@@ -1,0 +1,8 @@
+1
+00:00:04,096 --> 00:00:12,615
+ Hello, just one of it's working. I just deleted this by catch
+
+2
+00:00:14,256 --> 00:00:16,256
+ What's to the same result?
+

@@ -1,0 +1,6 @@
+collect the different data from the people with disabilities
+unclear speech to text 
+text to control robots for disabled people
+
+
+nvidia/parakeet-tdt_ctc-110m

@@ -1,0 +1,36 @@
+info:
+  name: post_game_state
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:3000/post_game_state/
+  body:
+    type: json
+    data: |-
+      {
+        "grid_size": [800, 600],
+        "player_pos": [200, 150],
+        "obstacles": [
+          [3, 2]
+        ],
+        "goal_completed": false,
+        "crops": [
+          {
+            "position": [4, 2],
+            "needs_water": true
+          },
+          {
+            "position": [2, 1],
+            "needs_water": true
+          }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,451 @@
+const TILE_SIZE = 32;
+
+export default class FarmScene extends Phaser.Scene {
+  constructor() {
+    super('FarmScene');
+  }
+  createInventoryPanel() {
+  this.inventoryPanelVisible = false;
+
+  // Container
+  this.inventoryPanel = this.add.container(650, 40);
+  this.inventoryPanel.setScrollFactor(0);
+  this.inventoryPanel.setDepth(100);
+  this.inventoryPanel.setVisible(false);
+  this.lastApiCall = 0;
+  this.apiInterval = 1000; // 5 seconds
+  this.isFetching = false;
+
+  // Background
+  const bg = this.add.rectangle(0, 0, 180, 120, 0x000000, 0.7)
+    .setOrigin(0.5,0.5);
+
+  // Title
+  const title = this.add.text(90, 8, 'Inventory', {
+    font: '16px Arial',
+    fill: '#ffffff'
+  }).setOrigin(0.5, 0);
+
+  // Item texts
+  this.seedText = this.add.text(10, 40, '', {
+    font: '14px Arial',
+    fill: '#ffffff'
+  });
+
+  this.cropText = this.add.text(10, 70, '', {
+    font: '14px Arial',
+    fill: '#ffffff'
+  });
+
+  this.inventoryPanel.add([
+    bg,
+    title,
+    this.seedText,
+    this.cropText
+  ]);
+
+  // this.updateInventoryPanel();
+  }
+  preload() {
+    this.load.image('grass', 'assets/tiles.png');
+    this.load.image('walls', 'assets/walls.png');
+    this.load.image('player', 'assets/player.png');
+    //  this.load.spritesheet('player', '/assets/player.png', {
+    //     frameWidth: 48,
+    //     frameHeight: 48
+    // });
+   
+    this.load.image('stone', 'assets/stone.png');
+    this.load.spritesheet('tiles', 'assets/tiles.png', {
+      frameWidth: 32,
+      frameHeight: 32
+    });
+    this.load.spritesheet('crops', 'assets/crops.png', {
+      frameWidth: 32,
+      frameHeight: 32
+    });
+  }
+
+ create() {
+
+    // this.cameras.main.setBounds(0, 0, 2500, 2020);
+    // move the camera (this is what you asked about)
+    // this.cameras.main.setScroll(500, 300);
+    this.createInventoryPanel(); 
+    this.createMap();
+    this.createPlayer();
+    this.createInput();
+    this.add.image(500, 400, "walls");
+    // walls.setScale(0.5);
+    this.crops = this.add.group();
+   this.anims.create({
+        key: 'down',
+        frames: this.anims.generateFrameNumbers('player', {
+            frames: [0,4,8,12]
+        }),
+        frameRate: 3,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'left',
+        frames: this.anims.generateFrameNumbers('player', {
+            frames: [1,5,9,13]
+        }),
+        frameRate: 3,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'right',
+        frames: this.anims.generateFrameNumbers('player', {
+            frames: [3,7,11,15]
+        }),
+        frameRate: 3,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'up',
+        frames: this.anims.generateFrameNumbers('player', {
+            frames: [2,6,10,14]
+        }),
+        frameRate: 3,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'idle',
+        frames: this.anims.generateFrameNumbers('player', {
+            frames: [0]
+        }),
+        frameRate: 3,
+        repeat: -1
+    });
+
+    //  const player = this.add.sprite(100, 100, 'player');
+
+    // player.play('down');
+    // console.log("player size:")
+    // console.log(this.textures.get('player').frameTotal);
+   
+  }
+
+  createMap() {
+    this.map = [];
+
+    for (let y = 0; y < 25; y++) {      
+      this.map[y] = [];
+      for (let x = 0; x < 30; x++) {
+        this.add.image(
+          x * TILE_SIZE,
+          y * TILE_SIZE,
+          'grass'
+        ).setOrigin(0);
+
+        this.map[y][x] = {
+          tilled: false,
+          watered: false,
+          crop: null,
+          waterOverlay: null
+        };
+      }
+    }
+
+    // const tile = this.add.sprite(
+    //   5 * TILE_SIZE + TILE_SIZE / 2,
+    //   4 * TILE_SIZE + TILE_SIZE / 2,
+    //   'tiles',
+    //   5
+    // );
+    // console.log(tile)
+
+    const map = this.make.tilemap({ key: 'map' });
+    const tileset = map.addTilesetImage('tiles');
+    const layer = map.createLayer('Ground', tileset);
+
+    this.inventory = {
+      seeds: 5,
+      crops: 0
+    };
+
+    this.inventoryText = this.add.text(10, 10, '', {
+      font: '16px Arial',
+      fill: '#ffffff'
+    }).setScrollFactor(0);
+
+    this.updateInventoryUI();
+  }
+
+  updateInventoryUI() {
+  this.inventoryText.setText(
+    `Seeds: ${this.inventory.seeds}\nCrops: ${this.inventory.crops}`
+  );
+
+  this.updateInventoryPanel();
+ }
+
+updateInventoryPanel() {
+  if (!this.seedText || !this.cropText) return;
+
+  this.seedText.setText(`🌱 Seeds: ${this.inventory.seeds}`);
+  this.cropText.setText(`🥕 Crops: ${this.inventory.crops}`);
+ }
+
+  game_state(){
+    farm_state = {"player":[10,12]}
+    return farm_state
+  }
+
+  createPlayer() {
+    this.player = this.physics.add.sprite(200, 100, 'player');
+    this.player.setDepth(10);
+    this.player.speed = 150;
+    this.player.setCollideWorldBounds(true);
+  }
+
+  createInput() {
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.actionKey = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.SPACE
+    );
+    this.waterKey = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.W
+    );
+    this.inventoryKey = this.input.keyboard.addKey(
+  Phaser.Input.Keyboard.KeyCodes.I
+   );
+   
+   const test = this.add.rectangle(400, 300, 50, 50, 0xff0000);
+     }  
+  
+  async fetchData(){
+    try {
+        // Example API call
+        const response = await fetch('http://localhost:3000/get_game_state');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Fetched data:', data);
+
+       const [x, y] = data.player_pos;
+       const crops = data.crops;
+       console.log(crops["crop1"]["pos"])
+       const needWater1 = crops["crop1"]["needs_water"];
+       if(needWater1 == false){
+        this.add.text(x, y-50, "adding water", { fontSize: '10px', fill: 'blue' });
+       }else if(needWater1 == true){
+        this.add.text(x, y-50, "", { fontSize: '10px', fill: 'blue' });
+       }
+
+       const needWater2 = crops["crop2"]["needs_water"];
+       console.log("water states....")
+       console.log(needWater1,needWater2)
+       if(needWater2 == false){
+        this.add.text(x, y-50, "adding water", { fontSize: '10px', fill: 'blue' });
+       }else if(needWater2 == true){
+        this.add.text(x, y-50, "", { fontSize: '10px', fill: 'blue' });
+       }
+
+       const crop1_pos = crops["crop1"]["pos"]
+       const crop2_pos = crops["crop2"]["pos"]
+       this.crop1 = this.add.sprite(
+      5 * TILE_SIZE + TILE_SIZE / 2,
+      4 * TILE_SIZE + TILE_SIZE / 2,
+      'tiles',
+      5).setOrigin(0,0);
+
+    this.add.image(400, 300, "walls");
+    this.crop2 = this.add.sprite(
+      5 * TILE_SIZE + TILE_SIZE / 2,
+      4 * TILE_SIZE + TILE_SIZE / 2,
+      'tiles',
+      8
+    ).setOrigin(0,0);
+       this.crop1.setPosition(crop1_pos[0]+25,crop1_pos[1]-25)
+       this.crop2.setPosition(crop2_pos[0]+25,crop2_pos[1]-25)
+       const [xobs,yobs] = data.obstacles;
+       console.log(data.obstacles)
+       this.add.image(xobs, yobs, 'stone').setOrigin(0.5,0.5);
+        // Stop any existing movement
+         this.player.setScale(2);
+        this.player.setVelocity(0);
+        // this.player.setOrigin(0.5,1)
+        this.player.setOrigin(0.5,0.8)
+        // Set player position
+        this.player.setPosition(x, y);
+
+        if (x > this.prevPlayerX) {
+        this.player.flipX = false;
+        this.player.anims.play('right', true);
+        } else if (x < this.prevPlayerX) {
+            this.player.flipX = true;
+            this.player.anims.play('left', true);
+        } else if(y > this.prevPlayerY) {
+            this.player.anims.play('down', true);
+        } else if (y < this.prevPlayerY) {
+            this.player.anims.play('up', true);
+        }else{
+          this.player.anims.play('idle', true);
+        }
+
+        this.player.setPosition(x, y);
+
+        this.prevPlayerX = x;
+        this.prevPlayerY = y;
+        // this.add.text(x, y, `x: ${x}, y: ${y}`, { fontSize: '10px', fill: '#000' });
+            // Use the data in your game
+
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        this.add.text(100, 100, 'Failed to load data', { fontSize: '20px', fill: '#f00' });
+    }
+  }
+    
+
+  update(time, delta) {
+    this.movePlayer();
+
+    if (Phaser.Input.Keyboard.JustDown(this.actionKey)) {
+      this.handleAction();
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.waterKey)) {
+      this.waterTile();
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.inventoryKey)) {
+  this.inventoryPanelVisible = !this.inventoryPanelVisible;
+  this.inventoryPanel.setVisible(this.inventoryPanelVisible);
+   }
+  if (!this.isFetching && time - this.lastApiCall > this.apiInterval) {
+        this.lastApiCall = time;
+        this.fetchData(); // call async function
+    }
+
+
+ 
+  }
+//200 100 -> 430 100 (1st crop)
+// 200 100 -> 350 175 (2nd crop)
+// 200 100 -> 350 175 (2nd crop)
+  movePlayer() {
+    const speed = this.player.speed;
+
+    this.player.setVelocity(0);
+
+    if (this.cursors.left.isDown) {
+      this.player.setVelocityX(-speed);
+    }
+    if (this.cursors.right.isDown) {
+      this.player.setVelocityX(speed);
+    }
+    if (this.cursors.up.isDown) {
+      this.player.setVelocityY(-speed);
+    }
+    if (this.cursors.down.isDown) {
+      this.player.setVelocityY(speed);
+    }
+
+    let playerX = this.player.x;
+    let playerY = this.player.y;
+
+    console.log(playerX, playerY);
+  }
+
+  waterTile() {
+    const x = Math.floor(this.player.x / TILE_SIZE);
+    const y = Math.floor(this.player.y / TILE_SIZE);
+
+    const tile = this.map[y]?.[x];
+    if (!tile || !tile.tilled) return;
+
+    tile.watered = true;
+
+    if (!tile.waterOverlay) {
+      tile.waterOverlay = this.add.rectangle(
+        x * TILE_SIZE,
+        y * TILE_SIZE,
+        TILE_SIZE,
+        TILE_SIZE,
+        0x0000ff,
+        0.3
+      ).setOrigin(0);
+    }
+  }
+
+  handleAction() {
+    const x = Math.floor(this.player.x / TILE_SIZE);
+    const y = Math.floor(this.player.y / TILE_SIZE);
+
+    const tile = this.map[y]?.[x];
+    if (!tile) return;
+
+    if (!tile.tilled) {
+      tile.tilled = true;
+      this.add.rectangle(
+        x * TILE_SIZE,
+        y * TILE_SIZE,
+        TILE_SIZE,
+        TILE_SIZE,
+        0x8b4513
+      ).setOrigin(0);
+    }
+    else if (!tile.crop && this.inventory.seeds > 0) {
+      this.inventory.seeds--;
+      this.updateInventoryUI();
+      this.plantCrop(x, y);
+    }
+    else if (tile.crop && tile.crop.isReady) {
+      tile.crop.destroy();
+      tile.crop = null;
+
+      this.inventory.crops++;
+      this.updateInventoryUI();
+    }
+  }
+
+  plantCrop(x, y) {
+    const crop = this.add.sprite(
+      x * TILE_SIZE + TILE_SIZE / 2,
+      y * TILE_SIZE + TILE_SIZE / 2,
+      'tiles',
+      12
+    );
+
+    crop.growth = 12;
+    crop.isReady = false;
+
+    this.time.addEvent({
+      delay: 2000,
+      repeat: 2,
+      callback: () => {
+        crop.growth++;
+        crop.setFrame(crop.growth);
+        if (crop.growth === 2) {
+          crop.isReady = true;
+        }
+      }
+    });
+
+    this.map[y][x].crop = crop;
+  }
+
+
+ 
+ }
+
+ const config = {
+  type: Phaser.AUTO,
+  width: 1000,
+  height: 800,
+  physics: {
+    default: 'arcade',
+    arcade: {
+      debug: false
+    }
+  },
+  scene: FarmScene
+ };
+
+new Phaser.Game(config);

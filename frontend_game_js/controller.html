@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Controller</title>
+</head>
+<body>
+
+  <h2>Controller</h2>
+
+  <button onclick="send('left')">Left</button>
+  <button onclick="send('right')">Right</button>
+  <button onclick="send('up')">Jump</button>
+  <button onclick="send('punch')">Punch</button>
+  <button onclick="send('kick')">Kick</button>
+  <button onclick="send('fireball')">Fireball</button>
+
+  <script>
+    let gameWindow;
+
+    function openGame() {
+      gameWindow = window.open('game.html', 'gameWindow');
+    }
+
+      function send(key) {
+  if (!gameWindow) {
+    alert("Open game first!");
+    return;
+  }
+
+  gameWindow.postMessage({
+    action: 'press',
+    key: key
+  }, '*');
+}
+
+    
+  </script>
+
+  <br><br>
+  <button onclick="openGame()">Open Game</button>
+
+</body>
+</html>

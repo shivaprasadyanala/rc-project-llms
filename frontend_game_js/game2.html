@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>API-Controlled Game</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    canvas {
+      background: #161b22;
+      border: 2px solid #30363d;
+      border-radius: 8px;
+      image-rendering: pixelated;
+    }
+    #info {
+      background: #161b22;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<script>
+  // Connect to our tiny bridge so it can send us commands
+  const ws = new WebSocket('ws://localhost:3000');
+
+  ws.onopen = () => {
+    console.log('Connected to control bridge');
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      window.postMessage(data, '*');   // forward to game.js listener
+    } catch (e) {
+      console.error('Invalid message', e);
+    }
+  };
+
+  ws.onclose = () => console.log('Control bridge closed');
+</script>
+<body>
+
+<h2>API-Controlled Fighter Game</h2>
+<canvas id="c" width="640" height="360"></canvas>
+
+<div id="info">
+  <strong>Game is ready.</strong><br>
+  You can now control it from console or from another script:<br><br>
+  <code>game.api.right()</code><br>
+  <code>game.api.up()</code><br>
+  <code>game.api.attack()</code><br>
+  <code>game.api.releaseAll()</code>
+</div>
+
+<script src="game.js"></script>
+
+<!-- Optional: your external controller script -->
+<!-- <script src="controller.js"></script> -->
+
+</body>
+</html>

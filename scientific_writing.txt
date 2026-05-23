@@ -1,0 +1,104 @@
+1.first write userleft use llm and mke it better.
+it is allowed to use but not completely reply.
+dont trust llms we dont get good grade.
+
+not too simple only appropriate abstaction
+
+no of pages not important only the content
+make a affort to be shorter
+1. priorites 
+	
+try to be understood (this is important) every who reads should understand
+- most of what follows should address this points
+- always remember the reader did not work 
+
+
+3. verify all cliams that are made.(good grades for strong claims)
+  - empirally (verify with experiments)
+  - cite litratrur
+  -
+
+state of art include we
+
+claims can be therorically and experimental.
+
+claim and varify
+verify with multiple experiments.
+remove part a it will fail verify.
+claim should be strong and stnd with it. and state it in some section.
+claim works in certain use cases.
+
+4.
+ - therotical reasons ( from scientfic paper)
+ - find weakness and explain and fix them.
+ - make ablation studeis ( build the system and make some changes, see if fails like remving the parts)
+ - alternatives suffer from the following problems.
+ - structure the explantions in stories, which summarize the facts.
+ - tell a story about the facts. ( by showing 99 acc we can prove this claim and used in practice)
+
+
+
+5. read the papers to write better.
+IMRD:
+ introduction
+ methods (what we did and everything should be, just stat facts)
+ results (focus on the facts, these are my numbers, brief discussion, small interpretain, meth a 96 acc, meth a has better accuracy,
+  summarize them) table, summariye the tables. how good are the numbers.
+ discussion ( genralize the results, explain more about the results) 
+  - give big pictrue interepretion
+  - answer the research 
+
+
+there are main experiments 1,2 experiments
+  and sub expericments which explains why the main experients dont work.
+   2 dont work. we did another experiment why it did not work.
+being honest.
+
+not compulsory for discusssion and conclusiton but if used to need to 
+
+use active voice is better.
+
+"we " is allowed to used.
+
+ 
+no need include fundatmentation stuff like back propation  or neural network.
+
+use weakverbs. (chatgpt uses it better)
+code and psudo code needs to be appendix.
+give numbers to the equation for images and tables.
+
+must,has,cannot,   are not used.
+
+Introduction
+
+can be written last vs can be written first.
+claims in the introduciton
+start with broader view. society has the problems with 
+why problem is importnat.
+can include the start of art or later also works.
+****important.****
+upto that point no one tried.(research gap)
+i looked at these papers not mentioned these papers.
+include some part of start of art.
+**has to be single sentence.**
+research gap has to be big enough to close it.
+
+can write many research gaps
+small to big.
+close one by one.
+at the end of introduction and again zoom out to genralize.
+it is an summarize the 
+
+***method sections from chatgpt might work from source code.
+
+refrences of everything should b present. for credit and authority.
+
+include the project setup. include which gpu used.
+mehtods is sumarz of source code.
+general idea of source code in methods.
+
+
+
+
+
+

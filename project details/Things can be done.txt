@@ -1,0 +1,4 @@
+1. frequency of watering ex watering every two hours by saving the state in the db.
+2. using db as tool
+3. there is a water pond the player goes to the bond to get water then he can water plant.
+4. water is limited priority of watering.

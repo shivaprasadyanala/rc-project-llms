@@ -1,0 +1,32 @@
+current part:  firmly and repeatedly it is passing now it is passing now it passed away in and
+
+
+seen set part:  friendly and repeatedly it is passing now it is passing now it passes
+
+
+Unequal part: firmly and repeatedly it is passing now it is passing now it passed away in and
+unseen part
+firmly and repeatedly it is passing now it is passing now it passed away in and
+
+
+
+
+the problem is:- 
+
+first when the model gives the wrong input
+then it corrects it self from the previous input.
+
+so there is a duplicate.
+
+implementation:-
+
+used whisper small model on local machine.
+used the implementation of the live whisper code to make changes but it still has the repetition issue.
+
+the main ploblem lies in the live translation using web sockets
+
+1. looked into other paid api but they were expensive
+
+2. look into whisper live implementation in gitrepo for implementations
+
+
