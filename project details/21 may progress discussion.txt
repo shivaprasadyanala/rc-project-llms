@@ -48,7 +48,7 @@ can work
 
 
 try to reduce the number of steps the model takes.
-try using dynamic crops
+try using dynamic crops  
 fix watering animation
 
 

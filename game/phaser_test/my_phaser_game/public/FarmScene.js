@@ -192,7 +192,8 @@ class FarmScene extends Phaser.Scene {
 
     this.inventory = {
       seeds: 5,
-      crops: 0
+      crops: 0,
+      water_available: false 
     };
 
     this.inventoryText = this.add.text(10, 10, '', {
@@ -205,7 +206,7 @@ class FarmScene extends Phaser.Scene {
 
   updateInventoryUI() {
   this.inventoryText.setText(
-    `Seeds: ${this.inventory.seeds}\nCrops: ${this.inventory.crops}`
+    `Seeds: ${this.inventory.seeds}\nCrops: ${this.inventory.crops}\n water_availabe : ${this.inventory.water_available}`
   );
 
   this.updateInventoryPanel();
@@ -256,6 +257,9 @@ updateInventoryPanel() {
 
        const [x, y] = data.player_pos;
        const crops = data.crops;
+       console.log("water water_available")
+       this.inventory.water_available = data.water_available
+       this.updateInventoryUI()
        console.log(crops["crop1"]["pos"])
        const crop1_pos = crops["crop1"]["pos"]
        const crop2_pos = crops["crop2"]["pos"]

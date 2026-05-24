@@ -46,6 +46,7 @@ state = {
 
     # Obstacles as a set for fast lookup
     "obstacles": {(250, 100)},
+    "water_available":False,
     "water_tank":{(80,250)},
 
     # Goal tracking
@@ -69,7 +70,7 @@ def set_crop_state():
     
 def water():
     """
-      water the crop and changes the state of water accordinglys
+      water the crop and changes the state of water accordingly
       Args:
           None: No argument 
       Returns:
@@ -89,6 +90,20 @@ def water():
 
     state["goal_completed"] = set_crop_state()
     return "Crop watered successfully"
+
+
+def collect_water():
+    """
+      collectes the water from the water contianer and changes the state of water_available accordingly
+      Args:
+          None: No argument 
+      Returns:
+        str: response of the result
+    """
+
+    state["water_available"] = True
+    print("in collect water tool.............")
+    return "Water collected successfully from water container"
 
 
 
@@ -125,7 +140,7 @@ def move(dx, dy):
 
 
 
-available_tools = {"move":move,"water":water,"astar":astar}
+available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water}
 
 
 
@@ -155,6 +170,8 @@ Crops:
 Obstacles:
 {list(state['obstacles'])}
 
+Water_available:
+{state["water_available"]}
 Water_tank:
 {list(state['water_tank'])}
 
@@ -187,7 +204,7 @@ while True:
   st_time = time.time()
   print("Hiiii")
   # response: ChatResponse = client.chat(model=model, messages=messages, tools=[ move_left,move_up,move_right,move_down,move,water])
-  response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar])
+  response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water])
 
   if response.message.content:
     print('Content: ')
@@ -229,10 +246,11 @@ while True:
                 "crop2":{"pos":[300,200],"needs_water":needs_water_state2}
             },
             "obstacles": [250,100],
+            "water_available":state["water_available"],
             "goal_completed": state["goal_completed"]
         }
-        # print("new_state")
-        # print(new_state)
+        print("new_state")
+        print(new_state)
         player_positions.append(state["player_pos"])
         response = requests.post(url, json=new_state, headers=headers)
         print(response)
@@ -253,6 +271,7 @@ reset_state = {
                 "crop2":{"pos":[300,200],"needs_water":True}
             },
             "obstacles": [250,100],
+            "water_available":False,
             "goal_completed": False
         }
         
