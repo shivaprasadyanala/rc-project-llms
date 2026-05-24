@@ -79,7 +79,9 @@ class FarmScene extends Phaser.Scene {
   }
 
  create() {
-
+  this.pathTaken = [];
+   this.lastX = 0;
+   this.lastY = 0;
   
   this.createInventoryPanel(); // ✅ FIRST
   this.createMap();
@@ -243,9 +245,12 @@ updateInventoryPanel() {
   Phaser.Input.Keyboard.KeyCodes.I
    );
   }  
-  
+
   async fetchData(){
     try {
+
+      this.graphics = this.add.graphics();
+
         // Example API call
         const response = await fetch('http://localhost:3000/get_game_state');
         // this.waterani.anims.play('up', true);
@@ -256,6 +261,39 @@ updateInventoryPanel() {
         console.log('Fetched data:', data);
 
        const [x, y] = data.player_pos;
+
+        if (Phaser.Math.Distance.Between(
+            x,
+            y,
+            this.lastX,
+            this.lastY
+        ) > 5) {
+
+            this.pathTaken.push({
+                x: x,
+                y: y
+            });
+
+            this.lastX = x;
+            this.lastY = y;
+        }
+
+    
+        // console.log("player path")
+        // console.log(this.pathTaken)
+       this.graphics.clear();
+        this.graphics.lineStyle(2, 0xff0000);
+
+        for (let i = 1; i < this.pathTaken.length-1; i++) {
+
+            let p1 = this.pathTaken[i - 1];
+            let p2 = this.pathTaken[i];
+
+            this.graphics.beginPath();
+            this.graphics.moveTo(p1.x, p1.y);
+            this.graphics.lineTo(p2.x, p2.y);
+            this.graphics.strokePath();
+        }
        const crops = data.crops;
        console.log("water water_available")
        this.inventory.water_available = data.water_available
@@ -343,10 +381,12 @@ updateInventoryPanel() {
       5 * TILE_SIZE + TILE_SIZE / 2,
       4 * TILE_SIZE + TILE_SIZE / 2,
       'tiles',
-      8
+      5
     ).setOrigin(0,0);
-       this.crop1.setPosition(crop1_pos[0]+25,crop1_pos[1]-25)
-       this.crop2.setPosition(crop2_pos[0]+25,crop2_pos[1]-25)
+    this.crop1.setPosition(crop1_pos[0]+25,crop1_pos[1]-25)
+    this.crop2.setPosition(crop2_pos[0]+25,crop2_pos[1]-25)
+       
+
        const [xobs,yobs] = data.obstacles;
        console.log(data.obstacles)
        this.add.image(xobs, yobs, 'stone').setOrigin(0.5,0.5);
