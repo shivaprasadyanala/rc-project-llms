@@ -54,3 +54,8 @@ add priorities to plants
 issues:-
 first the agent plants but the plant start growing without watering it.
 
+what to do:-
+keep track of tools called and missed.
+and the points for tasks done like collect_water,plant and water plant.
+
+

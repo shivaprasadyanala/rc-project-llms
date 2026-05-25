@@ -228,7 +228,6 @@ player_positions = []
 while True:
   st_time = time.time()
   print("Hiiii")
-  # response: ChatResponse = client.chat(model=model, messages=messages, tools=[ move_left,move_up,move_right,move_down,move,water])
   response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
 
   if response.message.content:
@@ -250,7 +249,6 @@ while True:
         print("time:"+str(time.time()-st_time))
         time_taken.append(time.time()-st_time)
 
-        print("crops:")
         needs_water_state1 = True
         needs_water_state2 = True
         crop_planted1 = False
