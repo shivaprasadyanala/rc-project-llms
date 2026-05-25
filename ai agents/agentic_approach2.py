@@ -14,7 +14,7 @@ url = "http://localhost:3000/post_game_state/"
 url2 = "http://hal9000.skim.th-owl.de:8003/transcribe"
 
 st_time = time.time()
-with open("record_game.m4a", "rb") as f:
+with open("plant_crops_audio.m4a", "rb") as f:
     response = requests.post(url2, files={"file": f})
 
 print(response.json()["text"])
@@ -40,8 +40,11 @@ state = {
 
     # Crops indexed by position
     "crops": {
-        (400, 275): {"needs_water": True},
-        (300, 200): {"needs_water": True},
+        (400, 275): {"planted":False,"needs_water": True},
+        (300, 200): {"planted":False,"needs_water": True},
+        # (200,475): {"planted":False,"needs_water": True},
+        # (150,300): {"planted":False,"needs_water": True},
+        # (275,325): {"planted":False,"needs_water": True}
     },
 
     # Obstacles as a set for fast lookup
@@ -113,7 +116,7 @@ def crops_to_text(crops):
       lines.append(f"- {pos}: needs_water = {info['needs_water']}")
     return "\n".join(lines)
 
-def move(dx, dy):
+def move(dx:int, dy:int):
     """
       move the game character based on dx and dy values and updates the state variable
       Args:
@@ -138,24 +141,46 @@ def move(dx, dy):
     return f"Moved to {(new_x, new_y)}"
 
 
+def plant_crop(dx:int, dy:int):
+    """
+      dx and dy values are the coordinates of the crops which have to be planed and updates the state variables of crops accordingly.
+      Args:
+          dx (int): x value of the coordinate
+          dy (int): y value of the coordinate
+      Returns:
+        str: The response of the action performed.
+    """
+    crop = state["crops"].get((dx,dy))
+    print(crop)
+    if not crop:
+        return "No crop here"
+
+    if crop["planted"]:
+        return "Crop already planted"
+
+    crop["planted"] = True
+    print(crop)
+
+    return f"crop with coordinates {dx},{dy} is planted"
 
 
-available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water}
 
 
-
-# Think step by step, but only keep minimum draft for each thinking step, with 5 words at most.
-#    Return the "Yes" or "No" at the end of the response after a separator ####.
-
+available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
 
 
 
 system_message2 = f"""
 
+you are smart farm game agent.
 
 Your task:
-Water needs to collected to plant water. Reach the water tank to collect water.
+1. planting the crops by going to the given coordinates.
+2. Water needs to collected to plant water.
+3. Reach the water tank to collect water.
 
+IMPORTANT.
+ check if the crops are planted.
 
 WORLD STATE:
 
@@ -204,7 +229,7 @@ while True:
   st_time = time.time()
   print("Hiiii")
   # response: ChatResponse = client.chat(model=model, messages=messages, tools=[ move_left,move_up,move_right,move_down,move,water])
-  response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water])
+  response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
 
   if response.message.content:
     print('Content: ')
@@ -228,22 +253,28 @@ while True:
         print("crops:")
         needs_water_state1 = True
         needs_water_state2 = True
+        crop_planted1 = False
+        crop_planted2 = False
         crops = state["crops"]
         if crops.get(tuple(state["player_pos"])) != None:
             # print(state)
             print("test water state")
             if state["player_pos"] == [400,275]:
                 needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
+                crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
             if state["player_pos"] == [300,200]:
                 needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
+                crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
             print(needs_water_state1,needs_water_state2)
+            print(crop_planted1,crop_planted2)
 
         new_state = {
             "grid_size": [5, 5],
             "player_pos": state["player_pos"],
             "crops": {
-                "crop1":{"pos":[400,275],"needs_water":needs_water_state1},
-                "crop2":{"pos":[300,200],"needs_water":needs_water_state2}
+                "crop1":{"pos":[400,275],"needs_water":needs_water_state1,"planted":crop_planted1},
+                "crop2":{"pos":[300,200],"needs_water":needs_water_state2,"planted":crop_planted2}
+
             },
             "obstacles": [250,100],
             "water_available":state["water_available"],
@@ -267,8 +298,11 @@ reset_state = {
             "player_pos": [200,100],
 
             "crops": {
-                "crop1":{"pos":[400,275],"needs_water":True},
-                "crop2":{"pos":[300,200],"needs_water":True}
+                "crop1":{"pos":[400,275],"needs_water":True,"planted":False},
+                "crop2":{"pos":[300,200],"needs_water":True,"planted":False},
+                # "crop3":{"pos":[200,475],"needs_water":True,"planted":False},
+                # "crop4":{"pos":[150,300],"needs_water":True,"planted":False},
+                # "crop5":{"pos":[275,325],"needs_water":True,"planted":False}
             },
             "obstacles": [250,100],
             "water_available":False,
