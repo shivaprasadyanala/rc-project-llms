@@ -47,8 +47,10 @@ can work
 2. add features like collect water,plant and harvest and sell.
 
 
-try to reduce the number of steps the model takes.
-try using dynamic crops  
+try to reduce the number of steps the model takes. 
 fix watering animation
+add priorities to plants
 
+issues:-
+first the agent plants but the plant start growing without watering it.
 

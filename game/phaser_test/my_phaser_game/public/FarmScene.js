@@ -85,7 +85,7 @@ class FarmScene extends Phaser.Scene {
   this.createMap();
   this.createPlayer();
   this.createInput();
-  
+  this.plant_cords = [[1,2]];
   this.crops = this.add.group();
   // wall code 
   // const wall3 = this.add.sprite(200, 210, 'walls_right', 8);
@@ -247,6 +247,7 @@ updateInventoryPanel() {
   async fetchData(){
     try {
         // Example API call
+
         const response = await fetch('http://localhost:3000/get_game_state');
         // this.waterani.anims.play('up', true);
         if (!response.ok) {
@@ -260,12 +261,43 @@ updateInventoryPanel() {
        console.log("water water_available")
        this.inventory.water_available = data.water_available
        this.updateInventoryUI()
-       console.log(crops["crop1"]["pos"])
+       // console.log(crops["crop1"]["pos"])
+       // console.log(Object.entries(crops))
+
+      if (crops) {
+        for (const [cropName, cropData] of Object.entries(crops)) {
+
+
+        console.log(`${cropName} position: X=${cropData.pos[0]}, Y=${cropData.pos[1]}`);
+        console.log("plant cords")
+        console.log(`${this.plant_cords}`)
+        const exists = this.plant_cords.some(
+          ([a, b]) => a === cropData.pos[0] && b === cropData.pos[1]
+        );
+        console.log(`${exists}`)
+        if(cropData.planted == true && !exists){
+          this.plant_cords.push([cropData.pos[0],cropData.pos[1]])
+
+         this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE)+1, Math.round(cropData.pos[1] / TILE_SIZE)-1) 
+
+        //   this.crop = this.add.sprite(
+        //   5 * TILE_SIZE + TILE_SIZE / 2,
+        //   4 * TILE_SIZE + TILE_SIZE / 2,
+        //   'tiles',
+        //   8
+        // ).setOrigin(0,0);
+        // this.crop.setPosition(cropData.pos[0]+25,cropData.pos[1]-25)
+
+        }
+          
+        }
+    }
+
        const crop1_pos = crops["crop1"]["pos"]
        const crop2_pos = crops["crop2"]["pos"]
        const needWater1 = crops["crop1"]["needs_water"];
-       console.log("needWater1 state....")
-       console.log(needWater1)
+       // console.log("needWater1 state....")
+       // console.log(needWater1)
        // this.watering = this.physics.add.sprite(x, y, 'waterani');
        this.waterText = ""
       if(needWater1 == false){
@@ -334,19 +366,13 @@ updateInventoryPanel() {
        }
 
        
-       this.crop1 = this.add.sprite(
-      5 * TILE_SIZE + TILE_SIZE / 2,
-      4 * TILE_SIZE + TILE_SIZE / 2,
-      'tiles',
-      5).setOrigin(0,0);
-    this.crop2 = this.add.sprite(
-      5 * TILE_SIZE + TILE_SIZE / 2,
-      4 * TILE_SIZE + TILE_SIZE / 2,
-      'tiles',
-      8
-    ).setOrigin(0,0);
-       this.crop1.setPosition(crop1_pos[0]+25,crop1_pos[1]-25)
-       this.crop2.setPosition(crop2_pos[0]+25,crop2_pos[1]-25)
+      //  this.crop1 = this.add.sprite(
+      // 5 * TILE_SIZE + TILE_SIZE / 2,
+      // 4 * TILE_SIZE + TILE_SIZE / 2,
+      // 'tiles',
+      // 5).setOrigin(0,0);
+      //  this.crop1.setPosition(crop2_pos[0]+25,crop2_pos[1]-25)
+
        const [xobs,yobs] = data.obstacles;
        console.log(data.obstacles)
        this.add.image(xobs, yobs, 'stone').setOrigin(0.5,0.5);
@@ -505,27 +531,35 @@ updateInventoryPanel() {
   }
 
   plantCrop(x, y) {
+    // alert("in plant crop")
+    // console.log(x,y)
+    this.inventory.seeds--;
+    this.inventory.crops++;
+    this.updateInventoryUI()
     const crop = this.add.sprite(
       x * TILE_SIZE + TILE_SIZE / 2,
       y * TILE_SIZE + TILE_SIZE / 2,
       'tiles',
-      12
+      5
     );
 
-    crop.growth = 12;
+    crop.growth = 5;
     crop.isReady = false;
 
     this.time.addEvent({
-      delay: 2000,
-      repeat: 2,
+      delay: 4000,
+      repeat: 13,
       callback: () => {
         crop.growth++;
-        crop.setFrame(crop.growth);
-        if (crop.growth === 2) {
+        if(crop.growth != 6){
+            crop.setFrame(crop.growth);
+          }
+        if (crop.growth === 19) {
           crop.isReady = true;
         }
       }
     });
+
 
     this.map[y][x].crop = crop;
   }
