@@ -168,7 +168,7 @@ def plant_crop(dx:int, dy:int):
 
 available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
 
-
+points_gained = 0
 
 system_message2 = f"""
 
@@ -255,16 +255,21 @@ while True:
         crop_planted2 = False
         crops = state["crops"]
         if crops.get(tuple(state["player_pos"])) != None:
-            # print(state)
-            print("test water state")
             if state["player_pos"] == [400,275]:
                 needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
                 crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
+                
+
             if state["player_pos"] == [300,200]:
                 needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
                 crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
+                # if crops.get(tuple(state["player_pos"]))["planted"]==True:
+                #     points_gained+=1
+                # if crops.get(tuple(state["player_pos"]))["needs_water"]==False:
+                #     points_gained+=1
             print(needs_water_state1,needs_water_state2)
             print(crop_planted1,crop_planted2)
+        
 
         new_state = {
             "grid_size": [5, 5],
@@ -290,6 +295,17 @@ while True:
     break
   else:
     break
+if state["water_available"] == True:
+    points_gained +=1
+
+if state["crops"].get(tuple([400,275]))["planted"]==True:
+    points_gained+=1
+if state["crops"].get(tuple([400,275]))["needs_water"]==False:
+    points_gained+=1
+if state["crops"].get(tuple([300,200]))["planted"]==True:
+    points_gained+=1
+if state["crops"].get(tuple([300,200]))["needs_water"]==False:
+    points_gained+=1
 
 reset_state = {
             "grid_size": [5, 5],
@@ -306,8 +322,11 @@ reset_state = {
             "water_available":False,
             "goal_completed": False
         }
-        
+
+
 response = requests.post(url, json=reset_state, headers=headers)
+
+
 
 print(time_taken)
 
@@ -337,6 +356,8 @@ print(len(time_taken))
 
 print("player positons:")
 print(player_positions)
+
+print(f"points gained by agent: {str(points_gained)}")
 
 plt.plot(time_taken)
 plt.xlabel('llm call run')
