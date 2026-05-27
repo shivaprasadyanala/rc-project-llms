@@ -56,6 +56,7 @@ first the agent plants but the plant start growing without watering it.
 
 what to do:-
 keep track of tools called and missed.
-and the points for tasks done like collect_water,plant and water plant.
-reset state for plants and water
-
+and the points for tasks done like collect_water,plant and water plant. ==> works
+reset state for plants and water ==> not able to remove the crops.
+add prompt once water is filled it can used for all crops.
+use pydantic instructor.

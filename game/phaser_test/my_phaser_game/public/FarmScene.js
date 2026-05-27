@@ -86,7 +86,9 @@ class FarmScene extends Phaser.Scene {
   this.createPlayer();
   this.createInput();
   this.plant_cords = [[1,2]];
-  this.crops = this.add.group();
+  // this.crops = this.add.group();
+  this.crops = {};
+
   // wall code 
   // const wall3 = this.add.sprite(200, 210, 'walls_right', 8);
 
@@ -280,16 +282,10 @@ updateInventoryPanel() {
 
          this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE)+1, Math.round(cropData.pos[1] / TILE_SIZE)-1) 
 
-        //   this.crop = this.add.sprite(
-        //   5 * TILE_SIZE + TILE_SIZE / 2,
-        //   4 * TILE_SIZE + TILE_SIZE / 2,
-        //   'tiles',
-        //   8
-        // ).setOrigin(0,0);
-        // this.crop.setPosition(cropData.pos[0]+25,cropData.pos[1]-25)
+        }else if(cropData.planted == false & this.inventory.crops > 0){
+            this.removeCrop(cropData.pos[0],cropData.pos[1])
+          }
 
-        }
-          
         }
     }
 
@@ -531,39 +527,52 @@ updateInventoryPanel() {
   }
 
   plantCrop(x, y) {
-    // alert("in plant crop")
-    // console.log(x,y)
+    const key = `${x},${y}`;
     this.inventory.seeds--;
     this.inventory.crops++;
     this.updateInventoryUI()
-    const crop = this.add.sprite(
+    this.crop = this.add.sprite(
       x * TILE_SIZE + TILE_SIZE / 2,
       y * TILE_SIZE + TILE_SIZE / 2,
       'tiles',
       5
     );
 
-    crop.growth = 5;
-    crop.isReady = false;
+    this.crop.growth = 5;
+    this.crop.isReady = false;
 
     this.time.addEvent({
       delay: 4000,
       repeat: 13,
       callback: () => {
-        crop.growth++;
-        if(crop.growth != 6){
-            crop.setFrame(crop.growth);
+        this.crop.growth++;
+        if(this.crop.growth != 6){
+            this.crop.setFrame(this.crop.growth);
           }
-        if (crop.growth === 19) {
-          crop.isReady = true;
+        if (this.crop.growth === 19) {
+          this.crop.isReady = true;
         }
       }
     });
 
 
-    this.map[y][x].crop = crop;
+    this.map[y][x].crop = this.crop;
+    this.crops[key] = this.crop;
   }
 
+
+removeCrop(x, y) {
+    this.inventory.seeds++;
+    this.inventory.crops--;
+    this.updateInventoryUI()
+    const key = `${x},${y}`;
+
+    if (this.crops[key]) {
+      this.crops[key].destroy();
+      delete this.crops[key];
+    }
+
+  }
 
  
  }
