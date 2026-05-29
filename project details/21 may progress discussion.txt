@@ -62,3 +62,4 @@ reset state for plants and water
 #  do prompt enginnering
 use fabrik for prompts
 use instructor and pydantic
+also check if the move tool arguments are correct.
