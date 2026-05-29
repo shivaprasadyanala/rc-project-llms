@@ -59,3 +59,6 @@ keep track of tools called and missed.
 and the points for tasks done like collect_water,plant and water plant.
 reset state for plants and water
 
+#  do prompt enginnering
+use fabrik for prompts
+use instructor and pydantic

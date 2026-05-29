@@ -138,7 +138,7 @@ def move(dx:int, dy:int):
         return "Blocked: obstacle"
 
     state["player_pos"] = [new_x, new_y]
-    return f"Moved to {(new_x, new_y)}"
+    return f"game character moved to {(new_x, new_y)}"
 
 
 def plant_crop(dx:int, dy:int):
@@ -246,10 +246,11 @@ while True:
         result = function_to_call(**tool_call.function.arguments)
         print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', result + '\n')
         messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-        print("time:"+str(time.time()-st_time))
+        print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
         time_taken.append(time.time()-st_time)
 
         needs_water_state1 = True
+
         needs_water_state2 = True
         crop_planted1 = False
         crop_planted2 = False
