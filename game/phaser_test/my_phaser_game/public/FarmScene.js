@@ -81,14 +81,33 @@ class FarmScene extends Phaser.Scene {
  create() {
 
   
-  this.createInventoryPanel(); // ✅ FIRST
+  this.createInventoryPanel(); 
   this.createMap();
   this.createPlayer();
   this.createInput();
   this.plant_cords = [[1,2]];
-  this.crops = this.add.group();
-  // wall code 
-  // const wall3 = this.add.sprite(200, 210, 'walls_right', 8);
+  // this.crops = this.add.group();
+  this.crops = {};
+
+   this.waterText1 = this.add.text(0, 0, "", {
+        fontSize: '10px',
+        fill: 'blue'
+    });
+
+    this.waterText1.setVisible(false);
+
+    this.watering1 = this.physics.add.sprite(0, 0, 'waterani');
+    this.watering1.setVisible(false);
+
+    this.waterText2 = this.add.text(0, 0, "", {
+        fontSize: '10px',
+        fill: 'blue'
+    });
+
+    this.waterText2.setVisible(false);
+
+    this.watering2 = this.physics.add.sprite(0, 0, 'waterani');
+    this.watering2.setVisible(false);
 
   this.tank = this.add.image(80, 250, 'water_tank').setOrigin(0.5,0.5);
   this.tank.setScale(0.10); // adjust size if needed
@@ -178,13 +197,7 @@ class FarmScene extends Phaser.Scene {
       }
     }
 
-    // const tile = this.add.sprite(
-    //   5 * TILE_SIZE + TILE_SIZE / 2,
-    //   4 * TILE_SIZE + TILE_SIZE / 2,
-    //   'tiles',
-    //   5
-    // );
-    // console.log(tile)
+
 
     const map = this.make.tilemap({ key: 'map' });
     const tileset = map.addTilesetImage('tiles');
@@ -258,7 +271,6 @@ updateInventoryPanel() {
 
        const [x, y] = data.player_pos;
        const crops = data.crops;
-       console.log("water water_available")
        this.inventory.water_available = data.water_available
        this.updateInventoryUI()
        // console.log(crops["crop1"]["pos"])
@@ -267,119 +279,100 @@ updateInventoryPanel() {
       if (crops) {
         for (const [cropName, cropData] of Object.entries(crops)) {
 
-
-        console.log(`${cropName} position: X=${cropData.pos[0]}, Y=${cropData.pos[1]}`);
-        console.log("plant cords")
-        console.log(`${this.plant_cords}`)
-        const exists = this.plant_cords.some(
-          ([a, b]) => a === cropData.pos[0] && b === cropData.pos[1]
-        );
-        console.log(`${exists}`)
-        if(cropData.planted == true && !exists){
-          this.plant_cords.push([cropData.pos[0],cropData.pos[1]])
-
-         this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE)+1, Math.round(cropData.pos[1] / TILE_SIZE)-1) 
-
-        //   this.crop = this.add.sprite(
-        //   5 * TILE_SIZE + TILE_SIZE / 2,
-        //   4 * TILE_SIZE + TILE_SIZE / 2,
-        //   'tiles',
-        //   8
-        // ).setOrigin(0,0);
-        // this.crop.setPosition(cropData.pos[0]+25,cropData.pos[1]-25)
-
-        }
-          
+            console.log(`${cropName} position: X=${cropData.pos[0]}, Y=${cropData.pos[1]}`);
+            console.log(`is crop planted: ${cropData.planted}`)
+            const exists = this.plant_cords.some(
+              ([a, b]) => a === cropData.pos[0] && b === cropData.pos[1]
+            );
+            if(cropData.planted == true && !exists){
+                this.plant_cords.push([cropData.pos[0],cropData.pos[1]])
+                this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE)+1, Math.round(cropData.pos[1] / TILE_SIZE)-1) 
+                const key = `${cropData.pos[0]},${cropData.pos[1]}`;
+                console.log(`crop array: ${this.crops}`)
+            }else if(cropData.planted == false & this.inventory.crops > 0 &this.inventory.water_available == false){
+              const key = `${Math.round(cropData.pos[0] / TILE_SIZE)+1},${Math.round(cropData.pos[1] / TILE_SIZE)-1}`;
+              console.log(`crop array: ${this.crops}`)
+              this.removeCrop(Math.round(cropData.pos[0] / TILE_SIZE)+1,Math.round(cropData.pos[1] / TILE_SIZE)-1)
+            }
         }
     }
+
+
 
        const crop1_pos = crops["crop1"]["pos"]
        const crop2_pos = crops["crop2"]["pos"]
        const needWater1 = crops["crop1"]["needs_water"];
-       // console.log("needWater1 state....")
-       // console.log(needWater1)
-       // this.watering = this.physics.add.sprite(x, y, 'waterani');
-       this.waterText = ""
-      if(needWater1 == false){
-        this.waterText = this.add.text(crop1_pos[0], crop1_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
-        if (!this.watering) {
-              this.watering = this.physics.add.sprite(x, y, 'waterani');
-               this.watering.setDepth(100);
-               this.watering.setScale(0.7);
-          }
-          this.watering.setPosition(x+40, y-20);
-          this.watering.anims.play('w', true);
-       }else if(needWater1 == true || (x == 200 && y == 100)){
-        this.waterText = null
-       }
-      //  if (needWater1 == false) {
+       if (!needWater1) {
+        this.waterText1.setPosition(crop1_pos[0], crop1_pos[1]-50);
+        this.waterText1.setText("adding water");
+        this.waterText1.setVisible(true);
 
-      //     if (!this.waterText) {
-      //         this.waterText = this.add.text(
-      //             crop1_pos[0],
-      //             crop1_pos[1] - 50,
-      //             "adding water",
-      //             { fontSize: '10px', fill: 'blue' }
-      //         );
+        this.watering1.setPosition(x+40, y-20);
+        this.watering1.setVisible(true);
+        this.watering1.anims.play('w', true);
+      }
+      else {
+          this.waterText1.setVisible(false);
+          this.watering1.setVisible(false);
+          this.watering1.anims.stop();
+      }
+      //  this.waterText = ""
+      // if(needWater1 == false){
+      //   this.waterText = this.add.text(crop1_pos[0], crop1_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
+      //   if (!this.watering) {
+      //         this.watering = this.physics.add.sprite(x, y, 'waterani');
+      //          this.watering.setDepth(100);
+      //          this.watering.setScale(0.7);
       //     }
+      //     this.watering.setPosition(x+40, y-20);
+      //     this.watering.anims.play('w', true);
+      //  }else if(needWater1 == true || (x == 200 && y == 100)){
+      //   this.waterText.destroy();
+      //   this.waterText = null
+      //  }
+  
+       const needWater2 = crops["crop2"]["needs_water"];
+       if (!needWater2) {
+          this.waterText2.setPosition(crop2_pos[0], crop2_pos[1]-50);
+          this.waterText2.setText("adding water");
+          this.waterText2.setVisible(true);
+
+          this.watering2.setPosition(x+40, y-20);
+          this.watering2.setVisible(true);
+          this.watering2.anims.play('w', true);
+        }
+        else {
+            this.waterText2.setVisible(false);
+            this.watering2.setVisible(false);
+            this.watering2.anims.stop();
+        }
+
+      //  if(needWater2 == false){
+      //     this.waterText = this.add.text(crop2_pos[0], crop2_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
 
       //     if (!this.watering) {
       //         this.watering = this.physics.add.sprite(x, y, 'waterani');
-      //         this.watering.setDepth(100);
-      //         this.watering.setScale(0.7);
+      //          this.watering.setDepth(100);
+      //          this.watering.setScale(0.7);
       //     }
-
-      //     this.watering.setPosition(x + 40, y - 20);
+      //     this.watering.setPosition(x+40, y-20);
       //     this.watering.anims.play('w', true);
-      // }
-      // else if (needWater1 == true || (x == 200 && y == 100)) {
-      //     if (this.waterText) {
-      //         this.waterText.destroy();   // or .setVisible(false)
-      //         this.waterText = null;
-      //     }
 
-      //     if (this.watering) {
-      //         this.watering.anims.stop();
-      //         this.watering.setFrame(2);
-      //     }
-      // }
-      
-       const needWater2 = crops["crop2"]["needs_water"];
-       console.log("water states....")
-       console.log(needWater1,needWater2)
-       
-
-       if(needWater2 == false){
-          this.add.text(crop2_pos[0], crop2_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
-
-          if (!this.watering) {
-              this.watering = this.physics.add.sprite(x, y, 'waterani');
-               this.watering.setDepth(100);
-               this.watering.setScale(0.7);
-          }
-          this.watering.setPosition(x+40, y-20);
-          this.watering.anims.play('w', true);
-
-       }else if((needWater2 == true) || (x == 200 && y == 100)){
-        this.waterText = null
-        // this.watering.setFrame(2);
-       }
+      //  }else if((needWater2 == true) || (x == 200 && y == 100)){
+      //   this.waterText.destroy();
+      //   this.waterText = null
+      //   // this.watering.setFrame(2);
+      //  }
 
        
-      //  this.crop1 = this.add.sprite(
-      // 5 * TILE_SIZE + TILE_SIZE / 2,
-      // 4 * TILE_SIZE + TILE_SIZE / 2,
-      // 'tiles',
-      // 5).setOrigin(0,0);
-      //  this.crop1.setPosition(crop2_pos[0]+25,crop2_pos[1]-25)
 
        const [xobs,yobs] = data.obstacles;
-       console.log(data.obstacles)
+       // console.log(data.obstacles)
        this.add.image(xobs, yobs, 'stone').setOrigin(0.5,0.5);
 
        
         // Stop any existing movement
-         this.player.setScale(2);
+        this.player.setScale(2);
         this.player.setVelocity(0);
         // this.player.setOrigin(0.5,1)
         this.player.setOrigin(0.5,0.8)
@@ -531,8 +524,7 @@ updateInventoryPanel() {
   }
 
   plantCrop(x, y) {
-    // alert("in plant crop")
-    // console.log(x,y)
+    const key = `${x},${y}`;
     this.inventory.seeds--;
     this.inventory.crops++;
     this.updateInventoryUI()
@@ -560,12 +552,25 @@ updateInventoryPanel() {
       }
     });
 
-
     this.map[y][x].crop = crop;
+    this.crops[key] = crop;
   }
 
 
- 
+removeCrop(x, y) {
+    console.log("remove crop invoked")
+    this.inventory.seeds++; 
+    this.inventory.crops--;
+    this.updateInventoryUI()
+    
+    const key = `${x},${y}`;
+    console.log("Removing:", key);
+    console.log("Available keys:", Object.keys(this.crops));
+    if (this.crops[key]) {
+      this.crops[key].destroy();
+      delete this.crops[key];
+    }
+  }
  }
 
  const config = {

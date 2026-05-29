@@ -181,6 +181,7 @@ Your task:
 
 IMPORTANT.
  check if the crops are planted.
+ Never calculate the distance on manually.
 
 WORLD STATE:
 
