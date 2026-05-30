@@ -69,3 +69,6 @@ reset state for plants and water ==> not able to remove the crops.
 add prompt once water is filled it can used for all crops.
 use pydantic instructor.
 
+1..10 | ForEach-Object {
+    python myscript.py
+}

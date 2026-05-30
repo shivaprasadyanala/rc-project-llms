@@ -7,7 +7,11 @@ import numpy as np
 from a_star_algo import astar
 from ollama import Client
 from ollama._types import ChatResponse
-
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+logging.getLogger("httpx").disabled = True
+logging.getLogger("httpcore").disabled = True
 
 url = "http://localhost:3000/post_game_state/"
 
@@ -226,77 +230,80 @@ model = "gpt-oss:20b"
 
 time_taken = []
 player_positions = []
-while True:
-  st_time = time.time()
-  print("Hiiii")
-  response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
+try:
+  while True:
+    st_time = time.time()
+    print("Hiiii")
+    response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
 
-  if response.message.content:
-    print('Content: ')
-    print(response.message.content + '\n')
-  if response.message.thinking:
-    print('Thinking: ')
-    print(response.message.thinking + '\n')
+    if response.message.content:
+      print('Content: ')
+      print(response.message.content + '\n')
+    if response.message.thinking:
+      print('Thinking: ')
+      print(response.message.thinking + '\n')
 
-  messages.append(response.message)
+    messages.append(response.message)
 
-  if response.message.tool_calls:
-    for tool_call in response.message.tool_calls:
-      function_to_call = available_tools.get(tool_call.function.name)
-      if function_to_call:
-        result = function_to_call(**tool_call.function.arguments)
-        print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', result + '\n')
-        messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-        print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-        time_taken.append(time.time()-st_time)
+    if response.message.tool_calls:
+      for tool_call in response.message.tool_calls:
+        function_to_call = available_tools.get(tool_call.function.name)
+        if function_to_call:
+          result = function_to_call(**tool_call.function.arguments)
+          print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', result + '\n')
+          messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+          print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
+          time_taken.append(time.time()-st_time)
 
-        needs_water_state1 = True
+          needs_water_state1 = True
 
-        needs_water_state2 = True
-        crop_planted1 = False
-        crop_planted2 = False
-        crops = state["crops"]
-        if crops.get(tuple(state["player_pos"])) != None:
-            if state["player_pos"] == [400,275]:
-                needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
-                crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
-                
+          needs_water_state2 = True
+          crop_planted1 = False
+          crop_planted2 = False
+          crops = state["crops"]
+          if crops.get(tuple(state["player_pos"])) != None:
+              if state["player_pos"] == [400,275]:
+                  needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
+                  crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
+                  
 
-            if state["player_pos"] == [300,200]:
-                needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
-                crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
-                # if crops.get(tuple(state["player_pos"]))["planted"]==True:
-                #     points_gained+=1
-                # if crops.get(tuple(state["player_pos"]))["needs_water"]==False:
-                #     points_gained+=1
-            print(needs_water_state1,needs_water_state2)
-            print(crop_planted1,crop_planted2)
-        
+              if state["player_pos"] == [300,200]:
+                  needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
+                  crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
+                  # if crops.get(tuple(state["player_pos"]))["planted"]==True:
+                  #     points_gained+=1
+                  # if crops.get(tuple(state["player_pos"]))["needs_water"]==False:
+                  #     points_gained+=1
+              print(needs_water_state1,needs_water_state2)
+              print(crop_planted1,crop_planted2)
+          
 
-        new_state = {
-            "grid_size": [5, 5],
-            "player_pos": state["player_pos"],
-            "crops": {
-                "crop1":{"pos":[400,275],"needs_water":needs_water_state1,"planted":crop_planted1},
-                "crop2":{"pos":[300,200],"needs_water":needs_water_state2,"planted":crop_planted2}
+          new_state = {
+              "grid_size": [5, 5],
+              "player_pos": state["player_pos"],
+              "crops": {
+                  "crop1":{"pos":[400,275],"needs_water":needs_water_state1,"planted":crop_planted1},
+                  "crop2":{"pos":[300,200],"needs_water":needs_water_state2,"planted":crop_planted2}
 
-            },
-            "obstacles": [250,100],
-            "water_available":state["water_available"],
-            "goal_completed": state["goal_completed"]
-        }
-        print("new_state")
-        print(new_state)
-        player_positions.append(state["player_pos"])
-        response = requests.post(url, json=new_state, headers=headers)
-        print(response)
-      else:
-        print(f'Tool {tool_call.function.name} not found')
-        messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
-  elif state["goal_completed"]:
-    break
-  else:
-    break
+              },
+              "obstacles": [250,100],
+              "water_available":state["water_available"],
+              "goal_completed": state["goal_completed"]
+          }
+          print("new_state")
+          print(new_state)
+          player_positions.append(state["player_pos"])
+          response = requests.post(url, json=new_state, headers=headers)
+          print(response)
+        else:
+          print(f'Tool {tool_call.function.name} not found')
+          messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+    elif state["goal_completed"]:
+      break
+    else:
+      break
+except Exception as e:
+  logger.error(f"LLm failed due to error: {str(e)}")
 if state["water_available"] == True:
     points_gained +=1
 
@@ -355,15 +362,21 @@ z_scores = (data - mean) / std_dev
 
 print("No of llms calls:-")
 print(len(time_taken))
+logger.info(f"No of llms calls: {len(time_taken)}")
+
 
 print("player positons:")
 print(player_positions)
+logger.info(f"player_positions: {player_positions}")
 
 print(f"points gained by agent: {str(points_gained)}")
+logger.info(f"points gained by agent: {str(points_gained)}")
 
 plt.plot(time_taken)
-plt.xlabel('llm call run')
-plt.ylabel('time')
-plt.title('llm processing time for each agentic all')
-plt.show()
+logger.info(f"time taken values: {time_taken}")
+
+# plt.xlabel('llm call run')
+# plt.ylabel('time')
+# plt.title('llm processing time for each agentic all')
+# plt.show()
 

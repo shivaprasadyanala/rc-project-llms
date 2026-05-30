@@ -270,6 +270,9 @@ updateInventoryPanel() {
         console.log('Fetched data:', data);
 
        const [x, y] = data.player_pos;
+       if (x==200 && y==100){
+        this.plant_cords = [[1,2]]
+       }
        const crops = data.crops;
        this.inventory.water_available = data.water_available
        this.updateInventoryUI()
@@ -281,6 +284,7 @@ updateInventoryPanel() {
 
             console.log(`${cropName} position: X=${cropData.pos[0]}, Y=${cropData.pos[1]}`);
             console.log(`is crop planted: ${cropData.planted}`)
+            console.log(`plant cords: ${this.plant_cords}`)
             const exists = this.plant_cords.some(
               ([a, b]) => a === cropData.pos[0] && b === cropData.pos[1]
             );
@@ -289,7 +293,7 @@ updateInventoryPanel() {
                 this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE)+1, Math.round(cropData.pos[1] / TILE_SIZE)-1) 
                 const key = `${cropData.pos[0]},${cropData.pos[1]}`;
                 console.log(`crop array: ${this.crops}`)
-            }else if(cropData.planted == false & this.inventory.crops > 0 &this.inventory.water_available == false){
+            }else if(cropData.planted == false && this.inventory.crops > 0 && this.inventory.water_available == false){
               const key = `${Math.round(cropData.pos[0] / TILE_SIZE)+1},${Math.round(cropData.pos[1] / TILE_SIZE)-1}`;
               console.log(`crop array: ${this.crops}`)
               this.removeCrop(Math.round(cropData.pos[0] / TILE_SIZE)+1,Math.round(cropData.pos[1] / TILE_SIZE)-1)
