@@ -12,20 +12,20 @@ def heuristic(a, b):
     # Manhattan distance
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-def astar(start_px, goal_px, obstacles_px, grid_width=800, grid_height=600):
+def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list[tuple[int, int]], grid_width=800, grid_height=600)->str:
     """
         a star algorithm which takes the start pixal, goal fixal, obstacle pixal, grid width, and gird height
         to calculate the path from the starting point to the goal by dodging the obstacles.
         Args:
-          start_px (int,int): x,y coordinates of start
-          goal_px (int,int): x,y coordinate of goal
+          start_px int,int: x,y coordinates of start
+          goal_px int,int: x,y coordinate of goal
           obstacles_px [(int,int)] : x,y coordinate of obstacles
       Returns:
         List: The list of tuples of the player coordinates to reach the destination
     
         A sample input for the function
-        start = (50, 75)
-        goal = (150, 125)
+        start_px = (50,75)
+        goal_px = (150,125)
 
         obstacles = [
             (75, 75),
@@ -36,21 +36,25 @@ def astar(start_px, goal_px, obstacles_px, grid_width=800, grid_height=600):
     """
     print(type(start_px))
     print((start_px))
-
+    print((goal_px))
     # start_px.split(",")[0]
     # start_px.split(",")[1]
-    new_st = (int(start_px.split(",")[0]),int(start_px.split(",")[1]))
-    new_goal = ( int(goal_px.split(",")[0]),int(goal_px.split(",")[1]))
-    print(new_goal)
-    print(new_st)
-    start = to_grid(new_st)
-    goal = to_grid(new_goal)
-    print(obstacles_px)
+    # try:
+
+    # new_st = (int(start_px.split(",")[0]),int(start_px.split(",")[1]))
+    # new_goal = ( int(goal_px.split(",")[0]),int(goal_px.split(",")[1]))
+    # print(new_goal)
+    # print(new_st)
+    # start = to_grid(new_st)
+    # goal = to_grid(new_goal)
+    start = to_grid(start_px)
+    goal = to_grid(goal_px)
+    # print(obstacles_px)
     # obstacles = {to_grid(o) for o in obstacles_px}
 
     obstacles.append(to_grid((int(obstacles_px.split(",")[0]),int(obstacles_px.split(",")[1]))))
 
-    print(obstacles)
+    # print(obstacles)
     open_set = []
     heapq.heappush(open_set, (0, start))
 
@@ -100,6 +104,8 @@ def astar(start_px, goal_px, obstacles_px, grid_width=800, grid_height=600):
                 heapq.heappush(open_set, (f_score, neighbor))
 
     return None  # no path found
+    # except Exception as e:
+    #     return "pass correct argument to the tool."
 
 
 

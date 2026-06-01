@@ -60,7 +60,7 @@ and the points for tasks done like collect_water,plant and water plant.
 reset state for plants and water
 
 #  do prompt enginnering
-use fabrik for prompts
+use fabrik for prompts -- it has some specific prompts for themes
 use instructor and pydantic
 also check if the move tool arguments are correct.
 
@@ -72,3 +72,4 @@ use pydantic instructor.
 1..10 | ForEach-Object {
     python myscript.py
 }
+for i in {1..100}; do python agentic_approach2.py; done linux

@@ -9,7 +9,7 @@ from ollama import Client
 from ollama._types import ChatResponse
 import logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(filename='example2.log', encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
@@ -173,7 +173,7 @@ def plant_crop(dx:int, dy:int)-> str:
 
 
 
-available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
+available_tools = {"move":move,"water":water,"collect_water":collect_water,"plant_crop":plant_crop}
 
 points_gained = 0
 
@@ -209,7 +209,7 @@ Water_tank:
 {list(state['water_tank'])}
 
 
-  To calculate the distance should use the astar algorithm tool
+
   move 25pxs and one side at a time
   and not allowed to pass through the crop and crops are not obstacles.
 
@@ -237,7 +237,7 @@ try:
   while True:
     st_time = time.time()
     print("Hiiii")
-    response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
+    response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
 
     if response.message.content:
       print('Content: ')
