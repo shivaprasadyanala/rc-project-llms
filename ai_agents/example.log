@@ -408,3 +408,19 @@
 2026-06-01 22:18:32,877 - INFO - time taken for api call + model: 4.869892597198486
 2026-06-01 22:18:32,877 - INFO - time taken for audio by model: 0.7569999694824219
 2026-06-01 22:18:54,250 - ERROR - LLm failed due to error: 'list' object has no attribute 'split'
+2026-06-01 22:30:33,203 - INFO - time taken for api call + model: 1.7913763523101807
+2026-06-01 22:30:33,203 - INFO - time taken for audio by model: 0.5802087783813477
+2026-06-01 22:30:38,653 - ERROR - LLm failed due to error: 'list' object has no attribute 'split'
+2026-06-01 22:30:45,097 - INFO - time taken for api call + model: 2.014315128326416
+2026-06-01 22:30:45,097 - INFO - time taken for audio by model: 0.6770505905151367
+2026-06-01 22:30:52,893 - ERROR - LLm failed due to error: 'list' object has no attribute 'split'
+2026-06-01 22:31:00,901 - INFO - time taken for api call + model: 2.0231497287750244
+2026-06-01 22:31:00,901 - INFO - time taken for audio by model: 0.35630202293395996
+2026-06-01 22:31:29,409 - ERROR - LLm failed due to error: 'list' object has no attribute 'split'
+2026-06-01 22:33:55,810 - INFO - time taken for api call + model: 3.5225203037261963
+2026-06-01 22:33:55,810 - INFO - time taken for audio by model: 0.40424633026123047
+2026-06-01 22:35:05,828 - ERROR - LLm failed due to error: astar() missing 3 required positional arguments: 'start_px', 'goal_px', and 'obstacles_px'
+2026-06-01 22:35:05,839 - INFO - No of llms calls: 15
+2026-06-01 22:35:05,839 - INFO - player_positions: [[200, 100], [200, 100], [200, 100], [200, 100], [200, 100], [200, 100], [200, 100], [400, 200], [400, 200], [400, 200], [400, 200], [700, 400], [700, 400], [700, 400], [700, 400]]
+2026-06-01 22:35:05,839 - INFO - points gained by agent: 2
+2026-06-01 22:35:06,093 - INFO - time taken values: [24.398451328277588, 3.1419711112976074, 1.498586654663086, 2.947216749191284, 4.87164306640625, 3.235255002975464, 1.6797053813934326, 1.518136978149414, 1.5771079063415527, 1.2774615287780762, 1.1422927379608154, 2.2117676734924316, 4.326900482177734, 1.767402172088623, 2.0608439445495605]
