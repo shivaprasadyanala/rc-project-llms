@@ -34,83 +34,82 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
     ]
     
     """
-    print(type(start_px))
-    print((start_px))
-    print((goal_px))
-    # start_px.split(",")[0]
-    # start_px.split(",")[1]
-    try:
+    # print(type(start_px))
+    # print((start_px))
+    # print((goal_px))
+    # print(obstacles_px)
+    
+    # try:
 
-        # new_st = (int(start_px.split(",")[0]),int(start_px.split(",")[1]))
-        # new_goal = ( int(goal_px.split(",")[0]),int(goal_px.split(",")[1]))
-        # print(new_goal)
-        # print(new_st)
-        # start = to_grid(new_st)
-        # goal = to_grid(new_goal)
-        start = to_grid(start_px)
-        goal = to_grid(goal_px)
-        # print(obstacles_px)
-        # obstacles = {to_grid(o) for o in obstacles_px}
+    new_st = (int(start_px[0]),int(start_px[1]))
+    new_goal = ( int(goal_px[0]),int(goal_px[1]))
+    # print(new_goal)
+    # print(new_st)
+    start = to_grid(new_st)
+    goal = to_grid(new_goal)
+   
+    obstacles =[]
+    for obstacle in obstacles_px:
+        obstacle_tuple = (obstacle[0],obstacle[1])
+        obstacles.append(to_grid(obstacle_tuple))
 
-        obstacles.append(to_grid((int(obstacles_px.split(",")[0]),int(obstacles_px.split(",")[1]))))
+    # print(obstacles)
+    open_set = []
+    heapq.heappush(open_set, (0, start))
 
-        # print(obstacles)
-        open_set = []
-        heapq.heappush(open_set, (0, start))
+    came_from = {}
+    g_score = {start: 0}
 
-        came_from = {}
-        g_score = {start: 0}
+    while open_set:
+        _, current = heapq.heappop(open_set)
 
-        while open_set:
-            _, current = heapq.heappop(open_set)
+        if current == goal:
+            # reconstruct path
+            path = []
+            while current in came_from:
+                path.append(to_pixel(current))
+                current = came_from[current]
+            path.append(to_pixel(start))
+            path.reverse()
+            return f"path from start to destination is: {path}"
+            # return path
 
-            if current == goal:
-                # reconstruct path
-                path = []
-                while current in came_from:
-                    path.append(to_pixel(current))
-                    current = came_from[current]
-                path.append(to_pixel(start))
-                path.reverse()
-                return f"path from start to destination is: {path}"
-                # return path
+        x, y = current
 
-            x, y = current
+        neighbors = [
+            (x+1, y),
+            (x-1, y),
+            (x, y+1),
+            (x, y-1),
+        ]
 
-            neighbors = [
-                (x+1, y),
-                (x-1, y),
-                (x, y+1),
-                (x, y-1),
-            ]
+        for nx, ny in neighbors:
+            neighbor = (nx, ny)
 
-            for nx, ny in neighbors:
-                neighbor = (nx, ny)
+            # bounds check
+            if nx < 0 or ny < 0 or nx >= int(grid_width) or ny >= int(grid_height):
+                continue
 
-                # bounds check
-                if nx < 0 or ny < 0 or nx >= int(grid_width) or ny >= int(grid_height):
-                    continue
+            # obstacle check
+            if neighbor in obstacles:
+                continue
 
-                # obstacle check
-                if neighbor in obstacles:
-                    continue
+            tentative_g = g_score[current] + 1
 
-                tentative_g = g_score[current] + 1
+            if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g
+                f_score = tentative_g + heuristic(neighbor, goal)
+                heapq.heappush(open_set, (f_score, neighbor))
 
-                if neighbor not in g_score or tentative_g < g_score[neighbor]:
-                    came_from[neighbor] = current
-                    g_score[neighbor] = tentative_g
-                    f_score = tentative_g + heuristic(neighbor, goal)
-                    heapq.heappush(open_set, (f_score, neighbor))
-
-        return None  # no path found
-    except Exception as e:
-        return "pass correct argument to the tool."
-
+    return None  # no path found
+    # except Exception as e:
+    #     return "pass correct argument to the tool."
 
 
-start = (50, 75)
-goal = (150, 125)
+
+start = [200, 100]
+goal = [400, 275]
 
 obstacles = [
     (75, 75),
