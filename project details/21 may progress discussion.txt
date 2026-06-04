@@ -61,7 +61,7 @@ reset state for plants and water
 
 #  do prompt enginnering
 use fabrik for prompts -- it has some specific prompts for themes
-use instructor and pydantic -- 
+use instructor and pydantic
 also check if the move tool arguments are correct.
 
 and the points for tasks done like collect_water,plant and water plant. ==> works
@@ -82,3 +82,4 @@ cat example.log | grep api | wc -l
 use react loop
 plan and act plan agent and act for tool calling agent.
 crew ai
+for i in {1..100}; do python agentic_approach2.py; done linux

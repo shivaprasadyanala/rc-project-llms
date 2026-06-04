@@ -1,3 +1,51 @@
 https://docs.unity3d.com/Packages/com.unity.ml-agents@4.0/manual/ML-Agents-Overview.html
 https://github.com/git-disl/awesome-LLM-game-agent-papers#crafter
 https://arxiv.org/pdf/2310.05418
+[llms and research]
+arxiv.org/pdf/2206.08853 - https://arxiv.org/pdf/2206.08853
+
+MineDojo/minedojo/sim/handlers/agent/actions/craft.py at main · MineDojo/MineDojo · GitHub - https://github.com/MineDojo/MineDojo/blob/main/minedojo/sim/handlers/agent/actions/craft.py
+
+arxiv.org/pdf/2305.16291 - https://arxiv.org/pdf/2305.16291
+
+arxiv.org/pdf/2403.00690 - https://arxiv.org/pdf/2403.00690
+
+arxiv.org/pdf/2404.02039 - https://arxiv.org/pdf/2404.02039
+
+SIMA 2: A Generalist Embodied Agent for Virtual Worlds - https://arxiv.org/html/2512.04797v1
+
+arxiv.org/pdf/2403.12037 - https://arxiv.org/pdf/2403.12037
+
+arxiv.org/pdf/2304.03442 - https://arxiv.org/pdf/2304.03442
+
+arxiv.org/pdf/2507.20300 - https://arxiv.org/pdf/2507.20300
+
+bobeff/open-source-games: A list of open source games. - https://github.com/bobeff/open-source-games?tab=readme-ov-file#tower-defence-games
+
+arxiv.org/pdf/2310.05418 - https://arxiv.org/pdf/2310.05418
+
+arxiv.org/pdf/1312.5602 - https://arxiv.org/pdf/1312.5602
+
+arxiv.org/pdf/2107.12808 - https://arxiv.org/pdf/2107.12808
+
+GitHub - michelpereira/awesome-open-source-games: Collection of Games that have the source code available on GitHub · GitHub - https://github.com/michelpereira/awesome-open-source-games#simulation
+
+[2210.03629] ReAct: Synergizing Reasoning and Acting in Language Models - https://arxiv.org/abs/2210.03629
+
+GitHub - git-disl/awesome-LLM-game-agent-papers: A Survey on Large Language Model-Based Game Agents (ACM CSUR) · GitHub - https://github.com/git-disl/awesome-LLM-game-agent-papers#humansocial-simulation
+
+Humanoid Agents - https://www.humanoidagents.com/
+
+Humanoid Agent Analytics - https://friends.humanoidagents.com/
+
+GitHub - HumanoidAgents/HumanoidAgents: Humanoid Agents: Platform for Simulating Human-like Generative Agents · GitHub - https://github.com/HumanoidAgents/HumanoidAgents
+
+Word2World: Generating Stories and Worlds through Large Language Models - https://arxiv.org/html/2405.06686v1#bib.bib34
+
+Key Research Papers | git-disl/awesome-LLM-game-agent-papers | DeepWiki - https://deepwiki.com/git-disl/awesome-LLM-game-agent-papers/4-key-research-papers
+
+WahahaYes/GdPlanningAI: An advanced game AI framework, based on Goal Oriented Action Planning (GOAP), and implemented in Godot. - https://github.com/WahahaYes/GdPlanningAI#usage
+
+arxiv.org/pdf/2303.16563 - https://arxiv.org/pdf/2303.16563
+
+arxiv.org/pdf/2403.09227 - https://arxiv.org/pdf/2403.09227

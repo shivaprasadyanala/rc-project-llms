@@ -78,7 +78,7 @@ def set_crop_state():
     state["goal_completed"]= is_goal_completed
     return is_goal_completed
     
-def water():
+def water()-> str:
     """
       water the crop and changes the state of water accordingly
       Args:
@@ -102,7 +102,7 @@ def water():
     return "Crop watered successfully"
 
 
-def collect_water():
+def collect_water()-> str:
     """
       collectes the water from the water contianer and changes the state of water_available accordingly
       Args:
@@ -123,7 +123,7 @@ def crops_to_text(crops):
       lines.append(f"- {pos}: needs_water = {info['needs_water']}")
     return "\n".join(lines)
 
-def move(dx:int, dy:int):
+def move(dx:int, dy:int)-> str:
     """
       move the game character based on dx and dy values and updates the state variable
       Args:
@@ -148,7 +148,7 @@ def move(dx:int, dy:int):
     return f"game character moved to {(new_x, new_y)}"
 
 
-def plant_crop(dx:int, dy:int):
+def plant_crop(dx:int, dy:int)-> str:
     """
       dx and dy values are the coordinates of the crops which have to be planed and updates the state variables of crops accordingly.
       Args:
@@ -341,42 +341,45 @@ response = requests.post(url, json=reset_state, headers=headers)
 
 
 print(time_taken)
+if len(time_taken)>0:
+    data = time_taken
+    mean = np.mean(data)
+    median = np.median(data)
+    variance = np.var(data)
+    std_dev = np.std(data)
+    min_val = np.min(data)
+    max_val = np.max(data)
 
-data = time_taken
-mean = np.mean(data)
-median = np.median(data)
-variance = np.var(data)
-std_dev = np.std(data)
-min_val = np.min(data)
-max_val = np.max(data)
+    stats = {
+        "mean": mean,
+        "median": median,
+        "variance": variance,
+        "std_dev": std_dev,
+        "min": min_val,
+        "max": max_val
+    }
 
-stats = {
-    "mean": mean,
-    "median": median,
-    "variance": variance,
-    "std_dev": std_dev,
-    "min": min_val,
-    "max": max_val
-}
-
-normalized = (data - min_val) / (max_val - min_val)
-z_scores = (data - mean) / std_dev
-
-
-print("No of llms calls:-")
-print(len(time_taken))
-logger.info(f"No of llms calls: {len(time_taken)}")
+    normalized = (data - min_val) / (max_val - min_val)
+    z_scores = (data - mean) / std_dev
 
 
-print("player positons:")
-print(player_positions)
-logger.info(f"player_positions: {player_positions}")
+    print("No of llms calls:-")
+    print(len(time_taken))
+    logger.info(f"No of llms calls: {len(time_taken)}")
 
-print(f"points gained by agent: {str(points_gained)}")
-logger.info(f"points gained by agent: {str(points_gained)}")
 
-plt.plot(time_taken)
-logger.info(f"time taken values: {time_taken}")
+    print("player positons:")
+    print(player_positions)
+    logger.info(f"player_positions: {player_positions}")
+
+    print(f"points gained by agent: {str(points_gained)}")
+    logger.info(f"points gained by agent: {str(points_gained)}")
+
+    plt.plot(time_taken)
+    logger.info(f"time taken values: {time_taken}")
+else:
+    logger.info("llm tool failed") 
+    print("llm tool failed")
 
 # plt.xlabel('llm call run')
 # plt.ylabel('time')
