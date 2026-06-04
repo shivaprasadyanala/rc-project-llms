@@ -294,9 +294,12 @@ Water_tank:
 {list(state['water_tank'])}
 
 
-  To calculate the distance should use the astar algorithm tool
+  
   move 25pxs and one side at a time
   and not allowed to pass through the crop and crops are not obstacles.
+
+Tools available:
+{available_tools}
 
 """
 
