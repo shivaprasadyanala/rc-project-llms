@@ -77,5 +77,8 @@ back to back time taken mean there is [] error.
 for i in {1..100}; do python agentic_approach2.py; done 
 Linux
 wc -l
-
+cat example.log | grep failed | wc -l
+cat example.log | grep api | wc -l
 use react loop
+plan and act plan agent and act for tool calling agent.
+crew ai
