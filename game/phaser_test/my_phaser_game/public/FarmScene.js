@@ -109,7 +109,7 @@ class FarmScene extends Phaser.Scene {
     this.watering2 = this.physics.add.sprite(0, 0, 'waterani');
     this.watering2.setVisible(false);
 
-  this.tank = this.add.image(80, 250, 'water_tank').setOrigin(0.5,0.5);
+  this.tank = this.add.image(75, 250, 'water_tank').setOrigin(0.5,0.5);
   this.tank.setScale(0.10); // adjust size if needed
 
  this.anims.create({

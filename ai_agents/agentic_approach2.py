@@ -7,9 +7,10 @@ import numpy as np
 from a_star_algo import astar
 from ollama import Client
 from ollama._types import ChatResponse
+import json
 import logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(filename='example3.log', encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
@@ -57,7 +58,7 @@ state = {
     # Obstacles as a set for fast lookup
     "obstacles": {(250, 100)},
     "water_available":False,
-    "water_tank":{(80,250)},
+    "water_tank":{(75,250)},
 
     # Goal tracking
     "goal_completed": False
@@ -71,20 +72,30 @@ def set_crop_state():
     """
     crops = state["crops"]
     is_goal_completed = False
+    value = 0
     for crop in crops:
-      # print("crop:")
-      # print(crop)
-      is_goal_completed = is_goal_completed and crop["needs_water"]
-    state["goal_completed"]= is_goal_completed
-    return is_goal_completed
-    
+      if crops[crop[0],crop[1]]["needs_water"] == False:
+        value+=1
+    print(value)
+    if value ==2:
+        state["goal_completed"]= True
+        return state["goal_completed"]
+
+
+# set_crop_state()
+# breakpoint()
 def water()-> str:
     """
-      water the crop and changes the state of water accordingly
+      waters the crop and changes the state accordingly
       Args:
           None: No argument 
       Returns:
-        str: response of the result
+        JSON string
+         {
+        "status":"true",
+        "action":"water",
+        "message": "status of the action"
+       }
     """
     pos = tuple(state["player_pos"])
     print(pos)
@@ -94,26 +105,45 @@ def water()-> str:
         return "No crop here"
 
     if not crop["needs_water"]:
-        return "Crop already watered"
+        # return "Crop already watered"
+        return {
+        "status":"false",
+        "action":"water",
+        "message": "crop already watered"
+        }
 
     crop["needs_water"] = False
 
     state["goal_completed"] = set_crop_state()
-    return "Crop watered successfully"
+    # return "Crop watered successfully"
+    return json.dumps({
+        "status":"true",
+        "action":"water",
+        "message": "crop watered successfully"
+        })
 
 
 def collect_water()-> str:
     """
-      collectes the water from the water contianer and changes the state of water_available accordingly
+      collectes the water from the water container and changes the state of water_available accordingly
       Args:
           None: No argument 
       Returns:
-        str: response of the result
+        JSON string
+         {
+        "status":"true",
+        "action":"move",
+        "water_available": state["water_available"]
+       }
     """
 
     state["water_available"] = True
-    print("in collect water tool.............")
-    return "Water collected successfully from water container"
+    # print("in collect water tool.............")
+    return json.dumps({
+        "status":"true",
+        "action":"collect water",
+        "water_available": state["water_available"]
+    })
 
 
 
@@ -125,12 +155,20 @@ def crops_to_text(crops):
 
 def move(dx:int, dy:int)-> str:
     """
-      move the game character based on dx and dy values and updates the state variable
-      Args:
-          dx (int): x value of the coordinate
-          dy (int): y value of the coordinate
-      Returns:
-        str: The number of units moved by the game character
+    Moves the game character by (dx, dy), updates the global state, and returns the updated state.
+
+    Args:
+        dx (int): x coordinate
+        dy (int): ý coordinate
+
+    Returns:
+    JSON string:
+        {
+            "status": true/false,
+            "action": "plant_crop",
+            "player_pos": [x, y],
+            "error": optional string
+        }
     """
     new_x = state["player_pos"][0] + int(dx)
     new_y = state["player_pos"][1] + int(dy)
@@ -138,40 +176,87 @@ def move(dx:int, dy:int)-> str:
     # Bounds check
     if not (0 <= new_x < state["grid_size"][0] and
             0 <= new_y < state["grid_size"][1]):
-        return "Blocked: out of bounds"
+        return json.dumps({
+        "status":"false",
+        "action":"move",
+        "player_pos": state["player_pos"],
+        "error":"Blocked: out of bounds"
+        })
 
     # Obstacle check
     if (new_x, new_y) in state["obstacles"]:
-        return "Blocked: obstacle"
+        return json.dumps({
+        "status":"false",
+        "action":"move",
+        "player_pos": state["player_pos"],
+        "error":"Blocked: obstacle"
+        })
 
     state["player_pos"] = [new_x, new_y]
-    return f"game character moved to {(new_x, new_y)}"
+    # return f"game character moved to {(new_x, new_y)}"
+    return json.dumps({
+        "status":"true",
+        "action":"move",
+        "player_pos": state["player_pos"]
+    })
 
 
-def plant_crop(dx:int, dy:int)-> str:
+def plant_crop(x:int, y:int)-> str:
     """
-      dx and dy values are the coordinates of the crops which have to be planed and updates the state variables of crops accordingly.
-      Args:
-          dx (int): x value of the coordinate
-          dy (int): y value of the coordinate
-      Returns:
-        str: The response of the action performed.
+    Plant a crop at the given grid coordinate (x,y).
+    Args:
+        x (int): x coordinate
+        y (int): y coordinate
+
+    Returns:
+        JSON string:
+        {
+            "status": true/false,
+            "action": "plant_crop",
+            "position": [x, y],
+            "planted": true/false,
+            "error": optional string
+        }
     """
-    crop = state["crops"].get((dx,dy))
-    print(crop)
+
+    crop = state["crops"].get((x, y))
+
     if not crop:
-        return "No crop here"
+        return json.dumps({
+            "status": False,
+            "error": "No crop here",
+            "position": [x, y]
+        })
 
     if crop["planted"]:
-        return "Crop already planted"
+        return json.dumps({
+            "status": False,
+            "error": "Already planted",
+            "position": [x, y]
+        })
 
     crop["planted"] = True
-    print(crop)
 
-    return f"crop with coordinates {dx},{dy} is planted"
+    return json.dumps({
+        "status": True,
+        "action": "plant_crop",
+        "position": [x, y],
+        "planted": True
+    })
+# tool_call = response.message.tool_calls[0]
 
+#     result = function_to_call(**tool_call.function.arguments)
 
+#     messages.append({
+#         "role": "tool",
+#         "content": json.dumps({
+#             "tool": tool_call.function.name,
+#             "result": result,
+#             "state": state
+#         })
+#     })
 
+#     continue
 
 available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
 
