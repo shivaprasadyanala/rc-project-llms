@@ -294,12 +294,17 @@ Water_tank:
 {list(state['water_tank'])}
 
 
-  
-  move 25pxs and one side at a time
-  and not allowed to pass through the crop and crops are not obstacles.
+move 25pxs and one side at a time
+and not allowed to pass through the crop and crops are not obstacles.
+
+Never output tool arguments as text, JSON, markdown, or code blocks.
+When an action is required, invoke the corresponding tool. 
+If a tool is available, emitting its arguments in text form is always incorrect.
 
 Tools available:
 {available_tools}
+
+
 
 """
 
@@ -323,8 +328,7 @@ time_taken = []
 player_positions = []
 try:
   while True:
-    st_time = time.time()
-    print("Hiiii")
+    st_time = time.time()    
     response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
 
     if response.message.content:
@@ -340,9 +344,10 @@ try:
       for tool_call in response.message.tool_calls:
         function_to_call = available_tools.get(tool_call.function.name)
         if function_to_call:
+          
           result = function_to_call(**tool_call.function.arguments)
           print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', result + '\n')
-          messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+          # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
           print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
           time_taken.append(time.time()-st_time)
 
@@ -381,6 +386,15 @@ try:
               "water_available":state["water_available"],
               "goal_completed": state["goal_completed"]
           }
+          messages.append({
+            "role": "tool",
+            "content": json.dumps({
+                "action_result": result,
+                "current_state": new_state
+            }),
+            "tool_name": tool_call.function.name
+        })
+
           print("new_state")
           print(new_state)
           player_positions.append(state["player_pos"])
