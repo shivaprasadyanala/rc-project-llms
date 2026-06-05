@@ -326,6 +326,7 @@ model = "gpt-oss:20b"
 
 time_taken = []
 player_positions = []
+agent_messages = []
 try:
   while True:
     st_time = time.time()    
@@ -334,9 +335,11 @@ try:
     if response.message.content:
       print('Content: ')
       print(response.message.content + '\n')
+      agent_messages.append(response.message.content)
     if response.message.thinking:
       print('Thinking: ')
       print(response.message.thinking + '\n')
+      agent_messages.append(response.message.thinking)
 
     messages.append(response.message)
 
@@ -348,6 +351,7 @@ try:
           result = function_to_call(**tool_call.function.arguments)
           print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', result + '\n')
           # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+          agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
           print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
           time_taken.append(time.time()-st_time)
 
@@ -409,6 +413,7 @@ try:
       break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
+  logger.info(agent_messages)
 if state["water_available"] == True:
     points_gained +=1
 
@@ -480,6 +485,7 @@ if len(time_taken)>0:
     plt.plot(time_taken)
     logger.info(f"time taken values: {time_taken}")
 else:
+    logger.info(agent_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
 
