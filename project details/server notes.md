@@ -66,3 +66,11 @@ add for which points are gained.
 
 pydantic for return type validation
 
+
+
+later:-
+
+make a tool get the game state. so the agent knows when the crop is harvested and it can collect the crop.
+
+make the to work independent by python server with adding memory
+
