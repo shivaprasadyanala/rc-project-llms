@@ -24,3 +24,7 @@ gpt-oss:20b  fast but inaccurate
 gemma4:31b  accurate but slow
 
 add for which points are gained.
+
+fixing the issues:- 
+
+if the crop is planted first before water collecting, the crop gets removed due to water available false.

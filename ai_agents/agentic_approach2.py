@@ -261,6 +261,7 @@ def plant_crop(x:int, y:int)-> str:
 available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
 
 points_gained = 0
+points_gained_object = {}
 
 system_message2 = f"""
 
@@ -426,15 +427,23 @@ while True:
 #   logger.info(agent_messages)
 if state["water_available"] == True:
     points_gained +=1
+    points_gained_object["water_available"] = 1
 
 if state["crops"].get(tuple([400,275]))["planted"]==True:
     points_gained+=1
+    points_gained_object["plant_crop_1"] = 1
 if state["crops"].get(tuple([400,275]))["needs_water"]==False:
     points_gained+=1
+    points_gained_object["needs_water_1"] = 1
+
 if state["crops"].get(tuple([300,200]))["planted"]==True:
     points_gained+=1
+    points_gained_object["plant_crop_2"] = 1
+
 if state["crops"].get(tuple([300,200]))["needs_water"]==False:
     points_gained+=1
+    points_gained_object["needs_water_2"] = 1
+
 
 reset_state = {
             "grid_size": [5, 5],
@@ -491,7 +500,9 @@ if len(time_taken)>0:
 
     print(f"points gained by agent: {str(points_gained)}")
     logger.info(f"points gained by agent: {str(points_gained)}")
-
+    print(f"points gained object: {str(points_gained_object)}")
+    logger.info(f"points gained object: {str(points_gained_object)}")
+    
     plt.plot(time_taken)
     logger.info(f"time taken values: {time_taken}")
     print("total input tokens: "+str(total_input_tokens))
