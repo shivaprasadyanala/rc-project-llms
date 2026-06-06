@@ -323,7 +323,7 @@ class FarmScene extends Phaser.Scene {
         this.watering1.setPosition(crop1_pos[0] +20, crop1_pos[1]-50);
         this.watering1.setVisible(true);
         this.watering1.anims.play('w', true);
-         this.time.delayedCall(2000, () => {
+         this.time.delayedCall(1000, () => {
           this.plant1Watered = true; // or whatever value makes the condition fail
 
           this.waterText1.setVisible(false);
@@ -346,7 +346,7 @@ class FarmScene extends Phaser.Scene {
         this.watering2.setPosition(crop2_pos[0]+20, crop2_pos[1] - 50);
         this.watering2.setVisible(true);
         this.watering2.anims.play('w', true);
-         this.time.delayedCall(2000, () => {
+         this.time.delayedCall(1000, () => {
           this.plant2Watered = true; // or whatever value makes the condition fail
 
           this.waterText2.setVisible(false);
