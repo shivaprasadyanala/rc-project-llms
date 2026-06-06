@@ -318,19 +318,29 @@ messages = [
 
 client = Client(
    host="http://hal9000.skim.th-owl.de:11437"
+   
 )
 # model = 'gpt-oss:20b'
 model = 'gemma4:26b'
+# model = 'qwen3.5:27b'
+
 # gpt-oss can call tools while "thinking"
 # a loop is needed to call the tools and get the results
 
 time_taken = []
 player_positions = []
 agent_messages = []
-try:
-  while True:
+total_output_tokens = 0
+total_input_tokens = 0
+# try:
+while True:
     st_time = time.time()    
     response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
+    print(f"input_tokens: {response['prompt_eval_count']}")
+    print(f"output_tokens: {response['eval_count']}")
+    total_output_tokens += response['eval_count']
+    total_input_tokens = response['prompt_eval_count']
+    print(f"reponse time: {(response['total_duration']/1e9)}")
 
     if response.message.content:
       print('Content: ')
@@ -349,7 +359,7 @@ try:
         if function_to_call:
           
           result = function_to_call(**tool_call.function.arguments)
-          print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', result + '\n')
+          print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
           # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
           agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
           print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
@@ -411,9 +421,9 @@ try:
       break
     else:
       break
-except Exception as e:
-  logger.error(f"LLm failed due to error: {str(e)}")
-  logger.info(agent_messages)
+# except Exception as e:
+#   logger.error(f"LLm failed due to error: {str(e)}")
+#   logger.info(agent_messages)
 if state["water_available"] == True:
     points_gained +=1
 
@@ -484,6 +494,10 @@ if len(time_taken)>0:
 
     plt.plot(time_taken)
     logger.info(f"time taken values: {time_taken}")
+    print("total input tokens: "+str(total_input_tokens))
+    print("total output tokens: "+str(total_output_tokens))
+    logger.info("total input tokens: "+str(total_input_tokens))
+    logger.info("total output tokens: "+str(total_output_tokens))
 else:
     logger.info(agent_messages)
     logger.info("llm tool failed") 
