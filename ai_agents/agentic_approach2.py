@@ -76,10 +76,10 @@ def set_crop_state():
     for crop in crops:
       if crops[crop[0],crop[1]]["needs_water"] == False:
         value+=1
-    print(value)
+    print("value of goal completed:" + str(value))
     if value ==2:
         state["goal_completed"]= True
-        return state["goal_completed"]
+    return state["goal_completed"]
 
 
 # set_crop_state()
@@ -334,6 +334,10 @@ agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
 # try:
+needs_water_state1 = True
+needs_water_state2 = True
+crop_planted1 = False
+crop_planted2 = False
 while True:
     st_time = time.time()    
     response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
@@ -365,26 +369,14 @@ while True:
           agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
           print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
           time_taken.append(time.time()-st_time)
-
-          needs_water_state1 = True
-
-          needs_water_state2 = True
-          crop_planted1 = False
-          crop_planted2 = False
           crops = state["crops"]
           if crops.get(tuple(state["player_pos"])) != None:
               if state["player_pos"] == [400,275]:
                   needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
                   crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
-                  
-
               if state["player_pos"] == [300,200]:
                   needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
                   crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
-                  # if crops.get(tuple(state["player_pos"]))["planted"]==True:
-                  #     points_gained+=1
-                  # if crops.get(tuple(state["player_pos"]))["needs_water"]==False:
-                  #     points_gained+=1
               print(needs_water_state1,needs_water_state2)
               print(crop_planted1,crop_planted2)
           
@@ -458,9 +450,8 @@ reset_state = {
             },
             "obstacles": [250,100],
             "water_available":False,
-            "goal_completed": False
+            "goal_completed": state["goal_completed"]
         }
-
 
 response = requests.post(url, json=reset_state, headers=headers)
 
@@ -502,7 +493,7 @@ if len(time_taken)>0:
     logger.info(f"points gained by agent: {str(points_gained)}")
     print(f"points gained object: {str(points_gained_object)}")
     logger.info(f"points gained object: {str(points_gained_object)}")
-    
+
     plt.plot(time_taken)
     logger.info(f"time taken values: {time_taken}")
     print("total input tokens: "+str(total_input_tokens))
