@@ -17,3 +17,10 @@ docker exec -it <container> nvidia-smi
 sudo docker run -d agentic_ir:latest
  sudo docker build -t agentic_ir:latest .
 wc -l
+
+models
+
+gpt-oss:20b  fast but inaccurate
+gemma4:31b  accurate but slow
+
+add for which points are gained.
