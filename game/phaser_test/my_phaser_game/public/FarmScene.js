@@ -86,6 +86,8 @@ class FarmScene extends Phaser.Scene {
     this.createPlayer();
     this.createInput();
     this.plant_cords = [[1, 2]];
+    this.plant1Watered = false
+    this.plant2Watered = false
     // this.crops = this.add.group();
     this.crops = {};
 
@@ -259,6 +261,7 @@ class FarmScene extends Phaser.Scene {
   }
 
   async fetchData() {
+    
     try {
       // Example API call
 
@@ -273,12 +276,16 @@ class FarmScene extends Phaser.Scene {
       const [x, y] = data.player_pos;
       if (x == 200 && y == 100) {
         this.plant_cords = [[1, 2]]
+        this.plant1Watered = false
+        this.plant2Watered = false
       }
       const crops = data.crops;
       this.inventory.water_available = data.water_available
       this.updateInventoryUI()
+
       // console.log(crops["crop1"]["pos"])
       // console.log(Object.entries(crops))
+      console.log(`is game goal_completed: ${data.goal_completed}`)
 
       if (crops) {
         for (const [cropName, cropData] of Object.entries(crops)) {
@@ -294,9 +301,10 @@ class FarmScene extends Phaser.Scene {
             this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
             const key = `${cropData.pos[0]},${cropData.pos[1]}`;
             console.log(`crop array: ${this.crops}`)
-          } else if (cropData.planted == false && this.inventory.crops > 0 && this.inventory.water_available == false) {
+          } else if (cropData.planted == false && this.inventory.crops > 0 && data.goal_completed==true) {
             const key = `${Math.round(cropData.pos[0] / TILE_SIZE) + 1},${Math.round(cropData.pos[1] / TILE_SIZE) - 1}`;
             console.log(`crop array: ${this.crops}`)
+            // alert(`key in remove crop: ${cropData.pos[0]}, ${cropData.pos[1]}  , ${this.inventory.crops}`)
             this.removeCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
           }
         }
@@ -306,51 +314,51 @@ class FarmScene extends Phaser.Scene {
 
       const crop1_pos = crops["crop1"]["pos"]
       const crop2_pos = crops["crop2"]["pos"]
-      const needWater1 = crops["crop1"]["needs_water"];
-      if (!needWater1) {
+      var needWater1 = crops["crop1"]["needs_water"];
+      if (!needWater1 && !this.plant1Watered) {
         this.waterText1.setPosition(crop1_pos[0], crop1_pos[1] - 50);
         this.waterText1.setText("adding water");
         this.waterText1.setVisible(true);
 
-        this.watering1.setPosition(x + 40, y - 20);
+        this.watering1.setPosition(crop1_pos[0] +20, crop1_pos[1]-50);
         this.watering1.setVisible(true);
         this.watering1.anims.play('w', true);
-      }
-      else {
-        this.waterText1.setVisible(false);
-        this.watering1.setVisible(false);
-        this.watering1.anims.stop();
-      }
-      //  this.waterText = ""
-      // if(needWater1 == false){
-      //   this.waterText = this.add.text(crop1_pos[0], crop1_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
-      //   if (!this.watering) {
-      //         this.watering = this.physics.add.sprite(x, y, 'waterani');
-      //          this.watering.setDepth(100);
-      //          this.watering.setScale(0.7);
-      //     }
-      //     this.watering.setPosition(x+40, y-20);
-      //     this.watering.anims.play('w', true);
-      //  }else if(needWater1 == true || (x == 200 && y == 100)){
-      //   this.waterText.destroy();
-      //   this.waterText = null
-      //  }
+         this.time.delayedCall(2000, () => {
+          this.plant1Watered = true; // or whatever value makes the condition fail
 
-      const needWater2 = crops["crop2"]["needs_water"];
-      if (!needWater2) {
+          this.waterText1.setVisible(false);
+          this.watering1.setVisible(false);
+          this.watering1.anims.stop();
+    });
+      }
+      // else {
+      //   this.waterText1.setVisible(false);
+      //   this.watering1.setVisible(false);
+      //   this.watering1.anims.stop();
+      // }
+
+      var needWater2 = crops["crop2"]["needs_water"];
+      if (!needWater2 && !this.plant2Watered) {
         this.waterText2.setPosition(crop2_pos[0], crop2_pos[1] - 50);
         this.waterText2.setText("adding water");
         this.waterText2.setVisible(true);
 
-        this.watering2.setPosition(x + 40, y - 20);
+        this.watering2.setPosition(crop2_pos[0]+20, crop2_pos[1] - 50);
         this.watering2.setVisible(true);
         this.watering2.anims.play('w', true);
+         this.time.delayedCall(2000, () => {
+          this.plant2Watered = true; // or whatever value makes the condition fail
+
+          this.waterText2.setVisible(false);
+          this.watering2.setVisible(false);
+          this.watering2.anims.stop();
+    });
       }
-      else {
-        this.waterText2.setVisible(false);
-        this.watering2.setVisible(false);
-        this.watering2.anims.stop();
-      }
+      // else {
+      //   this.waterText2.setVisible(false);
+      //   this.watering2.setVisible(false);
+      //   this.watering2.anims.stop();
+      // }
 
       //  if(needWater2 == false){
       //     this.waterText = this.add.text(crop2_pos[0], crop2_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
