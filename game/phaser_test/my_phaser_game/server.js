@@ -8,9 +8,9 @@ let gameState ={
             "crops": {
                 "crop1":{"pos":[400,275],"needs_water":true,"planted":false},
                 "crop2":{"pos":[300,200],"needs_water":true,"planted":false},
-                // "crop3":{"pos":[200,475],"needs_water":true,"planted":false},
-                // "crop4":{"pos":[150,300],"needs_water":true,"planted":false},
-                // "crop5":{"pos":[275,325],"needs_water":true,"planted":false},
+                "crop3":{"pos":[200,475],"needs_water":true,"planted":false},
+                "crop4":{"pos":[150,300],"needs_water":true,"planted":false},
+                "crop5":{"pos":[275,325],"needs_water":true,"planted":false},
             },
             "obstacles": [250,100],
             "water_available":false,
