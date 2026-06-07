@@ -9,6 +9,8 @@ from ollama import Client
 from ollama._types import ChatResponse
 import json
 import logging
+from models import MoveArgs,PlantCropArgs,AStarRequest,WaterRequest,CollectWaterRequest,CollectWaterResponse,MoveResponse,WaterResponse,PlantCropResponse
+from pydantic import BaseModel, Field, ValidationError
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='example3.log', encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
@@ -17,6 +19,15 @@ logging.getLogger("httpcore").disabled = True
 url = "http://localhost:3000/post_game_state/"
 
 url2 = "http://hal9000.skim.th-owl.de:8003/transcribe"
+
+tool_schemas = {
+    "move": MoveArgs,
+    "plant_crop": PlantCropArgs,
+    "astar": AStarRequest,
+    "collect_water": CollectWaterRequest,
+    "water": WaterRequest
+}
+
 
 st_time = time.time()
 with open("plant_crops_audio.m4a", "rb") as f:
@@ -92,7 +103,7 @@ def water()-> str:
       Returns:
         JSON string
          {
-        "status":"true",
+        "status": True,
         "action":"water",
         "message": "status of the action"
        }
@@ -102,25 +113,30 @@ def water()-> str:
     crop = state["crops"].get(pos)
     print(crop)
     if not crop:
-        return "No crop here"
+        response = WaterResponse(
+            status=False,
+            action="water",
+            message="No crop here"
+        )
+        return response.model_dump_json()
 
     if not crop["needs_water"]:
-        # return "Crop already watered"
-        return {
-        "status":"false",
-        "action":"water",
-        "message": "crop already watered"
-        }
+        response = WaterResponse(
+            status=False,
+            action="water",
+            message="crop already watered"
+        )
+        return response.model_dump_json()
 
     crop["needs_water"] = False
 
     state["goal_completed"] = set_crop_state()
-    # return "Crop watered successfully"
-    return json.dumps({
-        "status":"true",
-        "action":"water",
-        "message": "crop watered successfully"
-        })
+    response = WaterResponse(
+        status=True,
+        action="water",
+        message="crop watered successfully"
+    )
+    return response.model_dump_json()
 
 
 def collect_water()-> str:
@@ -131,20 +147,19 @@ def collect_water()-> str:
       Returns:
         JSON string
          {
-        "status":"true",
+        "status": True,
         "action":"move",
         "water_available": state["water_available"]
        }
     """
 
     state["water_available"] = True
-    # print("in collect water tool.............")
-    return json.dumps({
-        "status":"true",
-        "action":"collect water",
-        "water_available": state["water_available"]
-    })
-
+    response = CollectWaterResponse(
+        status=True,
+        action="collect water",
+        water_available=state["water_available"]
+    )
+    return response.model_dump_json()
 
 
 def crops_to_text(crops):
@@ -176,29 +191,34 @@ def move(dx:int, dy:int)-> str:
     # Bounds check
     if not (0 <= new_x < state["grid_size"][0] and
             0 <= new_y < state["grid_size"][1]):
-        return json.dumps({
-        "status":"false",
-        "action":"move",
-        "player_pos": state["player_pos"],
-        "error":"Blocked: out of bounds"
-        })
+        response = MoveResponse(
+            status=False,
+            action="move",
+            player_pos=state["player_pos"],
+            error= "Blocked: out of bounds"
+        )
+        return response.model_dump_json()
 
     # Obstacle check
     if (new_x, new_y) in state["obstacles"]:
-        return json.dumps({
-        "status":"false",
-        "action":"move",
-        "player_pos": state["player_pos"],
-        "error":"Blocked: obstacle"
-        })
+        response = MoveResponse(
+            status=False,
+            action="move",
+            player_pos=state["player_pos"],
+            error= "Blocked: obstacle"
+        )
+        return response.model_dump_json()
+
 
     state["player_pos"] = [new_x, new_y]
-    # return f"game character moved to {(new_x, new_y)}"
-    return json.dumps({
-        "status":"true",
-        "action":"move",
-        "player_pos": state["player_pos"]
-    })
+    response = MoveResponse(
+        status=True,
+        action="move",
+        player_pos=state["player_pos"]
+    )
+    return response.model_dump_json()
+
+
 
 
 def plant_crop(x:int, y:int)-> str:
@@ -214,7 +234,6 @@ def plant_crop(x:int, y:int)-> str:
             "status": true/false,
             "action": "plant_crop",
             "position": [x, y],
-            "planted": true/false,
             "error": optional string
         }
     """
@@ -222,41 +241,32 @@ def plant_crop(x:int, y:int)-> str:
     crop = state["crops"].get((x, y))
 
     if not crop:
-        return json.dumps({
-            "status": False,
-            "error": "No crop here",
-            "position": [x, y]
-        })
+        response = PlantCropResponse(
+            status=False,
+            action="plant_crop",
+            error= "No crop here",
+            position=[x, y]
+            )
+        return response.model_dump_json()
 
     if crop["planted"]:
-        return json.dumps({
-            "status": False,
-            "error": "Already planted",
-            "position": [x, y]
-        })
+        response = PlantCropResponse(
+            status=False,
+            action="plant_crop",
+            error= "Already planted",
+            position=[x, y]
+        )
+        return response.model_dump_json()
 
     crop["planted"] = True
 
-    return json.dumps({
-        "status": True,
-        "action": "plant_crop",
-        "position": [x, y],
-        "planted": True
-    })
-# tool_call = response.message.tool_calls[0]
+    response = PlantCropResponse(
+        status=True,
+        action="plant_crop",
+        position=[x, y]
+    )
+    return response.model_dump_json()
 
-#     result = function_to_call(**tool_call.function.arguments)
-
-#     messages.append({
-#         "role": "tool",
-#         "content": json.dumps({
-#             "tool": tool_call.function.name,
-#             "result": result,
-#             "state": state
-#         })
-#     })
-
-#     continue
 
 available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
 
@@ -345,7 +355,7 @@ while True:
     print(f"output_tokens: {response['eval_count']}")
     total_output_tokens += response['eval_count']
     total_input_tokens = response['prompt_eval_count']
-    print(f"reponse time: {(response['total_duration']/1e9)}")
+    print(f"response time: {(response['total_duration']/1e9)}")
 
     if response.message.content:
       print('Content: ')
@@ -362,54 +372,72 @@ while True:
       for tool_call in response.message.tool_calls:
         function_to_call = available_tools.get(tool_call.function.name)
         if function_to_call:
-          
-          result = function_to_call(**tool_call.function.arguments)
-          print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
-          # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-          agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-          print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-          time_taken.append(time.time()-st_time)
-          crops = state["crops"]
-          if crops.get(tuple(state["player_pos"])) != None:
-              if state["player_pos"] == [400,275]:
-                  needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
-                  crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
-              if state["player_pos"] == [300,200]:
-                  needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
-                  crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
-              print(needs_water_state1,needs_water_state2)
-              print(crop_planted1,crop_planted2)
-          
+            try:
+                schema = tool_schemas[tool_call.function.name]
+                validated_args = schema.model_validate(
+                    tool_call.function.arguments,
+                    # strict=True
+                )
 
-          new_state = {
-              "grid_size": [5, 5],
-              "player_pos": state["player_pos"],
-              "crops": {
-                  "crop1":{"pos":[400,275],"needs_water":needs_water_state1,"planted":crop_planted1},
-                  "crop2":{"pos":[300,200],"needs_water":needs_water_state2,"planted":crop_planted2}
+                result = function_to_call(
+                    **validated_args.model_dump()
+                )
+                # result = function_to_call(**tool_call.function.arguments)
+                print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
+                # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+                agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+                print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
+                time_taken.append(time.time()-st_time)
+                crops = state["crops"]
+                if crops.get(tuple(state["player_pos"])) != None:
+                  if state["player_pos"] == [400,275]:
+                      needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
+                      crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
+                  if state["player_pos"] == [300,200]:
+                      needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
+                      crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
+                  print(needs_water_state1,needs_water_state2)
+                  print(crop_planted1,crop_planted2)
 
-              },
-              "obstacles": [250,100],
-              "water_available":state["water_available"],
-              "goal_completed": state["goal_completed"]
-          }
-          messages.append({
-            "role": "tool",
-            "content": json.dumps({
-                "action_result": result,
-                "current_state": new_state
-            }),
-            "tool_name": tool_call.function.name
-        })
 
-          print("new_state")
-          print(new_state)
-          player_positions.append(state["player_pos"])
-          response = requests.post(url, json=new_state, headers=headers)
-          print(response)
+                new_state = {
+                  "grid_size": [5, 5],
+                  "player_pos": state["player_pos"],
+                  "crops": {
+                      "crop1":{"pos":[400,275],"needs_water":needs_water_state1,"planted":crop_planted1},
+                      "crop2":{"pos":[300,200],"needs_water":needs_water_state2,"planted":crop_planted2}
+
+                  },
+                  "obstacles": [250,100],
+                  "water_available":state["water_available"],
+                  "goal_completed": state["goal_completed"]
+                }
+                messages.append({
+                "role": "tool",
+                "content": json.dumps({
+                    "action_result": result,
+                    "current_state": new_state
+                }),
+                "tool_name": tool_call.function.name
+                })
+
+                print("new_state")
+                print(new_state)
+                player_positions.append(state["player_pos"])
+                response = requests.post(url, json=new_state, headers=headers)
+                print(response)
+            except ValidationError as e:
+                result = {
+                    "success": False,
+                    "error": str(e)
+                }
+                print(result)
         else:
-          print(f'Tool {tool_call.function.name} not found')
-          messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+            print(f'Tool {tool_call.function.name} not found')
+            messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+
+            
+          
     elif state["goal_completed"]:
       break
     else:

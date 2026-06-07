@@ -30,8 +30,9 @@ cal
 
 #######
 embodied reasoning (robot environments)
- “Inner monologue:
-Embodied reasoning through planning with language models,” 2022.
+embodied AI, the field that studies how intelligent systems can perceive, reason, and act in real environments
+
+ “Inner monologue:Embodied reasoning through planning with language models,” 2022.
 
 “Llm-planner: Few-shot grounded planning for embodied agents with large language models,” 2023.
 
@@ -41,5 +42,6 @@ plan and select: Interactive planning with large language models enables open-wo
 
 Language Models as Zero-Shot Planners: Extracting Actionable Knowledge for Embodied Agents
 
+ProgPrompt: Generating Situated Robot Task Plans using Large Language Models
 
-embodied AI, the field that studies how intelligent systems can perceive, reason, and act in real environments
+

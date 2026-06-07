@@ -1,5 +1,5 @@
 import heapq
-
+from models import AStarResponse
 TILE_SIZE = 25
 
 def to_grid(pos):
@@ -71,7 +71,10 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
                 current = came_from[current]
             path.append(to_pixel(start))
             path.reverse()
-            return f"path from start to destination is: {path}"
+            # return f"path from start to destination is: {path}"
+            res = AStarResponse(path=f"path from start to destination is: {path}")
+            return res.model_dump_json()
+
             # return path
 
         x, y = current

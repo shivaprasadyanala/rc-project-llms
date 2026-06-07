@@ -64,11 +64,19 @@ add for which points are gained.
 
 
 
-pydantic for return type validation
+1. pydantic for return type validation
+
+try returning only json (not using dumps) to test for accuracy in pydantic
 
 
 
-later:-
+2\. test with multiple obstacle and crops.
+
+3\. create a statistic for the log files.
+
+
+
+**later:-**
 
 make a tool get the game state. so the agent knows when the crop is harvested and it can collect the crop.
 
