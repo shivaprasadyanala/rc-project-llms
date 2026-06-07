@@ -331,11 +331,7 @@ class FarmScene extends Phaser.Scene {
           this.watering1.anims.stop();
     });
       }
-      // else {
-      //   this.waterText1.setVisible(false);
-      //   this.watering1.setVisible(false);
-      //   this.watering1.anims.stop();
-      // }
+      
 
       var needWater2 = crops["crop2"]["needs_water"];
       if (!needWater2 && !this.plant2Watered) {
@@ -354,28 +350,7 @@ class FarmScene extends Phaser.Scene {
           this.watering2.anims.stop();
     });
       }
-      // else {
-      //   this.waterText2.setVisible(false);
-      //   this.watering2.setVisible(false);
-      //   this.watering2.anims.stop();
-      // }
-
-      //  if(needWater2 == false){
-      //     this.waterText = this.add.text(crop2_pos[0], crop2_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
-
-      //     if (!this.watering) {
-      //         this.watering = this.physics.add.sprite(x, y, 'waterani');
-      //          this.watering.setDepth(100);
-      //          this.watering.setScale(0.7);
-      //     }
-      //     this.watering.setPosition(x+40, y-20);
-      //     this.watering.anims.play('w', true);
-
-      //  }else if((needWater2 == true) || (x == 200 && y == 100)){
-      //   this.waterText.destroy();
-      //   this.waterText = null
-      //   // this.watering.setFrame(2);
-      //  }
+      
 
 
 
