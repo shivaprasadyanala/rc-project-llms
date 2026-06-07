@@ -91,7 +91,7 @@ def set_crop_state():
       if crops[crop[0],crop[1]]["needs_water"] == False:
         value+=1
     print("value of goal completed:" + str(value))
-    if value ==2:
+    if value ==5:
         state["goal_completed"]= True
     return state["goal_completed"]
 
