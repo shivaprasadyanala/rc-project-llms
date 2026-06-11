@@ -1,0 +1,18 @@
+try to reduce the number of steps the model takes -> not possible due to the a star gives fixed steps.
+try using dynamic crops -> should be also a problem because the model does not memorize and this it just 
+add water points only at the crop -> done
+
+different questions and experiments regarding them
+1. like does this model reduce the time?
+2. does this approach increase the accuracy?
+
+what to do next?
+
+
+
+1. get different non-trivial commands from chat gpt and test them. user input (important) record separately with a device to see the accuracy of the model.
+2. try different models for reasoning and acting.
+3. make the agent plant the crops(not giving them in the state) and water them.
+4. test for slam skills.(have to see if its feesible)
+
+
