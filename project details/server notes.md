@@ -11,6 +11,7 @@ ff83  whisper\_server\_file\_api 8003/transcribe
 e15 ollama 11435
 
 sudo docker run -p 11435:11434 --gpus "device=5" -d ollama/ollama:latest
+sudo docker run -v ollama:/root/.ollama -p 11437:11434 --gpus "device=3" -d ollama/ollama:latest
 
 8b08  inco\_robotics  live whisper 
 
@@ -66,11 +67,11 @@ add for which points are gained.
 
 1. pydantic for return type validation
 
-try returning only json (not using dumps) to test for accuracy in pydantic
+try returning only json (not using dumps) to test for accuracy in pydantic -> done
 
 
 
-2\. test with multiple obstacle and crops.
+2\. test with multiple obstacle and crops. -> only crops.
 
 3\. create a statistic for the log files.
 
