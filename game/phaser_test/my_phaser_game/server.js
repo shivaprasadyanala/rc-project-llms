@@ -14,7 +14,7 @@ let gameState ={
             },
             "obstacles": [250,100],
             "water_available":false,
-            "water_tank": [80,250],
+            "water_tank": [75,250],
             "goal_completed": false
         };
 

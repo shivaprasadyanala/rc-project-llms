@@ -227,7 +227,8 @@ client = Client(
    host="http://hal9000.skim.th-owl.de:11437"
 )
 # model = 'gpt-oss:120b'
-model = "gpt-oss:20b"
+# model = "gpt-oss:20b"
+model = 'gemma4:26b'
 # gpt-oss can call tools while "thinking"
 # a loop is needed to call the tools and get the results
 

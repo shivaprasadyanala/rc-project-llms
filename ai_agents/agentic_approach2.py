@@ -7,15 +7,27 @@ import numpy as np
 from a_star_algo import astar
 from ollama import Client
 from ollama._types import ChatResponse
+import json
 import logging
+from models import MoveArgs,PlantCropArgs,AStarRequest,WaterRequest,CollectWaterRequest,CollectWaterResponse,MoveResponse,WaterResponse,PlantCropResponse
+from pydantic import BaseModel, Field, ValidationError
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(filename='example3.log', encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
 url = "http://localhost:3000/post_game_state/"
 
 url2 = "http://hal9000.skim.th-owl.de:8003/transcribe"
+
+tool_schemas = {
+    "move": MoveArgs,
+    "plant_crop": PlantCropArgs,
+    "astar": AStarRequest,
+    "collect_water": CollectWaterRequest,
+    "water": WaterRequest
+}
+
 
 st_time = time.time()
 with open("plant_crops_audio.m4a", "rb") as f:
@@ -57,7 +69,7 @@ state = {
     # Obstacles as a set for fast lookup
     "obstacles": {(250, 100)},
     "water_available":False,
-    "water_tank":{(80,250)},
+    "water_tank":{(75,250)},
 
     # Goal tracking
     "goal_completed": False
@@ -71,50 +83,83 @@ def set_crop_state():
     """
     crops = state["crops"]
     is_goal_completed = False
+    value = 0
     for crop in crops:
-      # print("crop:")
-      # print(crop)
-      is_goal_completed = is_goal_completed and crop["needs_water"]
-    state["goal_completed"]= is_goal_completed
-    return is_goal_completed
-    
-def water():
+      if crops[crop[0],crop[1]]["needs_water"] == False:
+        value+=1
+    print("value of goal completed:" + str(value))
+    if value ==2:
+        state["goal_completed"]= True
+    return state["goal_completed"]
+
+
+# set_crop_state()
+# breakpoint()
+def water()-> str:
     """
-      water the crop and changes the state of water accordingly
+      waters the crop and changes the state accordingly
       Args:
           None: No argument 
       Returns:
-        str: response of the result
+        JSON string
+         {
+        "status": True,
+        "action":"water",
+        "message": "status of the action"
+       }
     """
     pos = tuple(state["player_pos"])
     print(pos)
     crop = state["crops"].get(pos)
     print(crop)
     if not crop:
-        return "No crop here"
+        response = WaterResponse(
+            status=False,
+            action="water",
+            message="No crop here"
+        )
+        return response.model_dump_json()
 
     if not crop["needs_water"]:
-        return "Crop already watered"
+        response = WaterResponse(
+            status=False,
+            action="water",
+            message="crop already watered"
+        )
+        return response.model_dump_json()
 
     crop["needs_water"] = False
 
     state["goal_completed"] = set_crop_state()
-    return "Crop watered successfully"
+    response = WaterResponse(
+        status=True,
+        action="water",
+        message="crop watered successfully"
+    )
+    return response.model_dump_json()
 
 
-def collect_water():
+def collect_water()-> str:
     """
-      collectes the water from the water contianer and changes the state of water_available accordingly
+      collectes the water from the water container and changes the state of water_available accordingly
       Args:
           None: No argument 
       Returns:
-        str: response of the result
+        JSON string
+         {
+        "status": True,
+        "action":"move",
+        "water_available": state["water_available"]
+       }
     """
 
     state["water_available"] = True
-    print("in collect water tool.............")
-    return "Water collected successfully from water container"
-
+    response = CollectWaterResponse(
+        status=True,
+        action="collect water",
+        water_available=state["water_available"]
+    )
+    return response.model_dump_json()
 
 
 def crops_to_text(crops):
@@ -123,14 +168,22 @@ def crops_to_text(crops):
       lines.append(f"- {pos}: needs_water = {info['needs_water']}")
     return "\n".join(lines)
 
-def move(dx:int, dy:int):
+def move(dx:int, dy:int)-> str:
     """
-      move the game character based on dx and dy values and updates the state variable
-      Args:
-          dx (int): x value of the coordinate
-          dy (int): y value of the coordinate
-      Returns:
-        str: The number of units moved by the game character
+    Moves the game character by (dx, dy), updates the global state, and returns the updated state.
+
+    Args:
+        dx (int): x coordinate
+        dy (int): ý coordinate
+
+    Returns:
+    JSON string:
+        {
+            "status": true/false,
+            "action": "plant_crop",
+            "player_pos": [x, y],
+            "error": optional string
+        }
     """
     new_x = state["player_pos"][0] + int(dx)
     new_y = state["player_pos"][1] + int(dy)
@@ -138,44 +191,87 @@ def move(dx:int, dy:int):
     # Bounds check
     if not (0 <= new_x < state["grid_size"][0] and
             0 <= new_y < state["grid_size"][1]):
-        return "Blocked: out of bounds"
+        response = MoveResponse(
+            status=False,
+            action="move",
+            player_pos=state["player_pos"],
+            error= "Blocked: out of bounds"
+        )
+        return response.model_dump_json()
 
     # Obstacle check
     if (new_x, new_y) in state["obstacles"]:
-        return "Blocked: obstacle"
+        response = MoveResponse(
+            status=False,
+            action="move",
+            player_pos=state["player_pos"],
+            error= "Blocked: obstacle"
+        )
+        return response.model_dump_json()
+
 
     state["player_pos"] = [new_x, new_y]
-    return f"game character moved to {(new_x, new_y)}"
+    response = MoveResponse(
+        status=True,
+        action="move",
+        player_pos=state["player_pos"]
+    )
+    return response.model_dump_json()
 
 
-def plant_crop(dx:int, dy:int):
+
+
+def plant_crop(x:int, y:int)-> str:
     """
-      dx and dy values are the coordinates of the crops which have to be planed and updates the state variables of crops accordingly.
-      Args:
-          dx (int): x value of the coordinate
-          dy (int): y value of the coordinate
-      Returns:
-        str: The response of the action performed.
+    Plant a crop at the given grid coordinate (x,y).
+    Args:
+        x (int): x coordinate
+        y (int): y coordinate
+
+    Returns:
+        JSON string:
+        {
+            "status": true/false,
+            "action": "plant_crop",
+            "position": [x, y],
+            "error": optional string
+        }
     """
-    crop = state["crops"].get((dx,dy))
-    print(crop)
+
+    crop = state["crops"].get((x, y))
+
     if not crop:
-        return "No crop here"
+        response = PlantCropResponse(
+            status=False,
+            action="plant_crop",
+            error= "No crop here",
+            position=[x, y]
+            )
+        return response.model_dump_json()
 
     if crop["planted"]:
-        return "Crop already planted"
+        response = PlantCropResponse(
+            status=False,
+            action="plant_crop",
+            error= "Already planted",
+            position=[x, y]
+        )
+        return response.model_dump_json()
 
     crop["planted"] = True
-    print(crop)
 
-    return f"crop with coordinates {dx},{dy} is planted"
-
-
+    response = PlantCropResponse(
+        status=True,
+        action="plant_crop",
+        position=[x, y]
+    )
+    return response.model_dump_json()
 
 
 available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
 
 points_gained = 0
+points_gained_object = {}
 
 system_message2 = f"""
 
@@ -209,9 +305,17 @@ Water_tank:
 {list(state['water_tank'])}
 
 
-  To calculate the distance should use the astar algorithm tool
-  move 25pxs and one side at a time
-  and not allowed to pass through the crop and crops are not obstacles.
+move 25pxs and one side at a time
+and not allowed to pass through the crop and crops are not obstacles.
+
+Never output tool arguments as text, JSON, markdown, or code blocks.
+When an action is required, invoke the corresponding tool. 
+If a tool is available, emitting its arguments in text form is always incorrect.
+
+Tools available:
+{available_tools}
+
+
 
 """
 
@@ -225,26 +329,42 @@ messages = [
 
 client = Client(
    host="http://hal9000.skim.th-owl.de:11437"
+   
 )
-# model = 'gpt-oss:120b'
-model = "gpt-oss:20b"
+# model = 'gpt-oss:20b'
+model = 'gemma4:26b'
+# model = 'qwen3.5:27b'
+
 # gpt-oss can call tools while "thinking"
 # a loop is needed to call the tools and get the results
 
 time_taken = []
 player_positions = []
-try:
-  while True:
-    st_time = time.time()
-    print("Hiiii")
+agent_messages = []
+total_output_tokens = 0
+total_input_tokens = 0
+# try:
+needs_water_state1 = True
+needs_water_state2 = True
+crop_planted1 = False
+crop_planted2 = False
+while True:
+    st_time = time.time()    
     response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
+    print(f"input_tokens: {response['prompt_eval_count']}")
+    print(f"output_tokens: {response['eval_count']}")
+    total_output_tokens += response['eval_count']
+    total_input_tokens = response['prompt_eval_count']
+    print(f"response time: {(response['total_duration']/1e9)}")
 
     if response.message.content:
       print('Content: ')
       print(response.message.content + '\n')
+      agent_messages.append(response.message.content)
     if response.message.thinking:
       print('Thinking: ')
       print(response.message.thinking + '\n')
+      agent_messages.append(response.message.thinking)
 
     messages.append(response.message)
 
@@ -252,72 +372,98 @@ try:
       for tool_call in response.message.tool_calls:
         function_to_call = available_tools.get(tool_call.function.name)
         if function_to_call:
-          result = function_to_call(**tool_call.function.arguments)
-          print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', result + '\n')
-          messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-          print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-          time_taken.append(time.time()-st_time)
+            try:
+                schema = tool_schemas[tool_call.function.name]
+                validated_args = schema.model_validate(
+                    tool_call.function.arguments,
+                    # strict=True
+                )
 
-          needs_water_state1 = True
+                result = function_to_call(
+                    **validated_args.model_dump()
+                )
+                # result = function_to_call(**tool_call.function.arguments)
+                print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
+                # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+                agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+                print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
+                time_taken.append(time.time()-st_time)
+                crops = state["crops"]
+                if crops.get(tuple(state["player_pos"])) != None:
+                  if state["player_pos"] == [400,275]:
+                      needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
+                      crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
+                  if state["player_pos"] == [300,200]:
+                      needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
+                      crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
+                  print(needs_water_state1,needs_water_state2)
+                  print(crop_planted1,crop_planted2)
 
-          needs_water_state2 = True
-          crop_planted1 = False
-          crop_planted2 = False
-          crops = state["crops"]
-          if crops.get(tuple(state["player_pos"])) != None:
-              if state["player_pos"] == [400,275]:
-                  needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
-                  crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
-                  
 
-              if state["player_pos"] == [300,200]:
-                  needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
-                  crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
-                  # if crops.get(tuple(state["player_pos"]))["planted"]==True:
-                  #     points_gained+=1
-                  # if crops.get(tuple(state["player_pos"]))["needs_water"]==False:
-                  #     points_gained+=1
-              print(needs_water_state1,needs_water_state2)
-              print(crop_planted1,crop_planted2)
-          
+                new_state = {
+                  "grid_size": [5, 5],
+                  "player_pos": state["player_pos"],
+                  "crops": {
+                      "crop1":{"pos":[400,275],"needs_water":needs_water_state1,"planted":crop_planted1},
+                      "crop2":{"pos":[300,200],"needs_water":needs_water_state2,"planted":crop_planted2}
 
-          new_state = {
-              "grid_size": [5, 5],
-              "player_pos": state["player_pos"],
-              "crops": {
-                  "crop1":{"pos":[400,275],"needs_water":needs_water_state1,"planted":crop_planted1},
-                  "crop2":{"pos":[300,200],"needs_water":needs_water_state2,"planted":crop_planted2}
+                  },
+                  "obstacles": [250,100],
+                  "water_available":state["water_available"],
+                  "goal_completed": state["goal_completed"]
+                }
+                messages.append({
+                "role": "tool",
+                "content": json.dumps({
+                    "action_result": result,
+                    "current_state": new_state
+                }),
+                "tool_name": tool_call.function.name
+                })
 
-              },
-              "obstacles": [250,100],
-              "water_available":state["water_available"],
-              "goal_completed": state["goal_completed"]
-          }
-          print("new_state")
-          print(new_state)
-          player_positions.append(state["player_pos"])
-          response = requests.post(url, json=new_state, headers=headers)
-          print(response)
+                print("new_state")
+                print(new_state)
+                player_positions.append(state["player_pos"])
+                response = requests.post(url, json=new_state, headers=headers)
+                print(response)
+            except ValidationError as e:
+                result = {
+                    "success": False,
+                    "error": str(e)
+                }
+                print(result)
         else:
-          print(f'Tool {tool_call.function.name} not found')
-          messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+            print(f'Tool {tool_call.function.name} not found')
+            messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+
+            
+          
     elif state["goal_completed"]:
       break
     else:
       break
-except Exception as e:
-  logger.error(f"LLm failed due to error: {str(e)}")
+# except Exception as e:
+#   logger.error(f"LLm failed due to error: {str(e)}")
+#   logger.info(agent_messages)
 if state["water_available"] == True:
     points_gained +=1
+    points_gained_object["water_available"] = 1
 
 if state["crops"].get(tuple([400,275]))["planted"]==True:
     points_gained+=1
+    points_gained_object["plant_crop_1"] = 1
 if state["crops"].get(tuple([400,275]))["needs_water"]==False:
     points_gained+=1
+    points_gained_object["needs_water_1"] = 1
+
 if state["crops"].get(tuple([300,200]))["planted"]==True:
     points_gained+=1
+    points_gained_object["plant_crop_2"] = 1
+
 if state["crops"].get(tuple([300,200]))["needs_water"]==False:
     points_gained+=1
+    points_gained_object["needs_water_2"] = 1
+
 
 reset_state = {
             "grid_size": [5, 5],
@@ -332,51 +478,60 @@ reset_state = {
             },
             "obstacles": [250,100],
             "water_available":False,
-            "goal_completed": False
+            "goal_completed": state["goal_completed"]
         }
-
 
 response = requests.post(url, json=reset_state, headers=headers)
 
 
 
 print(time_taken)
+if len(time_taken)>0:
+    data = time_taken
+    mean = np.mean(data)
+    median = np.median(data)
+    variance = np.var(data)
+    std_dev = np.std(data)
+    min_val = np.min(data)
+    max_val = np.max(data)
 
-data = time_taken
-mean = np.mean(data)
-median = np.median(data)
-variance = np.var(data)
-std_dev = np.std(data)
-min_val = np.min(data)
-max_val = np.max(data)
+    stats = {
+        "mean": mean,
+        "median": median,
+        "variance": variance,
+        "std_dev": std_dev,
+        "min": min_val,
+        "max": max_val
+    }
 
-stats = {
-    "mean": mean,
-    "median": median,
-    "variance": variance,
-    "std_dev": std_dev,
-    "min": min_val,
-    "max": max_val
-}
-
-normalized = (data - min_val) / (max_val - min_val)
-z_scores = (data - mean) / std_dev
-
-
-print("No of llms calls:-")
-print(len(time_taken))
-logger.info(f"No of llms calls: {len(time_taken)}")
+    normalized = (data - min_val) / (max_val - min_val)
+    z_scores = (data - mean) / std_dev
 
 
-print("player positons:")
-print(player_positions)
-logger.info(f"player_positions: {player_positions}")
+    print("No of llms calls:-")
+    print(len(time_taken))
+    logger.info(f"No of llms calls: {len(time_taken)}")
 
-print(f"points gained by agent: {str(points_gained)}")
-logger.info(f"points gained by agent: {str(points_gained)}")
 
-plt.plot(time_taken)
-logger.info(f"time taken values: {time_taken}")
+    print("player positons:")
+    print(player_positions)
+    logger.info(f"player_positions: {player_positions}")
+
+    print(f"points gained by agent: {str(points_gained)}")
+    logger.info(f"points gained by agent: {str(points_gained)}")
+    print(f"points gained object: {str(points_gained_object)}")
+    logger.info(f"points gained object: {str(points_gained_object)}")
+
+    plt.plot(time_taken)
+    logger.info(f"time taken values: {time_taken}")
+    print("total input tokens: "+str(total_input_tokens))
+    print("total output tokens: "+str(total_output_tokens))
+    logger.info("total input tokens: "+str(total_input_tokens))
+    logger.info("total output tokens: "+str(total_output_tokens))
+else:
+    logger.info(agent_messages)
+    logger.info("llm tool failed") 
+    print("llm tool failed")
 
 # plt.xlabel('llm call run')
 # plt.ylabel('time')
