@@ -2,10 +2,23 @@ import speech_recognition as sr
 import requests
 r = sr.Recognizer()
 import time
+import yaml,os,sys
+def read_config(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            config = yaml.safe_load(file)  # safe_load prevents code execution
+            return config
+    except yaml.YAMLError as e:
+        print(f"Error parsing YAML file: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error reading file: {e}")
+        sys.exit(1)
 
+config_data = read_config("config.yaml")
 url = "http://hal9000.skim.th-owl.de:8003/transcribe"
 audio_text = ""
-while True:
+while True and config_data["speech"]["user_input"]:
     try:
         with sr.Microphone() as source:
             print("Listening...")
@@ -41,17 +54,3 @@ while True:
     except KeyboardInterrupt:
         print("Program terminated by user")
         break
-
-
-
-# recognize speech using whisper
-# try:
-#     print("Whisper thinks you said " + r.recognize_whisper(audio, language="english"))
-# except sr.UnknownValueError:
-#     print("Whisper could not understand audio")
-# except sr.RequestError as e:
-#     print(f"Could not request results from Whisper; {e}")
-
-
-# with open("microphone-results.wav", "wb") as f:
-#     f.write(audio.get_wav_data())
