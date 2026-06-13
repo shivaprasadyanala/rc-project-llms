@@ -90,6 +90,20 @@ class FarmScene extends Phaser.Scene {
     this.plant2Watered = false
     // this.crops = this.add.group();
     this.crops = {};
+    this.taskText= this.add.text(0, 0, "", {
+    fontFamily: 'Segoe UI',
+    fontSize: '20px',
+    color: '#00e5ff',
+    backgroundColor: '#1e1e1e',
+    padding: {
+        x: 12,
+        y: 8
+    },
+    stroke: '#0a0a0a',
+    strokeThickness: 2
+    });
+
+    this.taskText.setVisible(false);
 
     this.waterText1 = this.add.text(0, 0, "", {
       fontSize: '10px',
@@ -280,6 +294,14 @@ class FarmScene extends Phaser.Scene {
         this.plant2Watered = false
       }
       const crops = data.crops;
+      const task = data.task
+      if(!data.goal_completed && task){
+        this.taskText.setPosition(300, 0);
+        this.taskText.setText(`GAME AGENT TASK: ${task}`);
+        this.taskText.setVisible(true);
+      }else{
+        this.taskText.setVisible(false);
+      }
       this.inventory.water_available = data.water_available
       this.updateInventoryUI()
 

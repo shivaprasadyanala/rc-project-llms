@@ -9,35 +9,55 @@ from ollama import Client
 from ollama._types import ChatResponse
 import json
 import logging
+import yaml,os,sys
+from speech_to_text import audio_text
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='example3.log', encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+
+def read_config(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            config = yaml.safe_load(file)  # safe_load prevents code execution
+            return config
+    except yaml.YAMLError as e:
+        print(f"Error parsing YAML file: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error reading file: {e}")
+        sys.exit(1)
+config_data = read_config("config.yaml")
+
+log_file_name = config_data["log_file"]["name"]
+logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
-url = "http://localhost:3000/post_game_state/"
 
-url2 = "http://hal9000.skim.th-owl.de:8003/transcribe"
+url = config_data["server_urls"]["game_state_url"]
 
-st_time = time.time()
-with open("plant_crops_audio.m4a", "rb") as f:
-    response = requests.post(url2, files={"file": f})
+url2 = config_data["server_urls"]["whisper_url"]
 
-print(response.json()["text"])
+new_content = ""
+if config_data["speech"]["user_input"]:
+    new_content = audio_text
+else:
+    st_time = time.time()
+    with open("plant_crops_audio.m4a", "rb") as f:
+        response = requests.post(url2, files={"file": f})
 
-print(time.time()-st_time)
-logger.info(f"time taken for api call + model: {time.time()-st_time}")
-print("time_take by model")
-model_time = response.json()["time_taken"]
-print(response.json()["time_taken"])
-logger.info(f"time taken for audio by model: {model_time}")
+    print(response.json()["text"])
 
-new_content = response.json()["text"]
+    print(time.time()-st_time)
+    logger.info(f"time taken for api call + model: {time.time()-st_time}")
+    print("time_take by model")
+    model_time = response.json()["time_taken"]
+    print(response.json()["time_taken"])
+    logger.info(f"time taken for audio by model: {model_time}")
+
+    new_content = response.json()["text"]
 
 headers = {
 "Content-Type": "application/json"
 }
-
-
 
 
 state = {
@@ -305,8 +325,6 @@ If a tool is available, emitting its arguments in text form is always incorrect.
 Tools available:
 {available_tools}
 
-
-
 """
 
 messages = [
@@ -318,11 +336,11 @@ messages = [
 # {'role': 'user', 'content': 'go to the nearst crop and water it.'}]
 
 client = Client(
-   host="http://hal9000.skim.th-owl.de:11437"
+   host=config_data["server_urls"]["ollama_url"]
    
 )
 # model = 'gpt-oss:20b'
-model = 'gemma4:26b'
+model = config_data["model"]["name"]
 # model = 'qwen3.5:27b'
 
 # gpt-oss can call tools while "thinking"
@@ -405,7 +423,9 @@ while True:
           print("new_state")
           print(new_state)
           player_positions.append(state["player_pos"])
-          response = requests.post(url, json=new_state, headers=headers)
+          new_state["task"] = new_content
+          new_task_state = new_state
+          response = requests.post(url, json=new_task_state, headers=headers)
           print(response)
         else:
           print(f'Tool {tool_call.function.name} not found')
