@@ -5,61 +5,61 @@ class FarmScene extends Phaser.Scene {
     super('FarmScene');
   }
   createInventoryPanel() {
-  this.inventoryPanelVisible = false;
+    this.inventoryPanelVisible = false;
 
-  // Container
-  this.inventoryPanel = this.add.container(650, 40);
-  this.inventoryPanel.setScrollFactor(0);
-  this.inventoryPanel.setDepth(100);
-  this.inventoryPanel.setVisible(false);
-  this.lastApiCall = 0;
-  this.apiInterval = 1000; // 5 seconds
-  this.isFetching = false;
+    // Container
+    this.inventoryPanel = this.add.container(650, 40);
+    this.inventoryPanel.setScrollFactor(0);
+    this.inventoryPanel.setDepth(100);
+    this.inventoryPanel.setVisible(false);
+    this.lastApiCall = 0;
+    this.apiInterval = 1000; // 5 seconds
+    this.isFetching = false;
 
-  // Background
-  const bg = this.add.rectangle(0, 0, 180, 120, 0x000000, 0.7)
-    .setOrigin(0.5,0.5);
+    // Background
+    const bg = this.add.rectangle(0, 0, 180, 120, 0x000000, 0.7)
+      .setOrigin(0.5, 0.5);
 
-  // Title
-  const title = this.add.text(90, 8, 'Inventory', {
-    font: '16px Arial',
-    fill: '#ffffff'
-  }).setOrigin(0.5, 0);
+    // Title
+    const title = this.add.text(90, 8, 'Inventory', {
+      font: '16px Arial',
+      fill: '#ffffff'
+    }).setOrigin(0.5, 0);
 
-  // Item texts
-  this.seedText = this.add.text(10, 40, '', {
-    font: '14px Arial',
-    fill: '#ffffff'
-  });
+    // Item texts
+    this.seedText = this.add.text(10, 40, '', {
+      font: '14px Arial',
+      fill: '#ffffff'
+    });
 
-  this.cropText = this.add.text(10, 70, '', {
-    font: '14px Arial',
-    fill: '#ffffff'
-  });
+    this.cropText = this.add.text(10, 70, '', {
+      font: '14px Arial',
+      fill: '#ffffff'
+    });
 
-  this.inventoryPanel.add([
-    bg,
-    title,
-    this.seedText,
-    this.cropText
-  ]);
+    this.inventoryPanel.add([
+      bg,
+      title,
+      this.seedText,
+      this.cropText
+    ]);
 
-  // this.updateInventoryPanel();
+    // this.updateInventoryPanel();
   }
   preload() {
-    this.load.image('grass', 'assets/tiles.png');
+    // Load tiles spritesheet and use frame 0 as grass tile
     // this.load.image('player', 'assets/player.png');
     // this.load.image('walls', 'assets/walls.png');
 
-     this.load.spritesheet('player', 'assets/player.png', {
-        frameWidth: 48,
-        frameHeight: 48
+    this.load.spritesheet('player', 'assets/player.png', {
+      frameWidth: 48,
+      frameHeight: 48
     });
     this.load.spritesheet('waterani', 'assets/water2.png', {
-        frameWidth: 48,
-        frameHeight: 48
+      frameWidth: 48,
+      frameHeight: 48
     });
-   
+
     this.load.image('stone', 'assets/stone.png');
     this.load.spritesheet('tiles', 'assets/tiles.png', {
       frameWidth: 32,
@@ -78,21 +78,38 @@ class FarmScene extends Phaser.Scene {
 
   }
 
- create() {
+  create() {
 
-  
-  this.createInventoryPanel(); 
-  this.createMap();
-  this.createPlayer();
-  this.createInput();
-  this.plant_cords = [[1,2]];
-  // this.crops = this.add.group();
-  this.crops = {};
 
-   this.waterText1 = this.add.text(0, 0, "", {
-        fontSize: '10px',
-        fill: 'blue'
+    this.createInventoryPanel();
+    this.createMap();
+    this.createPlayer();
+    this.createInput();
+    this.plant_cords = [[1, 2]];
+    this.plant1Watered = false
+    this.plant2Watered = false
+    // this.crops = this.add.group();
+    this.crops = {};
+    this.taskText= this.add.text(0, 0, "", {
+      fontFamily: 'Segoe UI',
+    fontSize: '20px',
+    color: '#00e5ff',
+    backgroundColor: '#1e1e1e',
+    padding: {
+        x: 12,
+        y: 8
+    },
+    stroke: '#0a0a0a',
+    strokeThickness: 2
     });
+
+    this.taskText.setVisible(false);
+
+    this.waterText1 = this.add.text(0, 0, "", {
+      fontSize: '10px',
+      fill: 'blue'
+    });
+
 
     this.waterText1.setVisible(false);
 
@@ -100,8 +117,8 @@ class FarmScene extends Phaser.Scene {
     this.watering1.setVisible(false);
 
     this.waterText2 = this.add.text(0, 0, "", {
-        fontSize: '10px',
-        fill: 'blue'
+      fontSize: '10px',
+      fill: 'blue'
     });
 
     this.waterText2.setVisible(false);
@@ -109,62 +126,62 @@ class FarmScene extends Phaser.Scene {
     this.watering2 = this.physics.add.sprite(0, 0, 'waterani');
     this.watering2.setVisible(false);
 
-  this.tank = this.add.image(80, 250, 'water_tank').setOrigin(0.5,0.5);
-  this.tank.setScale(0.10); // adjust size if needed
-
- this.anims.create({
-        key: 'w',
-        frames: this.anims.generateFrameNumbers('waterani', {
-            frames: [0,1,2,3]
-        }),
-        frameRate: 6,
-        repeat: -1
-    });
-   
-   this.anims.create({
-        key: 'down',
-        frames: this.anims.generateFrameNumbers('player', {
-            frames: [0,4,8,12]
-        }),
-        frameRate: 3,
-        repeat: -1
-    });
-
-    
+    this.tank = this.add.image(75, 250, 'water_tank').setOrigin(0.5, 0.5);
+    this.tank.setScale(0.10); // adjust size if needed
 
     this.anims.create({
-        key: 'left',
-        frames: this.anims.generateFrameNumbers('player', {
-            frames: [1,5,9,13]
-        }),
-        frameRate: 3,
-        repeat: -1
+      key: 'w',
+      frames: this.anims.generateFrameNumbers('waterani', {
+        frames: [0, 1, 2, 3]
+      }),
+      frameRate: 6,
+      repeat: -1
     });
 
     this.anims.create({
-        key: 'right',
-        frames: this.anims.generateFrameNumbers('player', {
-            frames: [3,7,11,15]
-        }),
-        frameRate: 3,
-        repeat: -1
+      key: 'down',
+      frames: this.anims.generateFrameNumbers('player', {
+        frames: [0, 4, 8, 12]
+      }),
+      frameRate: 3,
+      repeat: -1
+    });
+
+
+
+    this.anims.create({
+      key: 'left',
+      frames: this.anims.generateFrameNumbers('player', {
+        frames: [1, 5, 9, 13]
+      }),
+      frameRate: 3,
+      repeat: -1
     });
 
     this.anims.create({
-        key: 'up',
-        frames: this.anims.generateFrameNumbers('player', {
-            frames: [2,6,10,14]
-        }),
-        frameRate: 3,
-        repeat: -1
+      key: 'right',
+      frames: this.anims.generateFrameNumbers('player', {
+        frames: [3, 7, 11, 15]
+      }),
+      frameRate: 3,
+      repeat: -1
+    });
+
+    this.anims.create({
+      key: 'up',
+      frames: this.anims.generateFrameNumbers('player', {
+        frames: [2, 6, 10, 14]
+      }),
+      frameRate: 3,
+      repeat: -1
     });
     this.anims.create({
-        key: 'idle',
-        frames: this.anims.generateFrameNumbers('player', {
-            frames: [0]
-        }),
-        frameRate: 3,
-        repeat: -1
+      key: 'idle',
+      frames: this.anims.generateFrameNumbers('player', {
+        frames: [0]
+      }),
+      frameRate: 3,
+      repeat: -1
     });
 
 
@@ -173,19 +190,20 @@ class FarmScene extends Phaser.Scene {
     // player.play('down');
     // console.log("player size:")
     // console.log(this.textures.get('player').frameTotal);
-   
+
   }
 
   createMap() {
     this.map = [];
 
-    for (let y = 0; y < 45; y++) {      
+    for (let y = 0; y < 45; y++) {
       this.map[y] = [];
       for (let x = 0; x < 45; x++) {
         this.add.image(
           x * TILE_SIZE,
           y * TILE_SIZE,
-          'grass'
+          'tiles',
+          0
         ).setOrigin(0);
 
         this.map[y][x] = {
@@ -206,7 +224,7 @@ class FarmScene extends Phaser.Scene {
     this.inventory = {
       seeds: 5,
       crops: 0,
-      water_available: false 
+      water_available: false
     };
 
     this.inventoryText = this.add.text(10, 10, '', {
@@ -218,22 +236,22 @@ class FarmScene extends Phaser.Scene {
   }
 
   updateInventoryUI() {
-  this.inventoryText.setText(
-    `Seeds: ${this.inventory.seeds}\nCrops: ${this.inventory.crops}\n water_availabe : ${this.inventory.water_available}`
-  );
+    this.inventoryText.setText(
+      `Seeds: ${this.inventory.seeds}\nCrops: ${this.inventory.crops}\n water_availabe : ${this.inventory.water_available}`
+    );
 
-  this.updateInventoryPanel();
- }
+    this.updateInventoryPanel();
+  }
 
-updateInventoryPanel() {
-  if (!this.seedText || !this.cropText) return;
+  updateInventoryPanel() {
+    if (!this.seedText || !this.cropText) return;
 
-  this.seedText.setText(`🌱 Seeds: ${this.inventory.seeds}`);
-  this.cropText.setText(`🥕 Crops: ${this.inventory.crops}`);
- }
+    this.seedText.setText(`🌱 Seeds: ${this.inventory.seeds}`);
+    this.cropText.setText(`🥕 Crops: ${this.inventory.crops}`);
+  }
 
-  game_state(){
-    farm_state = {"player":[10,12]}
+  game_state() {
+    farm_state = { "player": [10, 12] }
     return farm_state
   }
 
@@ -253,163 +271,153 @@ updateInventoryPanel() {
       Phaser.Input.Keyboard.KeyCodes.W
     );
     this.inventoryKey = this.input.keyboard.addKey(
-  Phaser.Input.Keyboard.KeyCodes.I
-   );
-  }  
-  
-  async fetchData(){
+      Phaser.Input.Keyboard.KeyCodes.I
+    );
+  }
+
+  async fetchData() {
+    
     try {
-        // Example API call
+      // Example API call
 
-        const response = await fetch('http://localhost:3000/get_game_state');
-        // this.waterani.anims.play('up', true);
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('Fetched data:', data);
+      const response = await fetch('http://localhost:3000/get_game_state');
+      // this.waterani.anims.play('up', true);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Fetched data:', data);
 
-       const [x, y] = data.player_pos;
-       if (x==200 && y==100){
-        this.plant_cords = [[1,2]]
-       }
-       const crops = data.crops;
-       this.inventory.water_available = data.water_available
-       this.updateInventoryUI()
-       // console.log(crops["crop1"]["pos"])
-       // console.log(Object.entries(crops))
+      const [x, y] = data.player_pos;
+      if (x == 200 && y == 100) {
+        this.plant_cords = [[1, 2]]
+        this.plant1Watered = false
+        this.plant2Watered = false
+      }
+      const crops = data.crops;
+
+      const task = data.task
+      if(!data.goal_completed && task){
+        this.taskText.setPosition(300, 0);
+        this.taskText.setText(`GAME AGENT TASK: ${task}`);
+        this.taskText.setVisible(true);
+      }else{
+        this.taskText.setVisible(false);
+      }
+      this.inventory.water_available = data.water_available
+      this.updateInventoryUI()
+
+      // console.log(crops["crop1"]["pos"])
+      // console.log(Object.entries(crops))
+      console.log(`is game goal_completed: ${data.goal_completed}`)
 
       if (crops) {
         for (const [cropName, cropData] of Object.entries(crops)) {
 
-            console.log(`${cropName} position: X=${cropData.pos[0]}, Y=${cropData.pos[1]}`);
-            console.log(`is crop planted: ${cropData.planted}`)
-            console.log(`plant cords: ${this.plant_cords}`)
-            const exists = this.plant_cords.some(
-              ([a, b]) => a === cropData.pos[0] && b === cropData.pos[1]
-            );
-            if(cropData.planted == true && !exists){
-                this.plant_cords.push([cropData.pos[0],cropData.pos[1]])
-                this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE)+1, Math.round(cropData.pos[1] / TILE_SIZE)-1) 
-                const key = `${cropData.pos[0]},${cropData.pos[1]}`;
-                console.log(`crop array: ${this.crops}`)
-            }else if(cropData.planted == false && this.inventory.crops > 0 && this.inventory.water_available == false){
-              const key = `${Math.round(cropData.pos[0] / TILE_SIZE)+1},${Math.round(cropData.pos[1] / TILE_SIZE)-1}`;
-              console.log(`crop array: ${this.crops}`)
-              this.removeCrop(Math.round(cropData.pos[0] / TILE_SIZE)+1,Math.round(cropData.pos[1] / TILE_SIZE)-1)
-            }
+          console.log(`${cropName} position: X=${cropData.pos[0]}, Y=${cropData.pos[1]}`);
+          console.log(`is crop planted: ${cropData.planted}`)
+          console.log(`plant cords: ${this.plant_cords}`)
+          const exists = this.plant_cords.some(
+            ([a, b]) => a === cropData.pos[0] && b === cropData.pos[1]
+          );
+          if (cropData.planted == true && !exists) {
+            this.plant_cords.push([cropData.pos[0], cropData.pos[1]])
+            this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
+            const key = `${cropData.pos[0]},${cropData.pos[1]}`;
+            console.log(`crop array: ${this.crops}`)
+          } else if (cropData.planted == false && this.inventory.crops > 0 && data.goal_completed==true) {
+            const key = `${Math.round(cropData.pos[0] / TILE_SIZE) + 1},${Math.round(cropData.pos[1] / TILE_SIZE) - 1}`;
+            console.log(`crop array: ${this.crops}`)
+            // alert(`key in remove crop: ${cropData.pos[0]}, ${cropData.pos[1]}  , ${this.inventory.crops}`)
+            this.removeCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
+          }
         }
-    }
+      }
 
 
 
-       const crop1_pos = crops["crop1"]["pos"]
-       const crop2_pos = crops["crop2"]["pos"]
-       const needWater1 = crops["crop1"]["needs_water"];
-       if (!needWater1) {
-        this.waterText1.setPosition(crop1_pos[0], crop1_pos[1]-50);
+      const crop1_pos = crops["crop1"]["pos"]
+      const crop2_pos = crops["crop2"]["pos"]
+      var needWater1 = crops["crop1"]["needs_water"];
+      if (!needWater1 && !this.plant1Watered) {
+        this.waterText1.setPosition(crop1_pos[0], crop1_pos[1] - 50);
         this.waterText1.setText("adding water");
         this.waterText1.setVisible(true);
 
-        this.watering1.setPosition(x+40, y-20);
+        this.watering1.setPosition(crop1_pos[0] +20, crop1_pos[1]-50);
         this.watering1.setVisible(true);
         this.watering1.anims.play('w', true);
-      }
-      else {
+         this.time.delayedCall(1000, () => {
+          this.plant1Watered = true; // or whatever value makes the condition fail
+
           this.waterText1.setVisible(false);
           this.watering1.setVisible(false);
           this.watering1.anims.stop();
+    });
       }
-      //  this.waterText = ""
-      // if(needWater1 == false){
-      //   this.waterText = this.add.text(crop1_pos[0], crop1_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
-      //   if (!this.watering) {
-      //         this.watering = this.physics.add.sprite(x, y, 'waterani');
-      //          this.watering.setDepth(100);
-      //          this.watering.setScale(0.7);
-      //     }
-      //     this.watering.setPosition(x+40, y-20);
-      //     this.watering.anims.play('w', true);
-      //  }else if(needWater1 == true || (x == 200 && y == 100)){
-      //   this.waterText.destroy();
-      //   this.waterText = null
-      //  }
-  
-       const needWater2 = crops["crop2"]["needs_water"];
-       if (!needWater2) {
-          this.waterText2.setPosition(crop2_pos[0], crop2_pos[1]-50);
-          this.waterText2.setText("adding water");
-          this.waterText2.setVisible(true);
+      
 
-          this.watering2.setPosition(x+40, y-20);
-          this.watering2.setVisible(true);
-          this.watering2.anims.play('w', true);
-        }
-        else {
-            this.waterText2.setVisible(false);
-            this.watering2.setVisible(false);
-            this.watering2.anims.stop();
-        }
+      var needWater2 = crops["crop2"]["needs_water"];
+      if (!needWater2 && !this.plant2Watered) {
+        this.waterText2.setPosition(crop2_pos[0], crop2_pos[1] - 50);
+        this.waterText2.setText("adding water");
+        this.waterText2.setVisible(true);
 
-      //  if(needWater2 == false){
-      //     this.waterText = this.add.text(crop2_pos[0], crop2_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
+        this.watering2.setPosition(crop2_pos[0]+20, crop2_pos[1] - 50);
+        this.watering2.setVisible(true);
+        this.watering2.anims.play('w', true);
+         this.time.delayedCall(1000, () => {
+          this.plant2Watered = true; // or whatever value makes the condition fail
 
-      //     if (!this.watering) {
-      //         this.watering = this.physics.add.sprite(x, y, 'waterani');
-      //          this.watering.setDepth(100);
-      //          this.watering.setScale(0.7);
-      //     }
-      //     this.watering.setPosition(x+40, y-20);
-      //     this.watering.anims.play('w', true);
+          this.waterText2.setVisible(false);
+          this.watering2.setVisible(false);
+          this.watering2.anims.stop();
+    });
+      }
+      
 
-      //  }else if((needWater2 == true) || (x == 200 && y == 100)){
-      //   this.waterText.destroy();
-      //   this.waterText = null
-      //   // this.watering.setFrame(2);
-      //  }
 
-       
 
-       const [xobs,yobs] = data.obstacles;
-       // console.log(data.obstacles)
-       this.add.image(xobs, yobs, 'stone').setOrigin(0.5,0.5);
+      const [xobs, yobs] = data.obstacles;
+      // console.log(data.obstacles)
+      this.add.image(xobs, yobs, 'stone').setOrigin(0.5, 0.5);
 
-       
-        // Stop any existing movement
-        this.player.setScale(2);
-        this.player.setVelocity(0);
-        // this.player.setOrigin(0.5,1)
-        this.player.setOrigin(0.5,0.8)
-        // Set player position
-        this.player.setPosition(x, y);
 
-        if (x > this.prevPlayerX) {
+      // Stop any existing movement
+      this.player.setScale(2);
+      this.player.setVelocity(0);
+      // this.player.setOrigin(0.5,1)
+      this.player.setOrigin(0.5, 0.8)
+      // Set player position
+      this.player.setPosition(x, y);
+
+      if (x > this.prevPlayerX) {
         // this.player.flipX = false;
         this.player.anims.play('right', true);
-        } else if (x < this.prevPlayerX) {
-            // this.player.flipX = true;
-            this.player.anims.play('left', true);
-        } else if(y > this.prevPlayerY) {
-            this.player.anims.play('down', true);
-        } else if (y < this.prevPlayerY) {
-            this.player.anims.play('up', true);
-        }else if(x == 200 && y == 100){
-          this.player.anims.play('idle', true);
-        }
+      } else if (x < this.prevPlayerX) {
+        // this.player.flipX = true;
+        this.player.anims.play('left', true);
+      } else if (y > this.prevPlayerY) {
+        this.player.anims.play('down', true);
+      } else if (y < this.prevPlayerY) {
+        this.player.anims.play('up', true);
+      } else if (x == 200 && y == 100) {
+        this.player.anims.play('idle', true);
+      }
 
-        this.player.setPosition(x, y);
+      this.player.setPosition(x, y);
 
-        this.prevPlayerX = x;
-        this.prevPlayerY = y;
-        // this.add.text(x, y, `x: ${x}, y: ${y}`, { fontSize: '10px', fill: '#000' });
-            // Use the data in your game
+      this.prevPlayerX = x;
+      this.prevPlayerY = y;
+      // this.add.text(x, y, `x: ${x}, y: ${y}`, { fontSize: '10px', fill: '#000' });
+      // Use the data in your game
 
     } catch (error) {
-        console.error('Error fetching data:', error);
-        this.add.text(100, 100, 'Failed to load data', { fontSize: '20px', fill: '#f00' });
+      console.error('Error fetching data:', error);
+      this.add.text(100, 100, 'Failed to load data', { fontSize: '20px', fill: '#f00' });
     }
   }
-    
+
 
   update(time, delta) {
     this.movePlayer();
@@ -419,34 +427,34 @@ updateInventoryPanel() {
     }
     //  this.player.anims.play('up', true);
 
-   
+
     if (Phaser.Input.Keyboard.JustDown(this.inventoryKey)) {
-     this.inventoryPanelVisible = !this.inventoryPanelVisible;
-     this.inventoryPanel.setVisible(this.inventoryPanelVisible);
-   }
+      this.inventoryPanelVisible = !this.inventoryPanelVisible;
+      this.inventoryPanel.setVisible(this.inventoryPanelVisible);
+    }
     if (!this.isFetching && time - this.lastApiCall > this.apiInterval) {
-        this.lastApiCall = time;
-        this.fetchData(); // call async function
+      this.lastApiCall = time;
+      this.fetchData(); // call async function
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.waterKey)) {
-     if (!this.watering) {
+      if (!this.watering) {
         this.watering = this.physics.add.sprite(
-            this.player.x,
-            this.player.y,
-            'waterani'
+          this.player.x,
+          this.player.y,
+          'waterani'
         );
-         this.watering.setDepth(100);
+        this.watering.setDepth(100);
+      }
+
+      // this.watering.setPosition(this.player.x+40, this.player.y-10);
+      // this.watering.anims.play('w', true);
     }
 
-    // this.watering.setPosition(this.player.x+40, this.player.y-10);
-    // this.watering.anims.play('w', true);
-}
- 
   }
-//200 100 -> 430 100 (1st crop)
-// 200 100 -> 350 175 (2nd crop)
-// 200 100 -> 350 175 (2nd crop)
+  //200 100 -> 430 100 (1st crop)
+  // 200 100 -> 350 175 (2nd crop)
+  // 200 100 -> 350 175 (2nd crop)
   movePlayer() {
     const speed = this.player.speed;
 
@@ -499,7 +507,7 @@ updateInventoryPanel() {
     const tile = this.map[y]?.[x];
     if (!tile) return;
 
-    if (!tile.tilled  && this.inventory.seeds > 0) {
+    if (!tile.tilled && this.inventory.seeds > 0) {
       tile.tilled = true;
       this.add.rectangle(
         x * TILE_SIZE,
@@ -521,7 +529,7 @@ updateInventoryPanel() {
       this.inventory.crops++;
       this.updateInventoryUI();
     }
-    else{
+    else {
       // this.add.text(x, y-50, "", { fontSize: '10px', fill: 'blue' });
       alert("you are out of inventory");
     }
@@ -547,9 +555,9 @@ updateInventoryPanel() {
       repeat: 13,
       callback: () => {
         crop.growth++;
-        if(crop.growth != 6){
-            crop.setFrame(crop.growth);
-          }
+        if (crop.growth != 6) {
+          crop.setFrame(crop.growth);
+        }
         if (crop.growth === 19) {
           crop.isReady = true;
         }
@@ -561,12 +569,12 @@ updateInventoryPanel() {
   }
 
 
-removeCrop(x, y) {
+  removeCrop(x, y) {
     console.log("remove crop invoked")
-    this.inventory.seeds++; 
+    this.inventory.seeds++;
     this.inventory.crops--;
     this.updateInventoryUI()
-    
+
     const key = `${x},${y}`;
     console.log("Removing:", key);
     console.log("Available keys:", Object.keys(this.crops));
@@ -575,9 +583,9 @@ removeCrop(x, y) {
       delete this.crops[key];
     }
   }
- }
+}
 
- const config = {
+const config = {
   type: Phaser.AUTO,
   width: 1400,
   height: 600,
@@ -588,10 +596,10 @@ removeCrop(x, y) {
     }
   },
   scene: FarmScene,
-  scale:{
+  scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   }
- };
+};
 
 new Phaser.Game(config);

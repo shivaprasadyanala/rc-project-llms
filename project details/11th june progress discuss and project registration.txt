@@ -1,0 +1,54 @@
+things to ask.
+things done.
+
+made the agent collect water,plant and water them.
+
+Time taken, llm calls and points gained are tracked
+
+Points for completing each task by agent.
+
+Tested with gpt-oss:20b, gemma4:26b and qwen3.5 model of which gemma4 gave better performace.
+
+ Failure rate of llm decreased to zero with better tool description and by pydantic usage for validation
+
+ Added few shots examples in the prompts to test the accuracy.
+
+ Performed tested with and without path find algorithm(astar) to reduce haluciation.
+
+keep track for log files for running a new implementation for 100 runs.
+
+ tested with 5 crops it also works with astar but should hallucinate without astar.
+
+
+
+1. closed source models? few rep optional
+2. for my project what is the base model?
+3. can use memory to store the previous run ?
+5. felt overwhelmed by other research projects. should i do more experiments or include more methodologies for better grade.
+
+one more problem is i have multiple ideas to implement like to make game complex and adding priority to crops. which should i focus.
+
+embodied ai. innermonologue.
+
+and also i found many paper which are similar to my project but different game.
+
+#######################################
+feed backs (experiments and science is important)
+
+decide a base model.
+
+old models which are not good at 
+user input
+test and criticize the work
+
+include arguments of critics.
+tell why these papers are different from my work.
+use mean and sd.
+model vs performance.
+spectrum of model like good,not bad, bad. vs different prompt techniques.
+download the open source code and try to run it.
+the base line model is the stupid model.
+
+include why the model used.
+balance between experiments and arguments and critices
+registration from

@@ -60,15 +60,135 @@ and the points for tasks done like collect_water,plant and water plant.
 reset state for plants and water
 
 #  do prompt enginnering
-use fabrik for prompts
-use instructor and pydantic
-also check if the move tool arguments are correct.
+use fabrik for prompts -- it has some specific prompts for themes
 
 and the points for tasks done like collect_water,plant and water plant. ==> works
 reset state for plants and water ==> not able to remove the crops.
 add prompt once water is filled it can used for all crops.
 use pydantic instructor.
 
+back to back time taken mean there is [] error.
+
 1..10 | ForEach-Object {
     python myscript.py
 }
+for i in {1..100}; do python agentic_approach2.py; done 
+Linux
+wc -l
+cat example.log | grep failed | wc -l
+cat example.log | grep api | wc -l
+use react loop --> done
+
+Here are some increasingly non-trivial examples:
+
+Resource Management
+Plant as many crops as possible without running out of water.
+Use exactly half of the available water on newly planted crops.
+Grow 10 carrots while minimizing trips to the well.
+Plant crops only if there is enough water to fully grow them.
+Save at least 20 units of water for later, then plant and water crops.
+Prioritization
+Water any crops that might die first, then plant new crops.
+If there are mature crops ready for harvest, harvest them before planting anything.
+Focus on crops that will be ready the soonest.
+Ensure every planted crop receives at least one watering before planting more.
+Conditional Logic
+If there isn't enough water, collect water first; otherwise start planting.
+Plant wheat if there are fewer than 10 wheat plants, otherwise plant corn.
+Only water crops that are below 50% hydration.
+If the well is empty, harvest crops instead.
+Optimization
+Minimize movement while planting and watering all empty plots.
+Complete the task using the fewest possible actions.
+Fill every plot and distribute water evenly among all crops.
+Plant and water crops in an order that minimizes walking distance.
+Ambiguous Instructions
+
+These are useful for seeing whether the agent asks questions or makes reasonable assumptions.
+
+Prepare the farm for tomorrow.
+Get the fields into good shape.
+Make sure the crops are healthy.
+Expand production without wasting resources.
+Take care of the farm.
+Multi-Step Planning
+Collect enough water to plant and fully water 20 crops, then do it.
+Harvest mature crops, replant the empty plots, and water everything.
+Grow a balanced farm with equal numbers of wheat, corn, and carrots.
+Create two rows of wheat and one row of corn, then water all crops.
+Memory / State Tracking
+Continue where you left off yesterday.
+Finish watering any crops that weren't watered last time.
+Plant the same crop pattern as before.
+Maintain the farm's current crop ratios.
+Error Recovery
+If planting fails because a tile is occupied, choose another tile.
+Water all crops even if the nearest water source runs dry.
+Keep planting until no valid plots remain.
+Recover from any failed action and continue toward the goal.
+Strategic Objectives
+Maximize harvest value over the next 5 days.
+Maximize crop count while keeping water usage below 100 units.
+Prepare for a drought by conserving water.
+Grow the most profitable farm possible with current resources.
+Hidden-State Reasoning
+Inspect the farm and determine the best next actions.
+Decide whether collecting water or planting crops provides more value right now.
+Evaluate the farm's status and improve productivity.
+Make the farm self-sustaining.
+Agent Benchmark Prompts
+
+These are particularly good for evaluating autonomous agents:
+
+"Increase total farm value as much as possible in the next 50 actions."
+"Achieve the largest harvest while never letting a crop dry out."
+"Operate the farm efficiently for one in-game day."
+"Analyze the current state and produce a plan before acting."
+"Reach 100 planted crops using the fewest trips to the water source."
+"Keep all crops alive while continuously expanding the farm."
+"Determine the optimal sequence of actions and execute it."
+"Adapt your strategy based on available water, empty plots, and crop health."
+
+
+
+If you want alternatives that still mean roughly "plant the crops and water them" but require a bit more reasoning or interpretation, here are some options:
+
+Slightly More Complex
+Get the empty plots producing crops and make sure they have enough water.
+Plant seeds wherever possible and keep the new crops hydrated.
+Fill the available farmland with crops and water them after planting.
+Establish a new batch of crops and provide the water they need.
+Turn all unused plots into healthy growing crops.
+Goal-Oriented
+Prepare the field for a successful harvest.
+Set up the next crop cycle and ensure growth can begin immediately.
+Get every available plot growing as soon as possible.
+Make the farm productive using the available land and water.
+Start crop production and support the crops' early growth.
+Resource-Aware
+Plant as many crops as the current water supply can support.
+Use the available water to establish and maintain newly planted crops.
+Expand the farm without leaving newly planted crops dry.
+Balance planting and watering so no new crop is neglected.
+Put the available resources toward growing new crops.
+Planning-Oriented
+Determine the best planting locations, plant the crops, and water them.
+Prepare the farm by planting and hydrating new crops efficiently.
+Bring the empty fields into production and care for the new plants.
+Grow the farm by adding crops and ensuring they receive water.
+Complete all steps necessary to start a healthy crop cycle.
+More Ambiguous (Good for Agent Testing)
+Get the fields ready for growth.
+Take care of the farm's unused land.
+Improve the condition of the farmland.
+Make sure the next harvest is on track.
+Bring the farm into a healthy growing state.
+Prepare everything needed for crop growth.
+Develop the farm's production capacity.
+Ensure the fields are actively growing crops.
+Instruction Following Stress Tests
+Plant crops wherever appropriate and don't forget their immediate needs.
+Start growing crops and leave none in need of water.
+Handle the entire crop setup process from empty field to watered plant.
+Make every viable plot ready for growth.
+Do whatever is necessary to begin growing crops on the farm.

@@ -14,7 +14,7 @@ let gameState ={
             },
             "obstacles": [250,100],
             "water_available":false,
-            "water_tank": [80,250],
+            "water_tank": [75,250],
             "goal_completed": false
         };
 
@@ -45,6 +45,8 @@ app.post('/post_game_state', (req, res) => {
     console.log('Updated gameState:', gameState);
     res.json(gameState);
 });
+
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,0 +1,56 @@
+Examples:
+
+Oh no, my farm is completely empty.
+My fields could really use some crops.
+Nothing seems to be growing around here.
+This farm looks pretty barren.
+I should probably start growing something.
+The fields are just sitting there unused.
+I'd like to see some crops in these plots.
+The farm isn't producing much right now.
+These empty fields aren't doing me any favors.
+We need to get something growing soon.
+
+More implied:
+
+Harvest season isn't going to be great at this rate.
+The farm feels neglected.
+I need to improve the farm's productivity.
+The land is going to waste.
+I should make better use of these plots.
+The farm needs some attention.
+It would be nice if these fields were actually growing something.
+This place doesn't look much like a working farm.
+I'd hate to leave all this farmland unused.
+We need to prepare for the next harvest.
+
+Including watering implicitly:
+
+Those fields look awfully dry and empty.
+The crops aren't going to grow themselves.
+The farm needs a little care.
+These plants could use some attention.
+Everything here looks thirsty.
+The fields need tending.
+The crops need looking after.
+The farm is in rough shape.
+The fields need some life brought back into them.
+I should make sure everything is growing properly.
+
+More conversational / roleplay-like:
+
+Can someone do something about these empty fields?
+I think we've fallen behind on farm work.
+This farm won't survive if we keep ignoring it.
+We should get the fields back into shape.
+Looks like there's a lot of work to do out here.
+I'd better get this farm running again.
+The farm isn't exactly thriving at the moment.
+I wish this place looked more alive.
+The fields seem forgotten.
+Time to turn this land into something useful.
+
+These are good tests because the agent must infer:
+
+Empty plots → plant crops.
+Newly planted crops need water.
