@@ -21,6 +21,7 @@ audio_text = ""
 while True and config_data["speech"]["user_input"]:
     try:
         with sr.Microphone() as source:
+            print("give a task to the llm agent:")
             print("Listening...")
             
             r.adjust_for_ambient_noise(source, duration=0.2)
@@ -36,10 +37,10 @@ while True and config_data["speech"]["user_input"]:
                 response = requests.post(url, files={"file": f})
             
             print("time taken for model: "+str(response.json()["time_taken"]))
-            text = response.json()["text"]
-            text = text.lower()+" stop"  
+            main_text = response.json()["text"]
+            text = main_text.lower()+" stop"  
             print("You said:", text)
-            audio_text = text
+            audio_text = main_text
             print("say STOP to stop giving commands")
             if "stop" in text:
                 print("Exiting program...")

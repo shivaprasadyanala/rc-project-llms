@@ -9,5 +9,6 @@ log_file:
 
 server_urls:
   game_state_url: http://localhost:3000/post_game_state/
+  game_task_url: http://localhost:3000/set_game_task/
   whisper_url: http://hal9000.skim.th-owl.de:8003/transcribe
   ollama_url: http://hal9000.skim.th-owl.de:11437

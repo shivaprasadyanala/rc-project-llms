@@ -69,9 +69,6 @@ headers = {
 "Content-Type": "application/json"
 }
 
-
-
-
 state = {
     "grid_size": (800, 600),
 
@@ -442,7 +439,9 @@ while True:
                 print("new_state")
                 print(new_state)
                 player_positions.append(state["player_pos"])
-                response = requests.post(url, json=new_state, headers=headers)
+                new_state["task"] = new_content
+                new_task_state = new_state
+                response = requests.post(url, json=new_task_state, headers=headers)
                 print(response)
             except ValidationError as e:
                 result = {
