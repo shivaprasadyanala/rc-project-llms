@@ -70,7 +70,7 @@ state = {
     "crops": {
         (400, 275): {"name":"wheat","planted":False,"needs_water": True},
         (300, 200): {"name":"rice","planted":False,"needs_water": True},
-        # (200,475): {"planted":False,"needs_water": True},
+        (200,475): {"name":"sugarcane","planted":False,"needs_water": True},
         # (150,300): {"planted":False,"needs_water": True},
         # (275,325): {"planted":False,"needs_water": True}
     },
@@ -352,10 +352,11 @@ agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
 # try:
-needs_water_state1 = True
-needs_water_state2 = True
-crop_planted1 = False
-crop_planted2 = False
+# needs_water_state1 = True
+# needs_water_state2 = True
+# crop_planted1 = False
+# crop_planted2 = False
+new_crops = {}
 while True:
     st_time = time.time()    
     response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
@@ -388,25 +389,36 @@ while True:
           print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
           time_taken.append(time.time()-st_time)
           crops = state["crops"]
-          if crops.get(tuple(state["player_pos"])) != None:
-              if state["player_pos"] == [400,275]:
-                  needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
-                  crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
-              if state["player_pos"] == [300,200]:
-                  needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
-                  crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
-              print(needs_water_state1,needs_water_state2)
-              print(crop_planted1,crop_planted2)
+          # if crops.get(tuple(state["player_pos"])) != None:
+          #     if state["player_pos"] == [400,275]:
+          #         needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
+          #         crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
+          #     if state["player_pos"] == [300,200]:
+          #         needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
+          #         crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
+          #     print(needs_water_state1,needs_water_state2)
+          #     print(crop_planted1,crop_planted2)
           
-
+          i = 0
+          for k,v in crops.items():   
+            i+=1
+            if crops.get(k) != None:
+              if state["player_pos"] == list(k):
+                new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
+              # else:
+                # print(k)
+                # print(state["player_pos"])
+                # print("wrong position")
+          print(new_crops)
           new_state = {
               "grid_size": [5, 5],
               "player_pos": state["player_pos"],
-              "crops": {
-                  "crop1":{"pos":[400,275],"name":"wheat","needs_water":needs_water_state1,"planted":crop_planted1},
-                  "crop2":{"pos":[300,200],"name":"rice","needs_water":needs_water_state2,"planted":crop_planted2}
+              "crops": new_crops,
+              # {
+              #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":needs_water_state1,"planted":crop_planted1},
+              #     "crop2":{"pos":[300,200],"name":"rice","needs_water":needs_water_state2,"planted":crop_planted2}
 
-              },
+              # },
               "obstacles": [250,100],
               "water_available":state["water_available"],
               "goal_completed": state["goal_completed"]
@@ -441,33 +453,46 @@ if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
 
-if state["crops"].get(tuple([400,275]))["planted"]==True:
-    points_gained+=1
-    points_gained_object["plant_crop_1"] = 1
-if state["crops"].get(tuple([400,275]))["needs_water"]==False:
-    points_gained+=1
-    points_gained_object["needs_water_1"] = 1
+# if state["crops"].get(tuple([400,275]))["planted"]==True:
+#     points_gained+=1
+#     points_gained_object["plant_crop_1"] = 1
+# if state["crops"].get(tuple([400,275]))["needs_water"]==False:
+#     points_gained+=1
+#     points_gained_object["needs_water_1"] = 1
 
-if state["crops"].get(tuple([300,200]))["planted"]==True:
-    points_gained+=1
-    points_gained_object["plant_crop_2"] = 1
+# if state["crops"].get(tuple([300,200]))["planted"]==True:
+#     points_gained+=1
+#     points_gained_object["plant_crop_2"] = 1
 
-if state["crops"].get(tuple([300,200]))["needs_water"]==False:
-    points_gained+=1
-    points_gained_object["needs_water_2"] = 1
+# if state["crops"].get(tuple([300,200]))["needs_water"]==False:
+#     points_gained+=1
+#     points_gained_object["needs_water_2"] = 1
+
+reset_crop = {}
+j = 0
+for k,v in crops.items():
+    j+=1    
+    reset_crop[f"crop{j}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":True,"planted":False}
+    if crops.get(k)["planted"] == True:
+        points_gained_object[f"plant_crop_{j}"] = 1
+        points_gained+=1
+    if crops.get(k)["needs_water"] == False:
+        points_gained_object[f"needs_water_{j}"] = 1
+        points_gained+=1
 
 
 reset_state = {
             "grid_size": [5, 5],
             "player_pos": [200,100],
 
-            "crops": {
-                "crop1":{"pos":[400,275],"name":"wheat","needs_water":True,"planted":False},
-                "crop2":{"pos":[300,200],"name":"rice","needs_water":True,"planted":False},
-                # "crop3":{"pos":[200,475],"needs_water":True,"planted":False},
-                # "crop4":{"pos":[150,300],"needs_water":True,"planted":False},
-                # "crop5":{"pos":[275,325],"needs_water":True,"planted":False}
-            },
+            "crops": reset_crop,
+            # {
+            #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":True,"planted":False},
+            #     "crop2":{"pos":[300,200],"name":"rice","needs_water":True,"planted":False},
+            #     # "crop3":{"pos":[200,475],"needs_water":True,"planted":False},
+            #     # "crop4":{"pos":[150,300],"needs_water":True,"planted":False},
+            #     # "crop5":{"pos":[275,325],"needs_water":True,"planted":False}
+            # },
             "obstacles": [250,100],
             "water_available":False,
             "goal_completed": state["goal_completed"]

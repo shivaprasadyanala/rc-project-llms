@@ -8,7 +8,7 @@ let gameState ={
             "crops": {
                 "crop1":{"pos":[400,275],"name":"wheat","needs_water":true,"planted":false},
                 "crop2":{"pos":[300,200],"name":"rice","needs_water":true,"planted":false},
-                // "crop3":{"pos":[200,475],"needs_water":true,"planted":false},
+                "crop3":{"pos":[200,475],"name":"sugarcane","needs_water":true,"planted":false},
                 // "crop4":{"pos":[150,300],"needs_water":true,"planted":false},
                 // "crop5":{"pos":[275,325],"needs_water":true,"planted":false},
             },
