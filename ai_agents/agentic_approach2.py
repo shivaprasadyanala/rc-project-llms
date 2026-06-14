@@ -68,8 +68,8 @@ state = {
 
     # Crops indexed by position
     "crops": {
-        (400, 275): {"planted":False,"needs_water": True},
-        (300, 200): {"planted":False,"needs_water": True},
+        (400, 275): {"name":"wheat","planted":False,"needs_water": True},
+        (300, 200): {"name":"rice","planted":False,"needs_water": True},
         # (200,475): {"planted":False,"needs_water": True},
         # (150,300): {"planted":False,"needs_water": True},
         # (275,325): {"planted":False,"needs_water": True}
@@ -403,8 +403,8 @@ while True:
               "grid_size": [5, 5],
               "player_pos": state["player_pos"],
               "crops": {
-                  "crop1":{"pos":[400,275],"needs_water":needs_water_state1,"planted":crop_planted1},
-                  "crop2":{"pos":[300,200],"needs_water":needs_water_state2,"planted":crop_planted2}
+                  "crop1":{"pos":[400,275],"name":"wheat","needs_water":needs_water_state1,"planted":crop_planted1},
+                  "crop2":{"pos":[300,200],"name":"rice","needs_water":needs_water_state2,"planted":crop_planted2}
 
               },
               "obstacles": [250,100],
@@ -462,8 +462,8 @@ reset_state = {
             "player_pos": [200,100],
 
             "crops": {
-                "crop1":{"pos":[400,275],"needs_water":True,"planted":False},
-                "crop2":{"pos":[300,200],"needs_water":True,"planted":False},
+                "crop1":{"pos":[400,275],"name":"wheat","needs_water":True,"planted":False},
+                "crop2":{"pos":[300,200],"name":"rice","needs_water":True,"planted":False},
                 # "crop3":{"pos":[200,475],"needs_water":True,"planted":False},
                 # "crop4":{"pos":[150,300],"needs_water":True,"planted":False},
                 # "crop5":{"pos":[275,325],"needs_water":True,"planted":False}

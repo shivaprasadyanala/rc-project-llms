@@ -289,9 +289,11 @@ class FarmScene extends Phaser.Scene {
 
       const [x, y] = data.player_pos;
       if (x == 200 && y == 100) {
-        this.plant_cords = [[1, 2]]
         this.plant1Watered = false
         this.plant2Watered = false
+      }
+      if(this.inventory.crops == 0){
+        this.plant_cords = [[1, 2]]
       }
       const crops = data.crops;
       const task = data.task
@@ -318,13 +320,17 @@ class FarmScene extends Phaser.Scene {
           const exists = this.plant_cords.some(
             ([a, b]) => a === cropData.pos[0] && b === cropData.pos[1]
           );
+          const key = `${Math.round(cropData.pos[0] / TILE_SIZE) + 1},${Math.round(cropData.pos[1] / TILE_SIZE) - 1}`;
+          if(this.crops[key]!= undefined){
+           console.log(`crop growth: ${this.crops[key].growth}`)
+          }
           if (cropData.planted == true && !exists) {
             this.plant_cords.push([cropData.pos[0], cropData.pos[1]])
             this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
             const key = `${cropData.pos[0]},${cropData.pos[1]}`;
             console.log(`crop array: ${this.crops}`)
-          } else if (cropData.planted == false && this.inventory.crops > 0 && data.goal_completed==true) {
-            const key = `${Math.round(cropData.pos[0] / TILE_SIZE) + 1},${Math.round(cropData.pos[1] / TILE_SIZE) - 1}`;
+          } else if (cropData.planted == false && this.inventory.crops > 0 && data.goal_completed==true && this.crops[key]?.growth === 19) {
+            // const key = `${Math.round(cropData.pos[0] / TILE_SIZE) + 1},${Math.round(cropData.pos[1] / TILE_SIZE) - 1}`;
             console.log(`crop array: ${this.crops}`)
             // alert(`key in remove crop: ${cropData.pos[0]}, ${cropData.pos[1]}  , ${this.inventory.crops}`)
             this.removeCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
