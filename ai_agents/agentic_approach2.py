@@ -97,7 +97,7 @@ def set_crop_state():
       if crops[crop[0],crop[1]]["needs_water"] == False:
         value+=1
     print("value of goal completed:" + str(value))
-    if value ==2:
+    if value ==3:
         state["goal_completed"]= True
     return state["goal_completed"]
 
@@ -376,9 +376,10 @@ while True:
       agent_messages.append(response.message.thinking)
 
     messages.append(response.message)
-
+    print(response.message.tool_calls)
     if response.message.tool_calls:
       for tool_call in response.message.tool_calls:
+        # LLM decides which function to call
         function_to_call = available_tools.get(tool_call.function.name)
         if function_to_call:
           
@@ -470,6 +471,7 @@ if state["water_available"] == True:
 
 reset_crop = {}
 j = 0
+crops = state["crops"]
 for k,v in crops.items():
     j+=1    
     reset_crop[f"crop{j}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":True,"planted":False}
@@ -555,3 +557,31 @@ else:
 # plt.title('llm processing time for each agentic all')
 # plt.show()
 
+
+def safe_execute(tool_call):
+    func = available_tools[tool_call.function.name]
+
+    args = tool_call.function.arguments
+
+    # validate before execution
+    print("ARGS:", args)
+
+    return func(**args)
+
+
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "water",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "crop_id": {"type": "integer"},
+                    "amount": {"type": "number"}
+                },
+                "required": ["crop_id", "amount"]
+            }
+        }
+    }
+]
