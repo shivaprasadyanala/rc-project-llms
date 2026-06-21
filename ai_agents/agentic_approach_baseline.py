@@ -4,7 +4,6 @@ import requests
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-from a_star_algo import astar
 from ollama import Client
 from ollama._types import ChatResponse
 import json
@@ -278,7 +277,7 @@ def plant_crop(x:int, y:int)-> str:
 
 #     continue
 
-available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
+available_tools = {"move":move,"water":water,"collect_water":collect_water,"plant_crop":plant_crop}
 
 points_gained = 0
 points_gained_object = {}
@@ -294,7 +293,7 @@ Your task:
 
 IMPORTANT.
  check if the crops are planted.
- Never calculate the distance on manually.
+
 
 WORLD STATE:
 
@@ -352,106 +351,106 @@ agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
 try:
-    # needs_water_state1 = True
-    # needs_water_state2 = True
-    # crop_planted1 = False
-    # crop_planted2 = False
-    new_crops = {}
-    while True:
-        st_time = time.time()    
-        response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
-        print(f"input_tokens: {response['prompt_eval_count']}")
-        print(f"output_tokens: {response['eval_count']}")
-        total_output_tokens += response['eval_count']
-        total_input_tokens = response['prompt_eval_count']
-        print(f"reponse time: {(response['total_duration']/1e9)}")
+  # needs_water_state1 = True
+  # needs_water_state2 = True
+  # crop_planted1 = False
+  # crop_planted2 = False
+  new_crops = {}
+  while True:
+      st_time = time.time()    
+      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
+      print(f"input_tokens: {response['prompt_eval_count']}")
+      print(f"output_tokens: {response['eval_count']}")
+      total_output_tokens += response['eval_count']
+      total_input_tokens = response['prompt_eval_count']
+      print(f"reponse time: {(response['total_duration']/1e9)}")
 
-        if response.message.content:
-          print('Content: ')
-          print(response.message.content + '\n')
-          agent_messages.append(response.message.content)
-        if response.message.thinking:
-          print('Thinking: ')
-          print(response.message.thinking + '\n')
-          agent_messages.append(response.message.thinking)
+      if response.message.content:
+        print('Content: ')
+        print(response.message.content + '\n')
+        agent_messages.append(response.message.content)
+      if response.message.thinking:
+        print('Thinking: ')
+        print(response.message.thinking + '\n')
+        agent_messages.append(response.message.thinking)
 
-        messages.append(response.message)
-        
-        if response.message.tool_calls:
-          for tool_call in response.message.tool_calls:
-            # LLM decides which function to call
-            function_to_call = available_tools.get(tool_call.function.name)
-            if function_to_call:
-              
-              result = function_to_call(**tool_call.function.arguments)
-              print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
-              # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-              agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-              print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-              time_taken.append(time.time()-st_time)
-              crops = state["crops"]
-              # if crops.get(tuple(state["player_pos"])) != None:
-              #     if state["player_pos"] == [400,275]:
-              #         needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
-              #         crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
-              #     if state["player_pos"] == [300,200]:
-              #         needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
-              #         crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
-              #     print(needs_water_state1,needs_water_state2)
-              #     print(crop_planted1,crop_planted2)
-              
-              i = 0
-              for k,v in crops.items():   
-                i+=1
-                if crops.get(k) != None:
-                  if state["player_pos"] == list(k):
-                    new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
-                  # else:
-                    # print(k)
-                    # print(state["player_pos"])
-                    # print("wrong position")
-              print(new_crops)
-              new_state = {
-                  "grid_size": [5, 5],
-                  "player_pos": state["player_pos"],
-                  "crops": new_crops,
-                  # {
-                  #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":needs_water_state1,"planted":crop_planted1},
-                  #     "crop2":{"pos":[300,200],"name":"rice","needs_water":needs_water_state2,"planted":crop_planted2}
+      messages.append(response.message)
+      
+      if response.message.tool_calls:
+        for tool_call in response.message.tool_calls:
+          # LLM decides which function to call
+          function_to_call = available_tools.get(tool_call.function.name)
+          if function_to_call:
+            
+            result = function_to_call(**tool_call.function.arguments)
+            print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
+            # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+            agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+            print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
+            time_taken.append(time.time()-st_time)
+            crops = state["crops"]
+            # if crops.get(tuple(state["player_pos"])) != None:
+            #     if state["player_pos"] == [400,275]:
+            #         needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
+            #         crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
+            #     if state["player_pos"] == [300,200]:
+            #         needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
+            #         crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
+            #     print(needs_water_state1,needs_water_state2)
+            #     print(crop_planted1,crop_planted2)
+            
+            i = 0
+            for k,v in crops.items():   
+              i+=1
+              if crops.get(k) != None:
+                if state["player_pos"] == list(k):
+                  new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
+                # else:
+                  # print(k)
+                  # print(state["player_pos"])
+                  # print("wrong position")
+            print(new_crops)
+            new_state = {
+                "grid_size": [5, 5],
+                "player_pos": state["player_pos"],
+                "crops": new_crops,
+                # {
+                #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":needs_water_state1,"planted":crop_planted1},
+                #     "crop2":{"pos":[300,200],"name":"rice","needs_water":needs_water_state2,"planted":crop_planted2}
 
-                  # },
-                  "obstacles": [250,100],
-                  "water_available":state["water_available"],
-                  "goal_completed": state["goal_completed"]
-              }
-              messages.append({
-                "role": "tool",
-                "content": json.dumps({
-                    "action_result": result,
-                    "current_state": new_state
-                }),
-                "tool_name": tool_call.function.name
-            })
+                # },
+                "obstacles": [250,100],
+                "water_available":state["water_available"],
+                "goal_completed": state["goal_completed"]
+            }
+            messages.append({
+              "role": "tool",
+              "content": json.dumps({
+                  "action_result": result,
+                  "current_state": new_state
+              }),
+              "tool_name": tool_call.function.name
+          })
 
-              print("new_state")
-              print(new_state)
-              player_positions.append(state["player_pos"])
-              new_state["task"] = new_content
-              new_task_state = new_state
-              response = requests.post(url, json=new_task_state, headers=headers)
-              print(response)
-            else:
-              print(f'Tool {tool_call.function.name} not found')
-              messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
-        elif state["goal_completed"]:
-          break
-        elif response.message.tool_calls == None:
-          print("LLm did not call the tools")
-          logger.error(f"LLm failed to call the tools: {str(e)}")
-          break
+            print("new_state")
+            print(new_state)
+            player_positions.append(state["player_pos"])
+            new_state["task"] = new_content
+            new_task_state = new_state
+            response = requests.post(url, json=new_task_state, headers=headers)
+            print(response)
+          else:
+            print(f'Tool {tool_call.function.name} not found')
+            messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+      elif state["goal_completed"]:
+        break
+      elif response.message.tool_calls == None:
+        print("LLm did not call the tools")
+        logger.error(f"LLm failed to call the tools: {str(e)}")
+        break
 except Exception as e:
-    logger.error(f"LLm failed due to error: {str(e)}")
-    logger.info(agent_messages)
+  logger.error(f"LLm failed due to error: {str(e)}")
+  logger.info(agent_messages)
 if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
