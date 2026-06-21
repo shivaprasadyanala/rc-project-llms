@@ -376,7 +376,7 @@ while True:
       agent_messages.append(response.message.thinking)
 
     messages.append(response.message)
-    print(response.message.tool_calls)
+    
     if response.message.tool_calls:
       for tool_call in response.message.tool_calls:
         # LLM decides which function to call
@@ -445,7 +445,8 @@ while True:
           messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
     elif state["goal_completed"]:
       break
-    else:
+    elif response.message.tool_calls == None:
+      print("LLm did not call the tools")
       break
 # except Exception as e:
 #   logger.error(f"LLm failed due to error: {str(e)}")
