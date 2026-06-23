@@ -347,6 +347,16 @@ model = config_data["model"]["name"]
 # gpt-oss can call tools while "thinking"
 # a loop is needed to call the tools and get the results
 
+
+def trim_memory(messages, keep_first=2, keep_last=5):
+    if len(messages) <= keep_first + keep_last:
+        return messages
+
+    first = messages[:keep_first]
+    last = messages[-keep_last:]
+
+    return first + last
+
 time_taken = []
 player_positions = []
 log_messages = []
@@ -359,6 +369,8 @@ try:
   # crop_planted2 = False
   new_crops = {}
   while True:
+      messages = trim_memory(messages)
+      print("length of messages:"+ str(len(messages)))
       st_time = time.time()    
       response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
       print(f"input_tokens: {response['prompt_eval_count']}")
