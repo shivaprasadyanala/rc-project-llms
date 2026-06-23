@@ -30,6 +30,7 @@ logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
+logger.info("model_used_for_baseline: "+ config_data["server_urls"]["ollama_url"])
 
 url = config_data["server_urls"]["game_state_url"]
 
@@ -338,6 +339,7 @@ client = Client(
    host=config_data["server_urls"]["ollama_url"]
    
 )
+
 # model = 'gpt-oss:20b'
 model = config_data["model"]["name"]
 # model = 'qwen3.5:27b'
@@ -347,9 +349,18 @@ model = config_data["model"]["name"]
 
 time_taken = []
 player_positions = []
-agent_messages = []
+log_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
+
+def trim_memory(messages, keep_first=2, keep_last=5):
+    if len(messages) <= keep_first + keep_last:
+        return messages
+
+    first = messages[:keep_first]
+    last = messages[-keep_last:]
+
+    return first + last
 try:
   # needs_water_state1 = True
   # needs_water_state2 = True
@@ -357,6 +368,9 @@ try:
   # crop_planted2 = False
   new_crops = {}
   while True:
+      messages = trim_memory(messages)
+      print("length of messsags:")
+      print(len(messages))
       st_time = time.time()    
       response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
       print(f"input_tokens: {response['prompt_eval_count']}")
@@ -368,11 +382,11 @@ try:
       if response.message.content:
         print('Content: ')
         print(response.message.content + '\n')
-        agent_messages.append(response.message.content)
+        log_messages.append(response.message.content)
       if response.message.thinking:
         print('Thinking: ')
         print(response.message.thinking + '\n')
-        agent_messages.append(response.message.thinking)
+        log_messages.append(response.message.thinking)
 
       messages.append(response.message)
       
@@ -385,7 +399,7 @@ try:
             result = function_to_call(**tool_call.function.arguments)
             print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
             # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-            agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+            log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
             print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
             time_taken.append(time.time()-st_time)
             crops = state["crops"]
@@ -450,7 +464,7 @@ try:
         break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
-  logger.info(agent_messages)
+  logger.info(log_messages)
 if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
@@ -549,7 +563,7 @@ if len(time_taken)>0:
     logger.info("total input tokens: "+str(total_input_tokens))
     logger.info("total output tokens: "+str(total_output_tokens))
 else:
-    logger.info(agent_messages)
+    logger.info(log_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
 
