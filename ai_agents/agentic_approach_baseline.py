@@ -352,15 +352,6 @@ player_positions = []
 log_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
-
-def trim_memory(messages, keep_first=2, keep_last=5):
-    if len(messages) <= keep_first + keep_last:
-        return messages
-
-    first = messages[:keep_first]
-    last = messages[-keep_last:]
-
-    return first + last
 try:
   # needs_water_state1 = True
   # needs_water_state2 = True
@@ -368,9 +359,6 @@ try:
   # crop_planted2 = False
   new_crops = {}
   while True:
-      messages = trim_memory(messages)
-      print("length of messsags:")
-      print(len(messages))
       st_time = time.time()    
       response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
       print(f"input_tokens: {response['prompt_eval_count']}")
