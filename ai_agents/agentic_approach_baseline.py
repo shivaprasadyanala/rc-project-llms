@@ -30,7 +30,7 @@ logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
-logger.info("model_used_for_baseline: "+ config_data["server_urls"]["ollama_url"])
+logger.info("model_used_for_baseline: "+ config_data["model"]["name"])
 
 url = config_data["server_urls"]["game_state_url"]
 
@@ -70,7 +70,7 @@ state = {
     "crops": {
         (400, 275): {"name":"wheat","planted":False,"needs_water": True},
         (300, 200): {"name":"rice","planted":False,"needs_water": True},
-        (200,475): {"name":"sugarcane","planted":False,"needs_water": True},
+        # (200,475): {"name":"sugarcane","planted":False,"needs_water": True},
         # (150,300): {"planted":False,"needs_water": True},
         # (275,325): {"planted":False,"needs_water": True}
     },
@@ -318,6 +318,7 @@ Water_tank:
 move 25pxs and one side at a time
 and not allowed to pass through the crop and crops are not obstacles.
 
+call only one tool at a time.
 Never output tool arguments as text, JSON, markdown, or code blocks.
 When an action is required, invoke the corresponding tool. 
 If a tool is available, emitting its arguments in text form is always incorrect.
@@ -361,7 +362,10 @@ try:
   # crop_planted1 = False
   # crop_planted2 = False
   new_crops = {}
-  while True:
+  i=0
+  while i< 50:
+      # time.sleep(1)
+      i+=1
       st_time = time.time()    
       response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
       print(f"input_tokens: {response['prompt_eval_count']}")
@@ -384,11 +388,13 @@ try:
       messages.append(response.message)
       
       if response.message.tool_calls:
+        print("llm tool_calls:")
+        print(len(response.message.tool_calls))
         for tool_call in response.message.tool_calls:
+          # time.sleep(1)
           # LLM decides which function to call
           function_to_call = available_tools.get(tool_call.function.name)
           if function_to_call:
-            
             result = function_to_call(**tool_call.function.arguments)
             print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
             # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
@@ -511,6 +517,78 @@ reset_state = {
 
 response = requests.post(url, json=reset_state, headers=headers)
 
+
+# def check_sequence(actual, correct):
+#     i = 0  # pointer for correct sequence
+
+#     for j, action in enumerate(actual):
+
+#         # if we've already exhausted correct sequence
+#         if i >= len(correct):
+#             return {
+#                 "valid": False,
+#                 "matched_until": j,
+#                 "reason": "Correct sequence already finished"
+#             }
+
+#         # match → advance correct pointer
+#         if action == correct[i]:
+#             i += 1
+#         else:
+#             # mismatch → stop immediately
+#             return {
+#                 "valid": False,
+#                 "matched_until": j,
+#                 "expected": correct[i],
+#                 "found": action
+#             }
+
+#     return {
+#         "valid": True,
+#         "matched_until": len(actual),
+#         "remaining_expected": correct[i:]
+#     }
+
+
+# # actual = ['move', 'move', 'move', 'plant_crop', 'move', 'move', 'water']
+
+# correct = ['move', 'collect_water', 'move', 'plant_crop', 'move', 'plant_crop']
+
+# print(check_sequence(tool_calls, correct))
+
+def check_sequence_details(actual, correct):
+    matched_elements = []
+    
+    for i, action in enumerate(actual):
+        # Case 1: Actual sequence is longer than the correct sequence
+        if i >= len(correct):
+            print(f"Result: WRONG")
+            print(f" -> Matched until: {matched_elements}")
+            print(f" -> Reason: 'actual' sequence is longer than 'correct' sequence.")
+            return False, matched_elements
+        
+        # Case 2: Element matches
+        if action == correct[i]:
+            matched_elements.append(action)
+        else:
+            # Case 3: Element does not match
+            print(f"Result: WRONG")
+            print(f" -> Matched until: {matched_elements}")
+            print(f" -> At position {i}, expected '{correct[i]}' but got '{action}'")
+            return False, matched_elements
+            
+    # If it finishes the loop, it's a perfect prefix match
+    print(f"Result: CORRECT")
+    print(f" -> Matched until: {matched_elements}")
+    return True, matched_elements
+
+
+
+correct_seq = ['move', 'collect_water', 'move', 'plant_crop', 'move', 'plant_crop']
+
+# print("--- Test sequence ---")
+# actual_1 = tool_calls
+# check_sequence_details(actual_1, correct_seq)
 
 
 print(time_taken)
