@@ -336,7 +336,8 @@ messages = [
 # {'role': 'user', 'content': 'go to the nearst crop and water it.'}]
 
 client = Client(
-   host=config_data["server_urls"]["ollama_url"]
+   host=config_data["server_urls"]["ollama_url"],
+    timeout=60
    
 )
 
@@ -352,6 +353,8 @@ player_positions = []
 log_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
+
+tool_calls = []
 try:
   # needs_water_state1 = True
   # needs_water_state2 = True
@@ -366,7 +369,9 @@ try:
       total_output_tokens += response['eval_count']
       total_input_tokens = response['prompt_eval_count']
       print(f"reponse time: {(response['total_duration']/1e9)}")
-
+      print("reponse::")
+      print(response.message)
+      # breakpoint()
       if response.message.content:
         print('Content: ')
         print(response.message.content + '\n')
@@ -389,6 +394,7 @@ try:
             # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
             log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
             print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
+            tool_calls.append(tool_call.function.name)
             time_taken.append(time.time()-st_time)
             crops = state["crops"]
             # if crops.get(tuple(state["player_pos"])) != None:
@@ -550,6 +556,22 @@ if len(time_taken)>0:
     print("total output tokens: "+str(total_output_tokens))
     logger.info("total input tokens: "+str(total_input_tokens))
     logger.info("total output tokens: "+str(total_output_tokens))
+    print("sequence of tool calls:"+ str(tool_calls))
+    logger.info("sequence of tool calls:"+ str(tool_calls))
+    threshold = 25
+    points = player_positions
+
+    jumps = 0
+    for i in range(len(points) - 1):
+        
+        x1, y1 = points[i]
+        x2, y2 = points[i + 1]
+
+        if abs(x2 - x1) > threshold or abs(y2 - y1) > threshold:
+            jumps +=1
+            print(f"Jump > {threshold}px: {points[i]} -> {points[i+1]}")
+    print("game character jumps:"+ str(jumps))
+    logger.info("game character jumps:"+ str(jumps))
 else:
     logger.info(log_messages)
     logger.info("llm tool failed") 
