@@ -1,4 +1,5 @@
 import heapq
+import time
 
 TILE_SIZE = 25
 
@@ -12,7 +13,7 @@ def heuristic(a, b):
     # Manhattan distance
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list[tuple[int, int]], grid_width=800, grid_height=600)->str:
+def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list[tuple[int, int]], grid_width=32, grid_height=24)->str:
     """
         a star algorithm which takes the start pixal, goal fixal, obstacle pixal, grid width, and gird height
         to calculate the path from the starting point to the goal by dodging the obstacles.
@@ -47,11 +48,18 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
     # print(new_st)
     start = to_grid(new_st)
     goal = to_grid(new_goal)
-   
-    obstacles =[]
+
+
+    # Early validation: Check if start or goal are inherently out of bounds
+    if start[0] < 0 or start[1] < 0 or start[0] >= grid_width or start[1] >= grid_height:
+        return "None (Start coordinate is out of bounds)"
+    if goal[0] < 0 or goal[1] < 0 or goal[0] >= grid_width or goal[1] >= grid_height:
+        return "None (Goal coordinate is out of bounds)"
+    
+    obstacles =set()
     for obstacle in obstacles_px:
-        obstacle_tuple = (obstacle[0],obstacle[1])
-        obstacles.append(to_grid(obstacle_tuple))
+        # obstacle_tuple = (obstacle[0],obstacle[1])
+        obstacles.add(to_grid((obstacle[0],obstacle[1])))
 
     # print(obstacles)
     open_set = []
@@ -62,7 +70,7 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
 
     while open_set:
         _, current = heapq.heappop(open_set)
-
+        # print(current,goal)
         if current == goal:
             # reconstruct path
             path = []
@@ -111,13 +119,25 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
 start = [200, 100]
 goal = [400, 275]
 
+goals = [[300, 275],[600, 275],[200, 375],[500, 225],[250, 250],[100, 75],[450, 155],[600, 175],[300, 575]]
+
 obstacles = [
     (75, 75),
     (100, 75),
     (125, 75)
 ]
 
-# path = astar(start, goal, obstacles, grid_width=20, grid_height=20)
+# st_time = time.time()
+# for goal in goals:
+#     print(goal)
+#     path = astar(start, goal, obstacles, grid_width=32, grid_height=24)
+#     print(path)
+# end_time = time.time()
+
+print("time taken:")
+print(st_time)
+print(end_time)
+print(end_time-st_time)
 
 # print(path)
 
