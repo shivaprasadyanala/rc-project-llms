@@ -12,8 +12,23 @@ import requests
 from langchain.callbacks.base import BaseCallbackHandler
 import time
 import logging
+import yaml,os,sys
 logger = logging.getLogger(__name__)
-log_file_name = "react_langchain_log.log"
+
+def read_config(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            config = yaml.safe_load(file)  # safe_load prevents code execution
+            return config
+    except yaml.YAMLError as e:
+        print(f"Error parsing YAML file: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error reading file: {e}")
+        sys.exit(1)
+config_data = read_config("config.yaml")
+
+log_file_name = config_data["log_file"]["name"]
 
 logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
@@ -167,7 +182,8 @@ PROMPT = PromptTemplate.from_template(PROMPT_TEMPLATE)
 # LLM = "glm-4.7-flash:q4_K_M"
 # LLM = "qwen3.6:27b"
 # LLM = "llama3.3:70b-instruct-q8_0"
-LLM = "nemotron3:33b"
+LLM = config_data["model"]["name"]
+
 
 llm_call_times = []
 
@@ -202,7 +218,7 @@ def create_agent():
     agent = create_react_agent(
         llm=ChatOllama(
         model=LLM,
-        base_url="http://hal9000.skim.th-owl.de:11437",
+        base_url=config_data["server_urls"]["ollama_url"],
         temperature=0.1,
         top_k=70,
         reasoning=False,

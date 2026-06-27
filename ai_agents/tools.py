@@ -235,7 +235,7 @@ state = {
     "crops": {
         (400, 275): {"name":"wheat","planted":False,"needs_water": True},
         (300, 200): {"name":"rice","planted":False,"needs_water": True},
-        (200,475): {"name":"sugarcane","planted":False,"needs_water": True},},
+        # (200,475): {"name":"sugarcane","planted":False,"needs_water": True},},
     "obstacles": {(250, 100)},
     "water_available":False,
     "water_tank":{(75,250)},
