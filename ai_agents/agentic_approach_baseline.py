@@ -85,6 +85,8 @@ state = {
 }
 
 invalid_moves = 0
+revisits = 0
+visited = set()
 invalid_move_object = {}
 
 def set_crop_state():
@@ -228,7 +230,7 @@ def move(dx:int, dy:int)-> str:
             "error": optional string
         }
     """
-    global invalid_moves,invalid_move_object
+    global invalid_moves,invalid_move_object,revisits
 
     new_x = state["player_pos"][0] + int(dx)
     new_y = state["player_pos"][1] + int(dy)
@@ -255,14 +257,23 @@ def move(dx:int, dy:int)-> str:
         "player_pos": state["player_pos"],
         "error":"Blocked: obstacle"
         })
-
-    state["player_pos"] = [new_x, new_y]
-    # return f"game character moved to {(new_x, new_y)}"
-    return json.dumps({
-        "status":"true",
-        "action":"move",
-        "player_pos": state["player_pos"]
-    })
+    if (new_x, new_y) in visited:
+        revisits+=1
+        state["player_pos"] = [new_x, new_y]
+        return json.dumps({
+            "status":"true",
+            "action":"move",
+            "player_pos": state["player_pos"]
+        })
+    else:
+        visited.add((new_x, new_y))
+        state["player_pos"] = [new_x, new_y]
+        # return f"game character moved to {(new_x, new_y)}"
+        return json.dumps({
+            "status":"true",
+            "action":"move",
+            "player_pos": state["player_pos"]
+        })
 
 
 def plant_crop(x:int, y:int)-> str:
@@ -707,6 +718,9 @@ if len(time_taken)>0:
     print(invalid_move_object)
     logger.info("no of invalid moves:"+ str(invalid_moves))
     logger.info("game character jumps:"+ str(jumps))
+    print("no of revisits:")
+    print(str(revisits))
+    logger.info("no of revisits:"+ str(revisits))
 
 else:
     logger.info(log_messages)
