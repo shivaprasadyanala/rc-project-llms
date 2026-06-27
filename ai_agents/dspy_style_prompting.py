@@ -10,11 +10,15 @@ import sys
 import dspy
 from a_star_algo import astar
 from speech_to_text import audio_text
-
+# from tools_dspy import water,collect_water,plant_crop,astar,move
 # ---------------------------------------------------------
 # 1. Configuration & Setup
 # ---------------------------------------------------------
 logger = logging.getLogger(__name__)
+# dspy.configure_cache(
+#     enable_disk_cache=False,
+#     enable_memory_cache=False
+# )
 
 def read_config(file_path):
     try:
@@ -59,11 +63,11 @@ else:
 # ---------------------------------------------------------
 state = {
     "grid_size": (800, 600),
-    "player_pos": [200, 100], 
+    "player_pos": [300, 100], 
     "crops": {
         (400, 275): {"name":"wheat","planted":False,"needs_water": True},
         (300, 200): {"name":"rice","planted":False,"needs_water": True},
-        (200, 475): {"name":"sugarcane","planted":False,"needs_water": True},
+        # (200, 475): {"name":"sugarcane","planted":False,"needs_water": True},
     },
     "obstacles": {(250, 100)},
     "water_available": False,
@@ -80,7 +84,7 @@ points_gained_object = {}
 def set_crop_state():
     crops = state["crops"]
     value = sum(1 for pos, info in crops.items() if not info["needs_water"])
-    if value == 3:
+    if value == 2:
         state["goal_completed"] = True
     return state["goal_completed"]
 
@@ -203,6 +207,22 @@ Water_available: {state["water_available"]}
 Water_tank: {list(state['water_tank'])}
 """
 
+class TrackedLM(dspy.LM):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.iteration_times = []
+        
+    def __call__(self, *args, **kwargs):
+        st = time.time()
+        # Call the original LLM method
+        response = super().__call__(*args, **kwargs)
+        elapsed = time.time() - st
+        
+        self.iteration_times.append(elapsed)
+        logger.info(f"ReAct LLM Iteration took {elapsed:.2f} seconds")
+        
+        return response
+
 class FarmAgentSignature(dspy.Signature):
     """
     You are a smart farm game agent.
@@ -223,19 +243,28 @@ class FarmAgentSignature(dspy.Signature):
     next_action: str = dspy.OutputField(desc="Concluding thought or action state once goal is met")
 
 # Initialize LLM
-lm = dspy.LM(
-    model="ollama/gemma4:26b", 
+# lm = dspy.LM(
+#     model="ollama/gpt-oss:20b", 
+#     api_base=config_data["server_urls"]["ollama_url"],
+#     max_tokens=10000,
+#     temperature=0.0
+# )
+lm = TrackedLM(
+    model="ollama/gpt-oss:20b",
+    # model="ollama/gemma4:26b", 
     api_base=config_data["server_urls"]["ollama_url"],
-    max_tokens=1000,
+    max_tokens=10000,
+    cache=False,
     temperature=0.0
 )
 dspy.settings.configure(lm=lm)
+
 
 # Initialize ReAct Agent
 agent = dspy.ReAct(
     FarmAgentSignature, 
     tools=[move, water, collect_water, plant_crop], # Add astar back here if implemented
-    max_iters=20 # Set a safe upper bound to prevent infinite loops
+    max_iters=35 # Set a safe upper bound to prevent infinite loops
 )
 
 # ---------------------------------------------------------
@@ -282,8 +311,8 @@ reset_state = {
 requests.post(game_server_url, json=reset_state, headers=headers)
 
 # Print & Log Stats
-if len(time_taken) > 0:
-    data = time_taken
+if len(lm.iteration_times) > 0:
+    data = lm.iteration_times
     stats = {
         "mean": np.mean(data),
         "median": np.median(data),
@@ -293,6 +322,9 @@ if len(time_taken) > 0:
         "max": np.max(data)
     }
 
+    print(stats)
+    print("iteration time taken")
+    print(data)
     print(f"No of tool calls: {len(time_taken)}")
     logger.info(f"No of tool calls: {len(time_taken)}")
     print(f"Player positons: {player_positions}")
@@ -300,11 +332,29 @@ if len(time_taken) > 0:
     print(f"Points gained object: {points_gained_object}")
     logger.info(f"Points gained object: {points_gained_object}")
 
-    plt.plot(time_taken)
-    plt.xlabel('Tool call run')
+    
+
+    print(f"Total ReAct Iterations (LLM calls): {len(data)}")
+    print(f"LLM Iteration Stats: {stats}")
+    logger.info(f"LLM Iteration Stats: {stats}")
+
+    # Plot the LLM iteration times alongside the tool execution times
+    plt.figure(figsize=(10, 5))
+    
+    # Plot LLM "Thinking" Time
+    plt.plot(data, label='LLM Iteration Time (Thought/Action)', color='orange', marker='o')
+    
+    # Plot Tool Execution Time (your original metric)
+    if len(time_taken) > 0:
+        # Note: time_taken length might differ from llm_data if the LLM fails to format a tool call
+        plt.plot(time_taken, label='Tool Execution Time (Observation)', color='blue', marker='x')
+
+    plt.xlabel('Iteration / Tool Call')
     plt.ylabel('Time (s)')
-    plt.title('Processing time for each tool call')
+    plt.title('Processing Time per ReAct Iteration')
+    plt.legend()
     plt.show()
+
 else:
     logger.info("LLM tool failed to execute properly.")
     print("LLM tool failed.")
