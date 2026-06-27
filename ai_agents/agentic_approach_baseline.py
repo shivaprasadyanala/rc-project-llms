@@ -64,7 +64,7 @@ state = {
     "grid_size": (800, 600),
 
     # Player
-    "player_pos": [200, 100],  # use list for mutability
+    "player_pos": [300, 100],  # use list for mutability
 
     # Crops indexed by position
     "crops": {
@@ -84,7 +84,8 @@ state = {
     "goal_completed": False
 }
 
-
+invalid_moves = 0
+invalid_move_object = {}
 
 def set_crop_state():
     """
@@ -117,15 +118,32 @@ def water()-> str:
         "message": "status of the action"
        }
     """
+    global invalid_moves,invalid_move_object
     pos = tuple(state["player_pos"])
     print(pos)
     crop = state["crops"].get(pos)
     print(crop)
     if not crop:
-        return "No crop here"
+        invalid_moves+=1
+        invalid_move_object["no crop"] +=1
+        return {
+        "status":"false",
+        "action":"water",
+        "message": "no crop here"
+        }
+    if not crop["planted"]:
+        invalid_moves+=1
+        invalid_move_object["crop not planted"] +=1
+        return {
+        "status":"false",
+        "action":"water",
+        "message": "crop not planted"
+        }
 
     if not crop["needs_water"]:
+        invalid_moves+=1
         # return "Crop already watered"
+        invalid_move_object["crop already watered"] +=1
         return {
         "status":"false",
         "action":"water",
@@ -141,7 +159,8 @@ def water()-> str:
         "action":"water",
         "message": "crop watered successfully"
         })
-
+# water()
+# breakpoint()
 
 def collect_water()-> str:
     """
@@ -153,18 +172,37 @@ def collect_water()-> str:
          {
         "status":"true",
         "action":"move",
+        "message": "water tank status"
         "water_available": state["water_available"]
        }
     """
+    global invalid_moves,invalid_move_object
+    print(state["player_pos"][0])
+    print(state["player_pos"][1])
 
+    new_x = state["player_pos"][0]
+    new_y = state["player_pos"][1]
+
+    water_tank = list(state["water_tank"])[0]
+    if new_x != water_tank[0] or new_y != water_tank[1]:
+        invalid_moves +=1
+        invalid_move_object["no water tank here"] +=1
+        {
+        "status":"false",
+        "action":"collect water",
+        "message":"no water tank here",
+        "water_available": state["water_available"]
+        }
+
+    # water_tank_y = state["water_tank"][1]
     state["water_available"] = True
     # print("in collect water tool.............")
     return json.dumps({
         "status":"true",
         "action":"collect water",
+        "message":"water collected successfully",
         "water_available": state["water_available"]
     })
-
 
 
 def crops_to_text(crops):
@@ -190,12 +228,16 @@ def move(dx:int, dy:int)-> str:
             "error": optional string
         }
     """
+    global invalid_moves,invalid_move_object
+
     new_x = state["player_pos"][0] + int(dx)
     new_y = state["player_pos"][1] + int(dy)
 
     # Bounds check
     if not (0 <= new_x < state["grid_size"][0] and
             0 <= new_y < state["grid_size"][1]):
+        invalid_moves+=1
+        invalid_move_object["out of bounds"] +=1
         return json.dumps({
         "status":"false",
         "action":"move",
@@ -205,6 +247,8 @@ def move(dx:int, dy:int)-> str:
 
     # Obstacle check
     if (new_x, new_y) in state["obstacles"]:
+        invalid_moves+=1
+        invalid_move_object["blocked obstacle"] +=1
         return json.dumps({
         "status":"false",
         "action":"move",
@@ -238,10 +282,12 @@ def plant_crop(x:int, y:int)-> str:
             "error": optional string
         }
     """
-
+    global invalid_moves,invalid_move_object
     crop = state["crops"].get((x, y))
 
     if not crop:
+        invalid_moves+=1
+        invalid_move_object["No crop here"] +=1
         return json.dumps({
             "status": False,
             "error": "No crop here",
@@ -249,6 +295,8 @@ def plant_crop(x:int, y:int)-> str:
         })
 
     if crop["planted"]:
+        invalid_move_object["Already planted"] +=1
+        invalid_moves+=1
         return json.dumps({
             "status": False,
             "error": "Already planted",
@@ -650,6 +698,16 @@ if len(time_taken)>0:
             print(f"Jump > {threshold}px: {points[i]} -> {points[i+1]}")
     print("game character jumps:"+ str(jumps))
     logger.info("game character jumps:"+ str(jumps))
+    invalid_moves+=jumps
+    invalid_move_rate = invalid_moves / len(player_positions)
+    print("invalid move rate:")
+    print(invalid_move_rate)
+    print("no of invalid moves:"+ str(invalid_moves))
+    print("invalid move object:")
+    print(invalid_move_object)
+    logger.info("no of invalid moves:"+ str(invalid_moves))
+    logger.info("game character jumps:"+ str(jumps))
+
 else:
     logger.info(log_messages)
     logger.info("llm tool failed") 
