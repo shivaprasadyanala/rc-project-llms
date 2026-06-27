@@ -3,6 +3,7 @@ Simple ReAct Agent
 """
 
 from langchain.agents import AgentExecutor, create_react_agent
+# from langchain_classic.agents import AgentExecutor, create_react_agent
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import PromptTemplate
 import json
@@ -10,6 +11,7 @@ import json
 from tools import astar,collect_water,water,plant_crop,move,crops_to_text,nstate,state,moves,points,points_object
 import requests
 from langchain.callbacks.base import BaseCallbackHandler
+# from langchain_core.callbacks import BaseCallbackHandler
 import time
 import logging
 import yaml,os,sys
