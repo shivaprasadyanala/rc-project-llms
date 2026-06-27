@@ -5,11 +5,11 @@ model:
   # name: llama3.1:8b
   # name: mistral:7b
    # name: qwen2.5:7b
-  # name: gpt-oss:20b
+  name: gpt-oss:20b
   # name: llama3.3:latest
   # name: qwen3.6:27b
   # name: glm-4.7-flash:q4_K_M
-  name: nemotron3:33b
+  # name: nemotron3:33b
 
 
 
@@ -18,10 +18,12 @@ speech:
   user_input: False
   audio_file: mic.wav
 log_file:
-  name: "example_${model.name}.log"
+  name: "example_dspy_gpt_oss.log"
 
 server_urls:
   game_state_url: http://localhost:3000/post_game_state/
   game_task_url: http://localhost:3000/set_game_task/
   whisper_url: http://hal9000.skim.th-owl.de:8003/transcribe
-  ollama_url: http://hal9000.skim.th-owl.de:11437
+  # ollama_url: http://hal9000.skim.th-owl.de:11437
+  ollama_url: http://hal9000.skim.th-owl.de:11449
+
