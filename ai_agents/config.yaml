@@ -7,9 +7,9 @@ model:
    # name: qwen2.5:7b
   # name: gpt-oss:20b
   # name: llama3.3:latest
-  # name: qwen3.6:27b
+  name: qwen3.6:27b
   # name: glm-4.7-flash:q4_K_M
-  name: nemotron3:33b
+  # name: nemotron3:33b
 
 
 
@@ -18,7 +18,7 @@ speech:
   user_input: False
   audio_file: mic.wav
 log_file:
-  name: "example_${model.name}.log"
+  name: "example_lreact_.log"
 
 server_urls:
   game_state_url: http://localhost:3000/post_game_state/
