@@ -5,203 +5,28 @@
             600
         ],
         "player_pos": [
-            50,
-            100
+            75,
+            350
         ],
         "crops": {
-            "125,125": {
-                "name": "potato",
-                "planted": true,
-                "needs_water": true
-            },
-            "200,225": {
-                "name": "rice",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                325,
-                350
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": false,
-        "water_tank": [
-            275,
-            375
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            100,
-            75
-        ],
-        "crops": {
-            "75,25": {
-                "name": "wheat",
-                "planted": false,
-                "needs_water": true
-            },
-            "0,275": {
-                "name": "corn",
-                "planted": true,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                200,
-                25
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": false,
-        "water_tank": [
-            175,
-            175
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            225,
-            200
-        ],
-        "crops": {
-            "25,125": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": false
-            },
-            "325,225": {
-                "name": "rice",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                100,
-                225
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": false,
-        "water_tank": [
-            400,
-            150
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            100,
-            0
-        ],
-        "crops": {
-            "125,150": {
-                "name": "sugarcane",
-                "planted": false,
-                "needs_water": false
-            },
-            "175,275": {
-                "name": "rice",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                250,
-                400
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": true,
-        "water_tank": [
-            175,
-            200
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            200,
-            75
-        ],
-        "crops": {
-            "125,25": {
-                "name": "corn",
-                "planted": false,
-                "needs_water": false
-            },
-            "25,25": {
+            "400,225": {
                 "name": "tomato",
-                "planted": false,
+                "planted": true,
+                "needs_water": false
+            },
+            "150,25": {
+                "name": "wheat",
+                "planted": true,
                 "needs_water": true
             }
         },
         "obstacles": [
             [
-                100,
-                250
+                125,
+                50
             ]
         ],
         "goal": "collect water",
-        "water_available": false,
-        "water_tank": [
-            50,
-            275
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            300,
-            225
-        ],
-        "crops": {
-            "175,225": {
-                "name": "sugarcane",
-                "planted": true,
-                "needs_water": false
-            },
-            "225,250": {
-                "name": "rice",
-                "planted": false,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                275,
-                250
-            ]
-        ],
-        "goal": "water wheat crop",
         "water_available": false,
         "water_tank": [
             25,
@@ -215,578 +40,18 @@
             600
         ],
         "player_pos": [
-            350,
-            100
-        ],
-        "crops": {
-            "125,325": {
-                "name": "rice",
-                "planted": true,
-                "needs_water": true
-            },
-            "175,350": {
-                "name": "potato",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                325,
-                150
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": false,
-        "water_tank": [
-            250,
-            325
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            75,
-            225
-        ],
-        "crops": {
-            "0,25": {
-                "name": "wheat",
-                "planted": false,
-                "needs_water": true
-            },
-            "375,250": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                275,
-                275
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": false,
-        "water_tank": [
-            200,
-            150
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            400,
-            225
-        ],
-        "crops": {
-            "350,25": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": true
-            },
-            "200,0": {
-                "name": "corn",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                400,
-                25
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": false,
-        "water_tank": [
-            100,
-            275
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            125,
-            225
-        ],
-        "crops": {
-            "250,25": {
-                "name": "rice",
-                "planted": false,
-                "needs_water": true
-            },
-            "300,25": {
-                "name": "potato",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                350,
-                150
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": false,
-        "water_tank": [
-            400,
-            400
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            200,
-            0
-        ],
-        "crops": {
-            "300,25": {
-                "name": "potato",
-                "planted": true,
-                "needs_water": false
-            },
-            "375,225": {
-                "name": "tomato",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                50,
-                175
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": false,
-        "water_tank": [
-            50,
-            75
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            300,
-            0
-        ],
-        "crops": {
-            "200,0": {
-                "name": "tomato",
-                "planted": true,
-                "needs_water": true
-            },
-            "150,350": {
-                "name": "potato",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                100,
-                150
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": true,
-        "water_tank": [
-            300,
-            300
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            150,
-            325
-        ],
-        "crops": {
-            "125,150": {
-                "name": "sugarcane",
-                "planted": true,
-                "needs_water": false
-            },
-            "300,375": {
-                "name": "tomato",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                375,
-                25
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": true,
-        "water_tank": [
-            50,
-            375
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            400,
-            25
-        ],
-        "crops": {
-            "150,125": {
-                "name": "tomato",
-                "planted": false,
-                "needs_water": true
-            },
-            "350,50": {
-                "name": "rice",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                50,
-                175
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": false,
-        "water_tank": [
-            200,
-            50
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            275,
-            300
-        ],
-        "crops": {
-            "275,200": {
-                "name": "rice",
-                "planted": false,
-                "needs_water": false
-            },
-            "0,225": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                250,
-                350
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": true,
-        "water_tank": [
-            375,
-            250
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            200,
-            75
-        ],
-        "crops": {
-            "400,250": {
-                "name": "rice",
-                "planted": false,
-                "needs_water": false
-            },
-            "25,75": {
-                "name": "sugarcane",
-                "planted": false,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                250,
-                275
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": false,
-        "water_tank": [
-            200,
-            50
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            375,
-            325
-        ],
-        "crops": {
-            "400,375": {
-                "name": "wheat",
-                "planted": false,
-                "needs_water": true
-            },
-            "25,275": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                25,
-                175
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": true,
-        "water_tank": [
-            300,
-            200
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            250,
-            0
-        ],
-        "crops": {
-            "375,300": {
-                "name": "sugarcane",
-                "planted": true,
-                "needs_water": true
-            },
-            "125,100": {
-                "name": "potato",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                125,
-                350
-            ]
-        ],
-        "goal": "water wheat crop",
-        "water_available": false,
-        "water_tank": [
-            50,
-            50
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            100,
-            300
-        ],
-        "crops": {
-            "275,75": {
-                "name": "tomato",
-                "planted": false,
-                "needs_water": true
-            },
-            "350,125": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                400,
-                25
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": false,
-        "water_tank": [
-            100,
-            25
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
             0,
             300
         ],
         "crops": {
-            "300,350": {
+            "200,75": {
+                "name": "rice",
+                "planted": true,
+                "needs_water": true
+            },
+            "25,400": {
                 "name": "corn",
                 "planted": true,
-                "needs_water": true
-            },
-            "350,0": {
-                "name": "rice",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                0,
-                0
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": false,
-        "water_tank": [
-            300,
-            175
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            275,
-            200
-        ],
-        "crops": {
-            "75,50": {
-                "name": "tomato",
-                "planted": true,
-                "needs_water": true
-            },
-            "350,175": {
-                "name": "sugarcane",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                250,
-                400
-            ]
-        ],
-        "goal": "water wheat crop",
-        "water_available": false,
-        "water_tank": [
-            275,
-            400
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            350,
-            250
-        ],
-        "crops": {
-            "200,225": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": true
-            },
-            "175,275": {
-                "name": "rice",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                75,
-                175
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": true,
-        "water_tank": [
-            250,
-            100
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            150,
-            200
-        ],
-        "crops": {
-            "325,125": {
-                "name": "rice",
-                "planted": true,
-                "needs_water": true
-            },
-            "150,225": {
-                "name": "sugarcane",
-                "planted": false,
                 "needs_water": true
             }
         },
@@ -796,11 +61,46 @@
                 350
             ]
         ],
-        "goal": "water wheat crop",
-        "water_available": false,
+        "goal": "plant nearest crop",
+        "water_available": true,
         "water_tank": [
-            0,
-            275
+            250,
+            200
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            275,
+            50
+        ],
+        "crops": {
+            "150,50": {
+                "name": "wheat",
+                "planted": true,
+                "needs_water": true
+            },
+            "0,325": {
+                "name": "tomato",
+                "planted": true,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                125,
+                400
+            ]
+        ],
+        "goal": "plant nearest crop",
+        "water_available": true,
+        "water_tank": [
+            125,
+            175
         ],
         "goal_completed": false
     },
@@ -811,31 +111,66 @@
         ],
         "player_pos": [
             225,
-            75
+            200
         ],
         "crops": {
-            "25,125": {
-                "name": "tomato",
+            "100,125": {
+                "name": "potato",
                 "planted": true,
                 "needs_water": false
             },
-            "150,100": {
-                "name": "potato",
-                "planted": true,
+            "75,400": {
+                "name": "rice",
+                "planted": false,
                 "needs_water": false
             }
         },
         "obstacles": [
             [
-                0,
-                125
+                375,
+                275
             ]
         ],
         "goal": "water wheat crop",
         "water_available": true,
         "water_tank": [
-            125,
-            25
+            100,
+            175
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            150,
+            400
+        ],
+        "crops": {
+            "325,25": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": true
+            },
+            "225,150": {
+                "name": "rice",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                150,
+                25
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": false,
+        "water_tank": [
+            50,
+            175
         ],
         "goal_completed": false
     },
@@ -846,100 +181,65 @@
         ],
         "player_pos": [
             350,
-            175
+            350
         ],
         "crops": {
-            "25,25": {
-                "name": "potato",
+            "400,0": {
+                "name": "corn",
+                "planted": true,
+                "needs_water": false
+            },
+            "225,275": {
+                "name": "rice",
+                "planted": false,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                400,
+                50
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": false,
+        "water_tank": [
+            25,
+            75
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            275,
+            225
+        ],
+        "crops": {
+            "200,325": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": false
+            },
+            "25,250": {
+                "name": "sugarcane",
                 "planted": false,
                 "needs_water": true
-            },
-            "375,25": {
-                "name": "potato",
-                "planted": true,
-                "needs_water": false
             }
         },
         "obstacles": [
             [
-                75,
-                300
+                125,
+                275
             ]
         ],
         "goal": "plant rice crop",
         "water_available": false,
         "water_tank": [
-            175,
-            200
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            75,
-            0
-        ],
-        "crops": {
-            "350,0": {
-                "name": "potato",
-                "planted": false,
-                "needs_water": false
-            },
-            "375,225": {
-                "name": "potato",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                375,
-                250
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": true,
-        "water_tank": [
-            200,
-            125
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            325,
-            325
-        ],
-        "crops": {
-            "125,250": {
-                "name": "corn",
-                "planted": false,
-                "needs_water": false
-            },
-            "125,25": {
-                "name": "wheat",
-                "planted": false,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                350,
-                400
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": false,
-        "water_tank": [
-            200,
+            100,
             50
         ],
         "goal_completed": false
@@ -950,12 +250,12 @@
             600
         ],
         "player_pos": [
-            100,
-            75
+            25,
+            350
         ],
         "crops": {
-            "275,100": {
-                "name": "sugarcane",
+            "225,225": {
+                "name": "rice",
                 "planted": true,
                 "needs_water": false
             },
@@ -968,399 +268,14 @@
         "obstacles": [
             [
                 25,
-                75
+                375
             ]
         ],
         "goal": "collect water",
-        "water_available": true,
-        "water_tank": [
-            325,
-            400
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            350,
-            375
-        ],
-        "crops": {
-            "150,25": {
-                "name": "sugarcane",
-                "planted": true,
-                "needs_water": false
-            },
-            "75,300": {
-                "name": "potato",
-                "planted": true,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                0,
-                400
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": true,
-        "water_tank": [
-            275,
-            175
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            75,
-            200
-        ],
-        "crops": {
-            "375,200": {
-                "name": "tomato",
-                "planted": true,
-                "needs_water": true
-            },
-            "325,250": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                25,
-                200
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": true,
-        "water_tank": [
-            325,
-            300
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            375,
-            200
-        ],
-        "crops": {
-            "50,200": {
-                "name": "tomato",
-                "planted": true,
-                "needs_water": true
-            },
-            "375,150": {
-                "name": "potato",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                350,
-                175
-            ]
-        ],
-        "goal": "plant rice crop",
-        "water_available": false,
-        "water_tank": [
-            175,
-            75
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            375,
-            175
-        ],
-        "crops": {
-            "225,25": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": true
-            },
-            "150,275": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                350,
-                300
-            ]
-        ],
-        "goal": "water wheat crop",
         "water_available": true,
         "water_tank": [
             50,
-            175
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            275,
-            225
-        ],
-        "crops": {
-            "375,100": {
-                "name": "potato",
-                "planted": false,
-                "needs_water": false
-            },
-            "375,325": {
-                "name": "potato",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                250,
-                400
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": false,
-        "water_tank": [
-            400,
-            400
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            375,
-            175
-        ],
-        "crops": {
-            "100,25": {
-                "name": "rice",
-                "planted": true,
-                "needs_water": false
-            },
-            "200,125": {
-                "name": "corn",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                225,
-                275
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": true,
-        "water_tank": [
-            150,
-            275
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            350,
-            200
-        ],
-        "crops": {
-            "100,200": {
-                "name": "potato",
-                "planted": true,
-                "needs_water": false
-            },
-            "275,200": {
-                "name": "tomato",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                400,
-                400
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": false,
-        "water_tank": [
-            100,
-            50
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            325,
-            300
-        ],
-        "crops": {
-            "275,225": {
-                "name": "potato",
-                "planted": false,
-                "needs_water": true
-            },
-            "325,225": {
-                "name": "sugarcane",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                200,
-                350
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": true,
-        "water_tank": [
-            325,
-            75
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            375,
-            75
-        ],
-        "crops": {
-            "0,325": {
-                "name": "tomato",
-                "planted": false,
-                "needs_water": false
-            },
-            "250,150": {
-                "name": "wheat",
-                "planted": false,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                225,
-                125
-            ]
-        ],
-        "goal": "collect water",
-        "water_available": false,
-        "water_tank": [
-            325,
-            300
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            125,
-            225
-        ],
-        "crops": {
-            "50,225": {
-                "name": "tomato",
-                "planted": true,
-                "needs_water": true
-            },
-            "325,0": {
-                "name": "potato",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                375,
-                0
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": false,
-        "water_tank": [
-            175,
-            150
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            25,
-            0
-        ],
-        "crops": {
-            "125,250": {
-                "name": "sugarcane",
-                "planted": true,
-                "needs_water": true
-            },
-            "125,375": {
-                "name": "sugarcane",
-                "planted": true,
-                "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                0,
-                400
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": true,
-        "water_tank": [
-            275,
-            175
+            375
         ],
         "goal_completed": false
     },
@@ -1374,13 +289,48 @@
             125
         ],
         "crops": {
-            "150,225": {
+            "0,0": {
+                "name": "corn",
+                "planted": true,
+                "needs_water": false
+            },
+            "75,250": {
                 "name": "sugarcane",
                 "planted": false,
-                "needs_water": true
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                175,
+                375
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": false,
+        "water_tank": [
+            225,
+            400
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            150,
+            300
+        ],
+        "crops": {
+            "50,125": {
+                "name": "tomato",
+                "planted": false,
+                "needs_water": false
             },
-            "300,50": {
-                "name": "corn",
+            "75,300": {
+                "name": "wheat",
                 "planted": true,
                 "needs_water": false
             }
@@ -1388,13 +338,258 @@
         "obstacles": [
             [
                 150,
-                125
+                50
+            ]
+        ],
+        "goal": "collect water",
+        "water_available": true,
+        "water_tank": [
+            100,
+            275
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            0,
+            300
+        ],
+        "crops": {
+            "275,75": {
+                "name": "rice",
+                "planted": false,
+                "needs_water": false
+            },
+            "350,275": {
+                "name": "corn",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                125,
+                400
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": false,
+        "water_tank": [
+            175,
+            400
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            275,
+            300
+        ],
+        "crops": {
+            "400,325": {
+                "name": "rice",
+                "planted": true,
+                "needs_water": true
+            },
+            "200,100": {
+                "name": "potato",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                175,
+                225
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": false,
+        "water_tank": [
+            325,
+            0
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            25,
+            0
+        ],
+        "crops": {
+            "150,300": {
+                "name": "potato",
+                "planted": true,
+                "needs_water": true
+            },
+            "175,125": {
+                "name": "wheat",
+                "planted": true,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                150,
+                0
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": true,
+        "water_tank": [
+            275,
+            250
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            250,
+            225
+        ],
+        "crops": {
+            "0,350": {
+                "name": "corn",
+                "planted": true,
+                "needs_water": true
+            },
+            "325,25": {
+                "name": "potato",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                400,
+                275
+            ]
+        ],
+        "goal": "plant nearest crop",
+        "water_available": false,
+        "water_tank": [
+            50,
+            400
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            100,
+            75
+        ],
+        "crops": {
+            "325,25": {
+                "name": "corn",
+                "planted": false,
+                "needs_water": true
+            },
+            "0,375": {
+                "name": "tomato",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                375,
+                150
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": true,
+        "water_tank": [
+            375,
+            275
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            100,
+            300
+        ],
+        "crops": {
+            "225,100": {
+                "name": "sugarcane",
+                "planted": false,
+                "needs_water": false
+            },
+            "125,375": {
+                "name": "potato",
+                "planted": true,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                225,
+                250
+            ]
+        ],
+        "goal": "collect water",
+        "water_available": true,
+        "water_tank": [
+            175,
+            300
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            300,
+            325
+        ],
+        "crops": {
+            "175,125": {
+                "name": "potato",
+                "planted": false,
+                "needs_water": false
+            },
+            "375,325": {
+                "name": "rice",
+                "planted": false,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                25,
+                175
             ]
         ],
         "goal": "plant nearest crop",
         "water_available": true,
         "water_tank": [
-            50,
+            100,
             50
         ],
         "goal_completed": false
@@ -1405,32 +600,382 @@
             600
         ],
         "player_pos": [
-            75,
-            25
+            275,
+            75
         ],
         "crops": {
-            "100,0": {
-                "name": "corn",
-                "planted": false,
-                "needs_water": true
-            },
-            "225,350": {
-                "name": "potato",
+            "400,25": {
+                "name": "wheat",
                 "planted": true,
+                "needs_water": false
+            },
+            "150,250": {
+                "name": "rice",
+                "planted": false,
                 "needs_water": true
             }
         },
         "obstacles": [
             [
                 350,
-                175
+                275
+            ]
+        ],
+        "goal": "plant nearest crop",
+        "water_available": false,
+        "water_tank": [
+            100,
+            400
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            200,
+            325
+        ],
+        "crops": {
+            "125,375": {
+                "name": "wheat",
+                "planted": false,
+                "needs_water": true
+            },
+            "25,150": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                225,
+                275
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": true,
+        "water_tank": [
+            400,
+            50
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            200,
+            400
+        ],
+        "crops": {
+            "375,100": {
+                "name": "wheat",
+                "planted": true,
+                "needs_water": false
+            },
+            "250,300": {
+                "name": "rice",
+                "planted": false,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                325,
+                50
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": false,
+        "water_tank": [
+            25,
+            200
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            75,
+            200
+        ],
+        "crops": {
+            "300,0": {
+                "name": "tomato",
+                "planted": false,
+                "needs_water": true
+            },
+            "275,350": {
+                "name": "sugarcane",
+                "planted": false,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                250,
+                275
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": true,
+        "water_tank": [
+            150,
+            0
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            175,
+            325
+        ],
+        "crops": {
+            "75,0": {
+                "name": "corn",
+                "planted": true,
+                "needs_water": false
+            },
+            "100,0": {
+                "name": "potato",
+                "planted": true,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                150,
+                250
+            ]
+        ],
+        "goal": "collect water",
+        "water_available": false,
+        "water_tank": [
+            325,
+            75
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            125,
+            325
+        ],
+        "crops": {
+            "50,200": {
+                "name": "corn",
+                "planted": true,
+                "needs_water": false
+            },
+            "125,150": {
+                "name": "corn",
+                "planted": false,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                400,
+                75
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": false,
+        "water_tank": [
+            50,
+            75
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            375,
+            300
+        ],
+        "crops": {
+            "375,200": {
+                "name": "potato",
+                "planted": true,
+                "needs_water": false
+            },
+            "100,0": {
+                "name": "tomato",
+                "planted": true,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                300,
+                25
+            ]
+        ],
+        "goal": "plant nearest crop",
+        "water_available": false,
+        "water_tank": [
+            350,
+            75
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            50,
+            350
+        ],
+        "crops": {
+            "100,0": {
+                "name": "rice",
+                "planted": true,
+                "needs_water": true
+            },
+            "375,25": {
+                "name": "corn",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                200,
+                250
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": true,
+        "water_tank": [
+            25,
+            300
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            350,
+            100
+        ],
+        "crops": {
+            "125,225": {
+                "name": "tomato",
+                "planted": true,
+                "needs_water": false
+            },
+            "150,125": {
+                "name": "rice",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                150,
+                375
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": false,
+        "water_tank": [
+            325,
+            400
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            300,
+            100
+        ],
+        "crops": {
+            "225,325": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": true
+            },
+            "75,25": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                150,
+                225
+            ]
+        ],
+        "goal": "plant nearest crop",
+        "water_available": true,
+        "water_tank": [
+            125,
+            400
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            350,
+            200
+        ],
+        "crops": {
+            "350,350": {
+                "name": "potato",
+                "planted": true,
+                "needs_water": false
+            },
+            "0,350": {
+                "name": "sugarcane",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                175,
+                225
             ]
         ],
         "goal": "water wheat crop",
         "water_available": false,
         "water_tank": [
             350,
-            75
+            400
         ],
         "goal_completed": false
     },
@@ -1444,13 +989,468 @@
             175
         ],
         "crops": {
-            "200,200": {
+            "75,125": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": false
+            },
+            "250,375": {
+                "name": "corn",
+                "planted": false,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                50,
+                250
+            ]
+        ],
+        "goal": "collect water",
+        "water_available": false,
+        "water_tank": [
+            175,
+            150
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            375,
+            75
+        ],
+        "crops": {
+            "250,250": {
+                "name": "sugarcane",
+                "planted": false,
+                "needs_water": true
+            },
+            "375,0": {
+                "name": "rice",
+                "planted": false,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                275,
+                175
+            ]
+        ],
+        "goal": "collect water",
+        "water_available": true,
+        "water_tank": [
+            250,
+            325
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            0,
+            325
+        ],
+        "crops": {
+            "275,225": {
+                "name": "wheat",
+                "planted": false,
+                "needs_water": true
+            },
+            "350,25": {
+                "name": "wheat",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                150,
+                50
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": false,
+        "water_tank": [
+            250,
+            75
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            250,
+            0
+        ],
+        "crops": {
+            "100,225": {
+                "name": "sugarcane",
+                "planted": false,
+                "needs_water": true
+            },
+            "325,125": {
+                "name": "wheat",
+                "planted": false,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                325,
+                150
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": false,
+        "water_tank": [
+            175,
+            75
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            225,
+            300
+        ],
+        "crops": {
+            "275,125": {
                 "name": "tomato",
                 "planted": true,
                 "needs_water": false
             },
-            "100,25": {
+            "50,250": {
+                "name": "wheat",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                100,
+                125
+            ]
+        ],
+        "goal": "plant nearest crop",
+        "water_available": true,
+        "water_tank": [
+            75,
+            375
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            150,
+            300
+        ],
+        "crops": {
+            "300,225": {
+                "name": "corn",
+                "planted": true,
+                "needs_water": false
+            },
+            "325,0": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                275,
+                50
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": true,
+        "water_tank": [
+            100,
+            50
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            375,
+            200
+        ],
+        "crops": {
+            "200,225": {
+                "name": "potato",
+                "planted": true,
+                "needs_water": true
+            },
+            "150,225": {
                 "name": "rice",
+                "planted": true,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                25,
+                275
+            ]
+        ],
+        "goal": "plant nearest crop",
+        "water_available": false,
+        "water_tank": [
+            400,
+            200
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            100,
+            225
+        ],
+        "crops": {
+            "375,225": {
+                "name": "corn",
+                "planted": false,
+                "needs_water": true
+            },
+            "375,350": {
+                "name": "tomato",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                225,
+                150
+            ]
+        ],
+        "goal": "collect water",
+        "water_available": false,
+        "water_tank": [
+            300,
+            175
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            350,
+            100
+        ],
+        "crops": {
+            "75,250": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": true
+            },
+            "0,125": {
+                "name": "tomato",
+                "planted": true,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                0,
+                25
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": true,
+        "water_tank": [
+            0,
+            250
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            0,
+            75
+        ],
+        "crops": {
+            "150,100": {
+                "name": "tomato",
+                "planted": false,
+                "needs_water": false
+            },
+            "200,225": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                175,
+                50
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": true,
+        "water_tank": [
+            175,
+            175
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            275,
+            200
+        ],
+        "crops": {
+            "200,75": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": false
+            },
+            "175,250": {
+                "name": "sugarcane",
+                "planted": true,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                125,
+                200
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": false,
+        "water_tank": [
+            50,
+            75
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            225,
+            75
+        ],
+        "crops": {
+            "300,350": {
+                "name": "tomato",
+                "planted": true,
+                "needs_water": true
+            },
+            "0,350": {
+                "name": "tomato",
+                "planted": true,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                0,
+                175
+            ]
+        ],
+        "goal": "collect water",
+        "water_available": false,
+        "water_tank": [
+            100,
+            400
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            200,
+            300
+        ],
+        "crops": {
+            "225,125": {
+                "name": "wheat",
+                "planted": true,
+                "needs_water": false
+            },
+            "25,275": {
+                "name": "tomato",
+                "planted": true,
+                "needs_water": false
+            }
+        },
+        "obstacles": [
+            [
+                150,
+                225
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": true,
+        "water_tank": [
+            275,
+            400
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            150,
+            400
+        ],
+        "crops": {
+            "250,250": {
+                "name": "rice",
+                "planted": false,
+                "needs_water": true
+            },
+            "175,250": {
+                "name": "corn",
                 "planted": true,
                 "needs_water": false
             }
@@ -1461,7 +1461,7 @@
                 250
             ]
         ],
-        "goal": "water wheat crop",
+        "goal": "plant nearest crop",
         "water_available": true,
         "water_tank": [
             350,
@@ -1475,32 +1475,102 @@
             600
         ],
         "player_pos": [
-            75,
-            225
+            200,
+            75
         ],
         "crops": {
-            "175,250": {
+            "250,25": {
                 "name": "rice",
-                "planted": false,
+                "planted": true,
                 "needs_water": false
             },
-            "100,25": {
-                "name": "corn",
+            "50,25": {
+                "name": "sugarcane",
+                "planted": false,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                25,
+                275
+            ]
+        ],
+        "goal": "plant rice crop",
+        "water_available": false,
+        "water_tank": [
+            100,
+            400
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            375,
+            325
+        ],
+        "crops": {
+            "175,50": {
+                "name": "tomato",
+                "planted": true,
+                "needs_water": true
+            },
+            "375,25": {
+                "name": "wheat",
                 "planted": false,
                 "needs_water": false
             }
         },
         "obstacles": [
             [
-                100,
-                375
+                200,
+                125
+            ]
+        ],
+        "goal": "water wheat crop",
+        "water_available": true,
+        "water_tank": [
+            125,
+            50
+        ],
+        "goal_completed": false
+    },
+    {
+        "grid_size": [
+            800,
+            600
+        ],
+        "player_pos": [
+            150,
+            75
+        ],
+        "crops": {
+            "275,75": {
+                "name": "potato",
+                "planted": true,
+                "needs_water": true
+            },
+            "125,25": {
+                "name": "rice",
+                "planted": true,
+                "needs_water": true
+            }
+        },
+        "obstacles": [
+            [
+                50,
+                50
             ]
         ],
         "goal": "water wheat crop",
         "water_available": false,
         "water_tank": [
-            125,
-            300
+            175,
+            175
         ],
         "goal_completed": false
     },
@@ -1511,31 +1581,31 @@
         ],
         "player_pos": [
             275,
-            0
+            75
         ],
         "crops": {
-            "125,350": {
-                "name": "tomato",
+            "175,375": {
+                "name": "corn",
                 "planted": false,
-                "needs_water": false
+                "needs_water": true
             },
-            "0,350": {
+            "375,125": {
                 "name": "sugarcane",
-                "planted": true,
-                "needs_water": false
+                "planted": false,
+                "needs_water": true
             }
         },
         "obstacles": [
             [
-                150,
+                200,
                 350
             ]
         ],
-        "goal": "plant nearest crop",
-        "water_available": false,
+        "goal": "water wheat crop",
+        "water_available": true,
         "water_tank": [
-            50,
-            75
+            325,
+            150
         ],
         "goal_completed": false
     },
@@ -1546,31 +1616,31 @@
         ],
         "player_pos": [
             175,
-            225
+            100
         ],
         "crops": {
-            "200,225": {
+            "175,250": {
                 "name": "potato",
                 "planted": false,
-                "needs_water": false
-            },
-            "325,125": {
-                "name": "tomato",
-                "planted": false,
                 "needs_water": true
+            },
+            "375,225": {
+                "name": "tomato",
+                "planted": true,
+                "needs_water": false
             }
         },
         "obstacles": [
             [
                 25,
-                400
+                50
             ]
         ],
-        "goal": "water wheat crop",
-        "water_available": true,
+        "goal": "collect water",
+        "water_available": false,
         "water_tank": [
-            375,
-            250
+            325,
+            25
         ],
         "goal_completed": false
     },
@@ -1580,67 +1650,32 @@
             600
         ],
         "player_pos": [
-            125,
-            325
+            400,
+            0
         ],
         "crops": {
-            "325,100": {
-                "name": "sugarcane",
-                "planted": true,
-                "needs_water": false
-            },
-            "100,225": {
-                "name": "sugarcane",
+            "350,250": {
+                "name": "corn",
                 "planted": false,
                 "needs_water": true
-            }
-        },
-        "obstacles": [
-            [
-                300,
-                275
-            ]
-        ],
-        "goal": "water wheat crop",
-        "water_available": true,
-        "water_tank": [
-            50,
-            375
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            50,
-            225
-        ],
-        "crops": {
-            "400,150": {
-                "name": "tomato",
-                "planted": true,
-                "needs_water": false
             },
-            "300,150": {
-                "name": "rice",
+            "325,0": {
+                "name": "corn",
                 "planted": true,
                 "needs_water": true
             }
         },
         "obstacles": [
             [
-                125,
-                200
+                0,
+                375
             ]
         ],
         "goal": "plant rice crop",
         "water_available": false,
         "water_tank": [
-            100,
-            275
+            0,
+            400
         ],
         "goal_completed": false
     },
@@ -1650,31 +1685,31 @@
             600
         ],
         "player_pos": [
-            50,
-            100
+            25,
+            0
         ],
         "crops": {
-            "50,325": {
-                "name": "corn",
-                "planted": false,
-                "needs_water": true
-            },
-            "375,125": {
+            "275,100": {
                 "name": "wheat",
                 "planted": true,
-                "needs_water": false
+                "needs_water": true
+            },
+            "175,25": {
+                "name": "wheat",
+                "planted": false,
+                "needs_water": true
             }
         },
         "obstacles": [
             [
-                225,
-                175
+                175,
+                275
             ]
         ],
-        "goal": "plant nearest crop",
+        "goal": "plant rice crop",
         "water_available": true,
         "water_tank": [
-            350,
+            25,
             300
         ],
         "goal_completed": false
@@ -1685,17 +1720,17 @@
             600
         ],
         "player_pos": [
-            175,
-            100
+            350,
+            200
         ],
         "crops": {
-            "400,125": {
-                "name": "rice",
-                "planted": false,
-                "needs_water": true
-            },
-            "125,25": {
+            "350,225": {
                 "name": "corn",
+                "planted": true,
+                "needs_water": false
+            },
+            "350,50": {
+                "name": "wheat",
                 "planted": false,
                 "needs_water": true
             }
@@ -1703,49 +1738,14 @@
         "obstacles": [
             [
                 275,
-                375
+                50
             ]
         ],
-        "goal": "collect water",
+        "goal": "plant rice crop",
         "water_available": false,
         "water_tank": [
-            400,
-            75
-        ],
-        "goal_completed": false
-    },
-    {
-        "grid_size": [
-            800,
-            600
-        ],
-        "player_pos": [
-            225,
-            325
-        ],
-        "crops": {
-            "150,100": {
-                "name": "sugarcane",
-                "planted": false,
-                "needs_water": true
-            },
-            "50,225": {
-                "name": "wheat",
-                "planted": true,
-                "needs_water": false
-            }
-        },
-        "obstacles": [
-            [
-                50,
-                350
-            ]
-        ],
-        "goal": "plant nearest crop",
-        "water_available": true,
-        "water_tank": [
-            350,
-            75
+            325,
+            300
         ],
         "goal_completed": false
     }

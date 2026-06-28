@@ -129,8 +129,7 @@ class FarmScene extends Phaser.Scene {
 
  
 
-    this.tank = this.add.image(75, 250, 'water_tank').setOrigin(0.5, 0.5);
-    this.tank.setScale(0.10); // adjust size if needed
+    
 
     this.anims.create({
       key: 'w',
@@ -289,162 +288,128 @@ class FarmScene extends Phaser.Scene {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      console.log('Fetched data:', data);
+      const isEmpty =
+        data &&
+        typeof data === 'object' &&
+        !Array.isArray(data) &&
+        Object.keys(data).length === 0;
+      if(!isEmpty){
 
-      const [x, y] = data.player_pos;
-      if (x == 200 && y == 100) {
-        // this.plant1Watered = false
-        // this.plant2Watered = false
-        for(let i = 0; i < 5;i++){
-          this.plantWatered[i] = false
+        console.log('Fetched data:', data);
+
+          const [x, y] = data.player_pos;
+          // if (x == 200 && y == 100) {
+          //   // this.plant1Watered = false
+          //   // this.plant2Watered = false
+          //   for(let i = 0; i < 5;i++){
+          //     this.plantWatered[i] = false
+          //   }
+          // }
+
+          if(data.reset_state){
+            for(let i = 0; i < 5;i++){
+              this.plantWatered[i] = false
+            }
+            if(this.stone){
+            this.stone.destroy();  
+             this.stone = null;            
+            }
+            if(this.tank)
+            {
+            this.tank.destroy(); 
+            this.tank = null;             
+            }
+
+          }else{
+            if(!this.stone){
+              const [xobs, yobs] = data.obstacles;
+              this.stone = this.add.image(xobs, yobs, 'stone').setOrigin(0.5, 0.5);
+            }
+            if(!this.tank){
+              const [xtank, ytank] = data.water_tank;
+            this.tank = this.add.image(xtank, ytank, 'water_tank').setOrigin(0.5, 0.5);
+            this.tank.setScale(0.10); // adjust size if needed
+            }
+            
+          }
+
+          
+
+          if(this.inventory.crops == 0){
+            this.plant_cords = [[1, 2]]
+          }
+          const crops = data.crops;
+          const task = data.task
+          if(!data.goal_completed && task){
+            this.taskText.setPosition(300, 0);
+            this.taskText.setText(`GAME AGENT TASK: ${task}`);
+            this.taskText.setVisible(true);
+          }else{
+            this.taskText.setVisible(false);
+          }
+          this.inventory.water_available = data.water_available
+          this.updateInventoryUI()
+
+          // console.log(crops["crop1"]["pos"])
+          // console.log(Object.entries(crops))
+          console.log(`is game goal_completed: ${data.goal_completed}`)
+
+          if (crops) {
+            let i=0
+            for (const [cropName, cropData] of Object.entries(crops)) {
+
+              console.log(`${cropName} position: X=${cropData.pos[0]}, Y=${cropData.pos[1]}`);
+              console.log(`is crop planted: ${cropData.planted}`)
+              console.log(`plant cords: ${this.plant_cords}`)
+              const exists = this.plant_cords.some(
+                ([a, b]) => a === cropData.pos[0] && b === cropData.pos[1]
+              );
+              const key = `${Math.round(cropData.pos[0] / TILE_SIZE) + 1},${Math.round(cropData.pos[1] / TILE_SIZE) - 1}`;
+              if(this.crops[key]!= undefined){
+               console.log(`crop growth: ${this.crops[key].growth}`)
+              }
+              if (cropData.planted == true && !exists) {
+                this.plant_cords.push([cropData.pos[0], cropData.pos[1]])
+                this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
+                const key = `${cropData.pos[0]},${cropData.pos[1]}`;
+                console.log(`crop array: ${this.crops}`)
+              } else if (cropData.planted == false && this.inventory.crops > 0 && data.goal_completed==true && this.crops[key]?.growth === 19) {
+                // const key = `${Math.round(cropData.pos[0] / TILE_SIZE) + 1},${Math.round(cropData.pos[1] / TILE_SIZE) - 1}`;
+                console.log(`crop array: ${this.crops}`)
+                // alert(`key in remove crop: ${cropData.pos[0]}, ${cropData.pos[1]}  , ${this.inventory.crops}`)
+                this.removeCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
+              }
+
+              var needWater = cropData.needs_water;
+              console.log(`need water: ${needWater}`)
+              console.log(`plant watered: ${this.plantWatered[i]}`)
+              console.log(`crop planted: ${cropData.planted}`)
+
+              // debugger; 
+              if (!needWater && !this.plantWatered[i] && cropData.planted == true) {
+                this.waters[i].text.setPosition(cropData.pos[0], cropData.pos[1] - 50);
+                this.waters[i].text.setText("adding water");
+                this.waters[i].text.setVisible(true);
+                this.waters[i].sprite.setPosition(cropData.pos[0], cropData.pos[1]-50);
+                this.waters[i].sprite.setVisible(true);
+                this.waters[i].sprite.anims.play('w', true);
+                 const currentIndex = i
+                 this.time.delayedCall(1000, () => {
+                  this.plantWatered[currentIndex] = true; // or whatever value makes the condition fail
+
+                  this.waters[currentIndex].text.setVisible(false);
+                  this.waters[currentIndex].sprite.setVisible(false);
+                  this.waters[currentIndex].sprite.anims.stop();
+                  });
+              }
+              i++;
+          }
         }
-      }
-      if(this.inventory.crops == 0){
-        this.plant_cords = [[1, 2]]
-      }
-      const crops = data.crops;
-      const task = data.task
-      if(!data.goal_completed && task){
-        this.taskText.setPosition(300, 0);
-        this.taskText.setText(`GAME AGENT TASK: ${task}`);
-        this.taskText.setVisible(true);
-      }else{
-        this.taskText.setVisible(false);
-      }
-      this.inventory.water_available = data.water_available
-      this.updateInventoryUI()
-
-      // console.log(crops["crop1"]["pos"])
-      // console.log(Object.entries(crops))
-      console.log(`is game goal_completed: ${data.goal_completed}`)
-
-      if (crops) {
-        let i=0
-        for (const [cropName, cropData] of Object.entries(crops)) {
-
-          console.log(`${cropName} position: X=${cropData.pos[0]}, Y=${cropData.pos[1]}`);
-          console.log(`is crop planted: ${cropData.planted}`)
-          console.log(`plant cords: ${this.plant_cords}`)
-          const exists = this.plant_cords.some(
-            ([a, b]) => a === cropData.pos[0] && b === cropData.pos[1]
-          );
-          const key = `${Math.round(cropData.pos[0] / TILE_SIZE) + 1},${Math.round(cropData.pos[1] / TILE_SIZE) - 1}`;
-          if(this.crops[key]!= undefined){
-           console.log(`crop growth: ${this.crops[key].growth}`)
-          }
-          if (cropData.planted == true && !exists) {
-            this.plant_cords.push([cropData.pos[0], cropData.pos[1]])
-            this.plantCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
-            const key = `${cropData.pos[0]},${cropData.pos[1]}`;
-            console.log(`crop array: ${this.crops}`)
-          } else if (cropData.planted == false && this.inventory.crops > 0 && data.goal_completed==true && this.crops[key]?.growth === 19) {
-            // const key = `${Math.round(cropData.pos[0] / TILE_SIZE) + 1},${Math.round(cropData.pos[1] / TILE_SIZE) - 1}`;
-            console.log(`crop array: ${this.crops}`)
-            // alert(`key in remove crop: ${cropData.pos[0]}, ${cropData.pos[1]}  , ${this.inventory.crops}`)
-            this.removeCrop(Math.round(cropData.pos[0] / TILE_SIZE) + 1, Math.round(cropData.pos[1] / TILE_SIZE) - 1)
-          }
-
-          var needWater = cropData.needs_water;
-          console.log(`need water: ${needWater}`)
-          console.log(`plant watered: ${this.plantWatered[i]}`)
-          console.log(`crop planted: ${cropData.planted}`)
-
-          // debugger; 
-          if (!needWater && !this.plantWatered[i] && cropData.planted == true) {
-            this.waters[i].text.setPosition(cropData.pos[0], cropData.pos[1] - 50);
-            this.waters[i].text.setText("adding water");
-            this.waters[i].text.setVisible(true);
-            this.waters[i].sprite.setPosition(cropData.pos[0], cropData.pos[1]-50);
-            this.waters[i].sprite.setVisible(true);
-            this.waters[i].sprite.anims.play('w', true);
-             const currentIndex = i
-             this.time.delayedCall(1000, () => {
-              this.plantWatered[currentIndex] = true; // or whatever value makes the condition fail
-
-              this.waters[currentIndex].text.setVisible(false);
-              this.waters[currentIndex].sprite.setVisible(false);
-              this.waters[currentIndex].sprite.anims.stop();
-              });
-          }
-          i++;
-        }
-      }
+      
 
 
 
-    //   const crop1_pos = crops["crop1"]["pos"]
-    //   const crop2_pos = crops["crop2"]["pos"]
-    //   var needWater1 = crops["crop1"]["needs_water"];
-    //   if (!needWater1 && !this.plant1Watered) {
-    //     this.waterText1.setPosition(crop1_pos[0], crop1_pos[1] - 50);
-    //     this.waterText1.setText("adding water");
-    //     this.waterText1.setVisible(true);
-
-    //     this.watering1.setPosition(crop1_pos[0] +20, crop1_pos[1]-50);
-    //     this.watering1.setVisible(true);
-    //     this.watering1.anims.play('w', true);
-    //      this.time.delayedCall(1000, () => {
-    //       this.plant1Watered = true; // or whatever value makes the condition fail
-
-    //       this.waterText1.setVisible(false);
-    //       this.watering1.setVisible(false);
-    //       this.watering1.anims.stop();
-    // });
-    //   }
-      // else {
-      //   this.waterText1.setVisible(false);
-      //   this.watering1.setVisible(false);
-      //   this.watering1.anims.stop();
-      // }
-
-    //   var needWater2 = crops["crop2"]["needs_water"];
-    //   if (!needWater2 && !this.plant2Watered) {
-    //     this.waterText2.setPosition(crop2_pos[0], crop2_pos[1] - 50);
-    //     this.waterText2.setText("adding water");
-    //     this.waterText2.setVisible(true);
-
-    //     this.watering2.setPosition(crop2_pos[0]+20, crop2_pos[1] - 50);
-    //     this.watering2.setVisible(true);
-    //     this.watering2.anims.play('w', true);
-    //      this.time.delayedCall(1000, () => {
-    //       this.plant2Watered = true; // or whatever value makes the condition fail
-
-    //       this.waterText2.setVisible(false);
-    //       this.watering2.setVisible(false);
-    //       this.watering2.anims.stop();
-    // });
-    //   }
-      // else {
-      //   this.waterText2.setVisible(false);
-      //   this.watering2.setVisible(false);
-      //   this.watering2.anims.stop();
-      // }
-
-      //  if(needWater2 == false){
-      //     this.waterText = this.add.text(crop2_pos[0], crop2_pos[1]-50, "adding water", { fontSize: '10px', fill: 'blue' });
-
-      //     if (!this.watering) {
-      //         this.watering = this.physics.add.sprite(x, y, 'waterani');
-      //          this.watering.setDepth(100);
-      //          this.watering.setScale(0.7);
-      //     }
-      //     this.watering.setPosition(x+40, y-20);
-      //     this.watering.anims.play('w', true);
-
-      //  }else if((needWater2 == true) || (x == 200 && y == 100)){
-      //   this.waterText.destroy();
-      //   this.waterText = null
-      //   // this.watering.setFrame(2);
-      //  }
-
-
-
-      const [xobs, yobs] = data.obstacles;
-      // console.log(data.obstacles)
-      this.add.image(xobs, yobs, 'stone').setOrigin(0.5, 0.5);
-
-
-      // Stop any existing movement
+          // Stop any existing movement
       this.player.setScale(2);
       this.player.setVelocity(0);
       // this.player.setOrigin(0.5,1)
@@ -470,8 +435,8 @@ class FarmScene extends Phaser.Scene {
 
       this.prevPlayerX = x;
       this.prevPlayerY = y;
-      // this.add.text(x, y, `x: ${x}, y: ${y}`, { fontSize: '10px', fill: '#000' });
-      // Use the data in your game
+
+      }
 
     } catch (error) {
       console.error('Error fetching data:', error);
