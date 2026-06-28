@@ -76,9 +76,9 @@ state = {
     },
 
     # Obstacles as a set for fast lookup
-    "obstacles": {(250, 100)},
+    "obstacles": [250, 100],
     "water_available":False,
-    "water_tank":{(75,250)},
+    "water_tank":[75,250],
 
     # Goal tracking
     "goal_completed": False
@@ -185,7 +185,8 @@ def collect_water()-> str:
     new_x = state["player_pos"][0]
     new_y = state["player_pos"][1]
 
-    water_tank = list(state["water_tank"])[0]
+    water_tank = (state["water_tank"])
+    print(water_tank)
     if new_x != water_tank[0] or new_y != water_tank[1]:
         invalid_moves +=1
         invalid_move_object["no water tank here"] +=1
@@ -205,6 +206,8 @@ def collect_water()-> str:
         "message":"water collected successfully",
         "water_available": state["water_available"]
     })
+
+
 
 
 def crops_to_text(crops):
@@ -517,10 +520,18 @@ try:
             messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
       elif state["goal_completed"]:
         break
+      # elif response.message.tool_calls == None:
+      #   print("LLm did not call the tools")
+      #   logger.error(f"LLm failed to call the tools: {str(e)}")
+      #   break
       elif response.message.tool_calls == None:
-        print("LLm did not call the tools")
-        logger.error(f"LLm failed to call the tools: {str(e)}")
-        break
+        print("LLM did not call tools but goal is not complete.")
+        messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
+        # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
+        if len(messages) > 50: 
+            print("Message limit reached, aborting to prevent infinite loop.")
+            logger.error(f"Message limit reached, aborting to prevent infinite loop.")
+            break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
   logger.info(log_messages)
