@@ -127,7 +127,7 @@ def water()-> str:
     print(crop)
     if not crop:
         invalid_moves+=1
-        invalid_move_object["no crop"] +=1
+        invalid_move_object["no crop"] = invalid_move_object.get("no crop", 0) + 1
         return {
         "status":"false",
         "action":"water",
@@ -135,7 +135,7 @@ def water()-> str:
         }
     if not crop["planted"]:
         invalid_moves+=1
-        invalid_move_object["crop not planted"] +=1
+        invalid_move_object["crop not planted"] = invalid_move_object.get("crop not planted", 0) + 1
         return {
         "status":"false",
         "action":"water",
@@ -145,7 +145,7 @@ def water()-> str:
     if not crop["needs_water"]:
         invalid_moves+=1
         # return "Crop already watered"
-        invalid_move_object["crop already watered"] +=1
+        invalid_move_object["crop already watered"] = invalid_move_object.get("crop already watered", 0) + 1
         return {
         "status":"false",
         "action":"water",
@@ -161,8 +161,7 @@ def water()-> str:
         "action":"water",
         "message": "crop watered successfully"
         })
-# water()
-# breakpoint()
+
 
 def collect_water()-> str:
     """
@@ -189,7 +188,7 @@ def collect_water()-> str:
     print(water_tank)
     if new_x != water_tank[0] or new_y != water_tank[1]:
         invalid_moves +=1
-        invalid_move_object["no water tank here"] +=1
+        invalid_move_object["no water tank here"] = invalid_move_object.get("no water tank here", 0) + 1
         {
         "status":"false",
         "action":"collect water",
@@ -239,10 +238,20 @@ def move(dx:int, dy:int)-> str:
     new_y = state["player_pos"][1] + int(dy)
 
     # Bounds check
+    if int(dx) > 0 and int(dy) > 0:
+        invalid_moves+=1
+        invalid_move_object["diagonal_move"] = invalid_move_object.get("diagonal_move", 0) + 1
+        return json.dumps({
+        "status":"false",
+        "action":"move",
+        "player_pos": state["player_pos"],
+        "error":"diagonal move not allowed"
+        })
     if not (0 <= new_x < state["grid_size"][0] and
             0 <= new_y < state["grid_size"][1]):
         invalid_moves+=1
-        invalid_move_object["out of bounds"] +=1
+        invalid_move_object["out of bounds"] = invalid_move_object.get("out of bounds", 0) + 1
+
         return json.dumps({
         "status":"false",
         "action":"move",
@@ -253,7 +262,7 @@ def move(dx:int, dy:int)-> str:
     # Obstacle check
     if (new_x, new_y) in state["obstacles"]:
         invalid_moves+=1
-        invalid_move_object["blocked obstacle"] +=1
+        invalid_move_object["blocked obstacle"] = invalid_move_object.get("blocked obstacle", 0) + 1
         return json.dumps({
         "status":"false",
         "action":"move",
@@ -279,6 +288,7 @@ def move(dx:int, dy:int)-> str:
         })
 
 
+
 def plant_crop(x:int, y:int)-> str:
     """
     Plant a crop at the given grid coordinate (x,y).
@@ -301,7 +311,7 @@ def plant_crop(x:int, y:int)-> str:
 
     if not crop:
         invalid_moves+=1
-        invalid_move_object["No crop here"] +=1
+        invalid_move_object["No crop here"] = invalid_move_object.get("No crop here", 0) + 1
         return json.dumps({
             "status": False,
             "error": "No crop here",
@@ -309,7 +319,7 @@ def plant_crop(x:int, y:int)-> str:
         })
 
     if crop["planted"]:
-        invalid_move_object["Already planted"] +=1
+        invalid_move_object["Already planted"] = invalid_move_object.get("Already planted", 0) + 1
         invalid_moves+=1
         return json.dumps({
             "status": False,
