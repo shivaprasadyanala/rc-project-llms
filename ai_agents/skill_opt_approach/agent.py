@@ -11,6 +11,11 @@ LOG_DIR = Path("logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 log_path = LOG_DIR / "steps.jsonl"
+client = Client(
+   host="http://hal9000.skim.th-owl.de:11437",
+    timeout=60  
+)
+model = 'gpt-oss:20b'
 
 def log_step(record):
     with open(log_path, "a") as f:
@@ -19,20 +24,58 @@ def log_step(record):
 
 combined_invalid_objects = Counter()
 
-if log_path.exists():   # ✅ prevents "no such file"
+file_path = "./prompts/best_skill.md"
+best_skill = ""
+with open(file_path, "r", encoding="utf-8") as file:
+    best_skill = file.read()
+
+def update_best_skill(invalid_moves):
+    prompt = """
+    You are converting failure logs into concise behavioral rules for an agent skill file.
+
+    Rules:
+    - Be concrete and actionable
+    - Avoid repetition
+    - Do NOT restate failures
+    - Output ONLY JSON list of strings
+
+
+    Current Skill
+
+    {best_skill}
+
+    Common failures
+
+    {invalid_moves}
+
+    Suggest concrete additions or edits to the current skill.
+    should follow th format of the current skill
+    Do not rewrite unrelated sections."""
+    messages = [
+        {'role':'system','content':prompt},
+    ]
+    response: ChatResponse = client.chat(model=model, messages=messages, options={'temperature': 0.75})
+    print("response:----")
+    print(response.message.content)
+    print("Thinking:----")
+    print(response.message.thinking)
+
+if log_path.exists():  
     with open(log_path, "r") as f:
+        cnt = 0
         for line in f:
             line = line.strip()
             if not line:
                 continue
-
             episode = json.loads(line)
-
+            cnt+=1
             invalid_obj = episode.get("invalid_move_object", {})
 
             if isinstance(invalid_obj, dict):
                 combined_invalid_objects.update(invalid_obj)
-
+        if cnt == 10:
+            update_best_skill(dict(combined_invalid_objects))
+            pass
     print(dict(combined_invalid_objects))
 else:
     print("No log file found yet.")
@@ -45,16 +88,11 @@ prompt = build_prompt(
     available_tools=available_tools,
 )
 
-client = Client(
-   host="http://hal9000.skim.th-owl.de:11437",
-    timeout=60
-   
-)
 
-# model = 'gpt-oss:20b'
+
 # model = "llama3.1:8b"
 # model = "qwen2.5:7b"
-model = "qwen3:8b"
+# model = "qwen3:8b"
 # model = "ornith:9b"
 
 # model = config_data["model"]["name"]

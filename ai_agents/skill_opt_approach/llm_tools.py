@@ -49,104 +49,113 @@ def set_crop_state():
 
 # set_crop_state()
 # breakpoint()
+
 def water()-> str:
-    """
-      waters the crop and changes the state accordingly
-      Args:
-          None: No argument 
-      Returns:
-        JSON string
-         {
-        "status":"true",
-        "action":"water",
-        "message": "status of the action"
-       }
-    """
-    global invalid_moves,invalid_move_object
-    pos = tuple(state["player_pos"])
-    print(pos)
-    crop = state["crops"].get(pos)
-    print(crop)
-    if not crop:
-        invalid_moves+=1
-        invalid_move_object["watering where there is not crop"] = invalid_move_object.get("watering where there is not crop", 0) + 1
-        return {
-        "status":"false",
-        "action":"water",
-        "message": "no crop here"
-        }
-    if not crop["planted"]:
-        invalid_moves+=1
-        invalid_move_object["watering before the crop is planted"] = invalid_move_object.get("watering before the crop is planted", 0) + 1
-        return {
-        "status":"false",
-        "action":"water",
-        "message": "crop not planted"
-        }
+    try:
+        """
+          waters the crop and changes the state accordingly
+          Args:
+              None: No argument 
+          Returns:
+            JSON string
+             {
+            "status":"true",
+            "action":"water",
+            "message": "status of the action"
+           }
+        """
+        global invalid_moves,invalid_move_object
+        pos = tuple(state["player_pos"])
+        print(pos)
+        crop = state["crops"].get(pos)
+        print(crop)
+        if not crop:
+            invalid_moves+=1
+            invalid_move_object["watering where there is not crop"] = invalid_move_object.get("watering where there is not crop", 0) + 1
+            return {
+            "status":"false",
+            "action":"water",
+            "message": "no crop here"
+            }
+        if not crop["planted"]:
+            invalid_moves+=1
+            invalid_move_object["watering before the crop is planted"] = invalid_move_object.get("watering before the crop is planted", 0) + 1
+            return {
+            "status":"false",
+            "action":"water",
+            "message": "crop not planted"
+            }
 
-    if not crop["needs_water"]:
-        invalid_moves+=1
-        # return "Crop already watered"
-        invalid_move_object["watering the already watered crop"] = invalid_move_object.get("watering the already watered crop", 0) + 1
-        return {
-        "status":"false",
-        "action":"water",
-        "message": "crop already watered"
-        }
+        if not crop["needs_water"]:
+            invalid_moves+=1
+            # return "Crop already watered"
+            invalid_move_object["watering the already watered crop"] = invalid_move_object.get("watering the already watered crop", 0) + 1
+            return {
+            "status":"false",
+            "action":"water",
+            "message": "crop already watered"
+            }
 
-    crop["needs_water"] = False
+        crop["needs_water"] = False
 
-    state["goal_completed"] = set_crop_state()
-    # return "Crop watered successfully"
-    return json.dumps({
-        "status":"true",
-        "action":"water",
-        "message": "crop watered successfully"
-        })
+        state["goal_completed"] = set_crop_state()
+        # return "Crop watered successfully"
+        return json.dumps({
+            "status":"true",
+            "action":"water",
+            "message": "crop watered successfully"
+            })
+    except Exception as e:
+        print(e)
+        invalid_move_object["invalid tool arguments"] = invalid_move_object.get("invalid tool arguments", 0) + 1
 
 
 def collect_water()-> str:
-    """
-      collectes the water from the water container and changes the state of water_available accordingly
-      Args:
-          None: No argument 
-      Returns:
-        JSON string
-         {
-        "status":"true",
-        "action":"move",
-        "message": "water tank status"
-        "water_available": state["water_available"]
-       }
-    """
-    global invalid_moves,invalid_move_object
-    print(state["player_pos"][0])
-    print(state["player_pos"][1])
+    try:
+        """
+          collectes the water from the water container and changes the state of water_available accordingly
+          Args:
+              None: No argument 
+          Returns:
+            JSON string
+             {
+            "status":"true",
+            "action":"move",
+            "message": "water tank status"
+            "water_available": state["water_available"]
+           }
+        """
+        global invalid_moves,invalid_move_object
+        print(state["player_pos"][0])
+        print(state["player_pos"][1])
 
-    new_x = state["player_pos"][0]
-    new_y = state["player_pos"][1]
+        new_x = state["player_pos"][0]
+        new_y = state["player_pos"][1]
 
-    water_tank = (state["water_tank"])
-    print(water_tank)
-    if new_x != water_tank[0] or new_y != water_tank[1]:
-        invalid_moves +=1
-        invalid_move_object["collecting the water at wrong postion"] = invalid_move_object.get("collecting the water at wrong postion", 0) + 1
-        {
-        "status":"false",
-        "action":"collect water",
-        "message":"no water tank here",
-        "water_available": state["water_available"]
-        }
+        water_tank = (state["water_tank"])
+        print(water_tank)
+        if new_x != water_tank[0] or new_y != water_tank[1]:
+            invalid_moves +=1
+            invalid_move_object["collecting the water at wrong postion"] = invalid_move_object.get("collecting the water at wrong postion", 0) + 1
+            {
+            "status":"false",
+            "action":"collect water",
+            "message":"no water tank here",
+            "water_available": state["water_available"]
+            }
 
-    # water_tank_y = state["water_tank"][1]
-    state["water_available"] = True
-    # print("in collect water tool.............")
-    return json.dumps({
-        "status":"true",
-        "action":"collect water",
-        "message":"water collected successfully",
-        "water_available": state["water_available"]
-    })
+        # water_tank_y = state["water_tank"][1]
+        state["water_available"] = True
+        # print("in collect water tool.............")
+        return json.dumps({
+            "status":"true",
+            "action":"collect water",
+            "message":"water collected successfully",
+            "water_available": state["water_available"]
+        })
+    except Exception as e:
+        print(e)
+        invalid_move_object["invalid tool arguments"] = invalid_move_object.get("invalid tool arguments", 0) + 1
 
 
 
@@ -190,6 +199,18 @@ def move(dx:int, dy:int)-> str:
             "player_pos": state["player_pos"],
             "error":"diagonal move not allowed"
             })
+
+        VALID_PAIRS = {(0, -25), (0, 25), (-25, 0),(25, 0)}
+        if (dx,dy) not in VALID_PAIRS:
+            invalid_moves+=1
+            invalid_move_object["tool argument values are not 25px"] = invalid_move_object.get("tool argument values are not 25px", 0) + 1
+            return json.dumps({
+            "status":"false",
+            "action":"move",
+            "player_pos": state["player_pos"],
+            "error":"invalid tool argument values check the rules again."
+            })
+
         if not (0 <= new_x < state["grid_size"][0] and
                 0 <= new_y < state["grid_size"][1]):
             invalid_moves+=1
@@ -237,48 +258,52 @@ def move(dx:int, dy:int)-> str:
 
 
 def plant_crop(x:int, y:int)-> str:
-    """
-    Plant a crop at the given grid coordinate (x,y).
-    Args:
-        x (int): x coordinate
-        y (int): y coordinate
+    try:
+        """
+        Plant a crop at the given grid coordinate (x,y).
+        Args:
+            x (int): x coordinate
+            y (int): y coordinate
 
-    Returns:
-        JSON string:
-        {
-            "status": true/false,
+        Returns:
+            JSON string:
+            {
+                "status": true/false,
+                "action": "plant_crop",
+                "position": [x, y],
+                "planted": true/false,
+                "error": optional string
+            }
+        """
+        global invalid_moves,invalid_move_object
+        crop = state["crops"].get((x, y))
+        # checking if there a crop object in the state
+        if not crop:
+            invalid_moves+=1
+            invalid_move_object["No crop here"] = invalid_move_object.get("No crop here", 0) + 1
+            return json.dumps({
+                "status": False,
+                "error": "No crop here",
+                "position": [x, y]
+            })
+
+        if crop["planted"]:
+            invalid_move_object["planting at a already cropped poistion"] = invalid_move_object.get("planting at a already cropped poistion", 0) + 1
+            invalid_moves+=1
+            return json.dumps({
+                "status": False,
+                "error": "Already planted",
+                "position": [x, y]
+            })
+
+        crop["planted"] = True
+
+        return json.dumps({
+            "status": True,
             "action": "plant_crop",
             "position": [x, y],
-            "planted": true/false,
-            "error": optional string
-        }
-    """
-    global invalid_moves,invalid_move_object
-    crop = state["crops"].get((x, y))
-    # checking if there a crop object in the state
-    if not crop:
-        invalid_moves+=1
-        invalid_move_object["No crop here"] = invalid_move_object.get("No crop here", 0) + 1
-        return json.dumps({
-            "status": False,
-            "error": "No crop here",
-            "position": [x, y]
+            "planted": True
         })
-
-    if crop["planted"]:
-        invalid_move_object["planting at a already cropped poistion"] = invalid_move_object.get("planting at a already cropped poistion", 0) + 1
-        invalid_moves+=1
-        return json.dumps({
-            "status": False,
-            "error": "Already planted",
-            "position": [x, y]
-        })
-
-    crop["planted"] = True
-
-    return json.dumps({
-        "status": True,
-        "action": "plant_crop",
-        "position": [x, y],
-        "planted": True
-    })
+    except Exception as e:
+        print(e)
+        invalid_move_object["invalid tool arguments"] = invalid_move_object.get("invalid tool arguments", 0) + 1
