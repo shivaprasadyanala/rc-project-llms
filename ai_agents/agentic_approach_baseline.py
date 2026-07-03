@@ -97,7 +97,7 @@ def set_crop_state():
     is_goal_completed = False
     value = 0
     for crop in crops:
-      if crops[crop[0],crop[1]]["needs_water"] == False:
+      if  crops[crop[0],crop[1]]["planted"] == True and crops[crop[0],crop[1]]["needs_water"] == False:
         value+=1
     print("value of goal completed:" + str(value))
     if value ==2:
