@@ -13,7 +13,7 @@ class FarmScene extends Phaser.Scene {
     this.inventoryPanel.setDepth(100);
     this.inventoryPanel.setVisible(false);
     this.lastApiCall = 0;
-    this.apiInterval = 1000; // 5 seconds
+    this.apiInterval = 900; // 5 seconds
     this.isFetching = false;
 
     // Background
