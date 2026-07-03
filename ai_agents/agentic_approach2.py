@@ -70,7 +70,7 @@ state = {
     "crops": {
         (400, 275): {"name":"wheat","planted":False,"needs_water": True},
         (300, 200): {"name":"rice","planted":False,"needs_water": True},
-        (200,475): {"name":"sugarcane","planted":False,"needs_water": True},
+        # (200,475): {"name":"sugarcane","planted":False,"needs_water": True},
         # (150,300): {"planted":False,"needs_water": True},
         # (275,325): {"planted":False,"needs_water": True}
     },
@@ -97,13 +97,45 @@ def set_crop_state():
       if crops[crop[0],crop[1]]["needs_water"] == False:
         value+=1
     print("value of goal completed:" + str(value))
-    if value ==3:
+    if value ==2:
         state["goal_completed"]= True
     return state["goal_completed"]
 
 
 # set_crop_state()
 # breakpoint()
+def crops_parser(crops):
+    i = 0
+    new_crops = {}
+    for k,v in crops.items():   
+        i+=1
+        if crops.get(k) != None:
+            if state["player_pos"] == list(k):
+                new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
+    return new_crops
+
+def api_call(new_state):
+    print(state)
+    new_crops = crops_parser(state)
+    new_state["crops"] = new_crops
+    time.sleep(1)
+    requests.post(url, json=new_state, headers=headers)
+def follow_path(path:list)-> str:
+    """
+      follow path tool takes the path from the astar algorithm to the goal and make api call to the game server.
+    """
+    for step in path:
+        state["player_pos"] = step
+        print(state)
+        modified_state =state.copy()
+        api_call(modified_state)
+    return json.dumps({
+        "status":"true",
+        "action":"follow_path",
+        "message": "followed path to the goal"
+        })
+
+
 def water()-> str:
     """
       waters the crop and changes the state accordingly
@@ -126,14 +158,22 @@ def water()-> str:
 
     if not crop["needs_water"]:
         # return "Crop already watered"
-        return {
+        return json.dumps({
         "status":"false",
         "action":"water",
         "message": "crop already watered"
-        }
+        })
+
+    if not crop["planted"]:
+        # invalid_moves+=1
+        # invalid_move_object["crop not planted"] = invalid_move_object.get("crop not planted", 0) + 1
+        return json.dumps({
+        "status":"false",
+        "action":"water",
+        "message": "crop not planted"
+        })
 
     crop["needs_water"] = False
-
     state["goal_completed"] = set_crop_state()
     # return "Crop watered successfully"
     return json.dumps({
@@ -240,7 +280,8 @@ def plant_crop(x:int, y:int)-> str:
     """
 
     crop = state["crops"].get((x, y))
-
+    print("plant crop tool:-")
+    print(state)
     if not crop:
         return json.dumps({
             "status": False,
@@ -278,7 +319,7 @@ def plant_crop(x:int, y:int)-> str:
 
 #     continue
 
-available_tools = {"move":move,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
+available_tools = {"follow_path":follow_path,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
 
 points_gained = 0
 points_gained_object = {}
@@ -359,7 +400,7 @@ try:
     new_crops = {}
     while True:
         st_time = time.time()    
-        response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
+        response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
         print(f"input_tokens: {response['prompt_eval_count']}")
         print(f"output_tokens: {response['eval_count']}")
         total_output_tokens += response['eval_count']
@@ -376,50 +417,24 @@ try:
           agent_messages.append(response.message.thinking)
 
         messages.append(response.message)
-        
         if response.message.tool_calls:
           for tool_call in response.message.tool_calls:
             # LLM decides which function to call
             function_to_call = available_tools.get(tool_call.function.name)
             if function_to_call:
-              
+              print(tool_call.function.arguments)
               result = function_to_call(**tool_call.function.arguments)
               print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
               # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
               agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
               print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
               time_taken.append(time.time()-st_time)
-              crops = state["crops"]
-              # if crops.get(tuple(state["player_pos"])) != None:
-              #     if state["player_pos"] == [400,275]:
-              #         needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
-              #         crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
-              #     if state["player_pos"] == [300,200]:
-              #         needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
-              #         crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
-              #     print(needs_water_state1,needs_water_state2)
-              #     print(crop_planted1,crop_planted2)
-              
-              i = 0
-              for k,v in crops.items():   
-                i+=1
-                if crops.get(k) != None:
-                  if state["player_pos"] == list(k):
-                    new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
-                  # else:
-                    # print(k)
-                    # print(state["player_pos"])
-                    # print("wrong position")
+              new_crops = crops_parser(state["crops"])                
               print(new_crops)
               new_state = {
                   "grid_size": [5, 5],
                   "player_pos": state["player_pos"],
                   "crops": new_crops,
-                  # {
-                  #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":needs_water_state1,"planted":crop_planted1},
-                  #     "crop2":{"pos":[300,200],"name":"rice","needs_water":needs_water_state2,"planted":crop_planted2}
-
-                  # },
                   "obstacles": [250,100],
                   "water_available":state["water_available"],
                   "goal_completed": state["goal_completed"]
