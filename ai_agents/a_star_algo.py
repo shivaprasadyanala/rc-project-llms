@@ -15,7 +15,7 @@ def heuristic(a, b):
 
 def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list[tuple[int, int]], grid_width=32, grid_height=24)->str:
     """
-        a star algorithm which takes the start pixal, goal fixal, obstacle pixal, grid width, and gird height
+        a star algorithm which takes the start pixal, goal fixal, obstacle pixal, grid width, and grid height
         to calculate the path from the starting point to the goal by dodging the obstacles.
         Args:
           start_px int,int: x,y coordinates of start
@@ -41,7 +41,7 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
     # print(obstacles_px)
     
     # try:
-
+    print("astar called")
     new_st = (int(start_px[0]),int(start_px[1]))
     new_goal = ( int(goal_px[0]),int(goal_px[1]))
     # print(new_goal)
@@ -51,10 +51,10 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
 
 
     # Early validation: Check if start or goal are inherently out of bounds
-    if start[0] < 0 or start[1] < 0 or start[0] >= grid_width or start[1] >= grid_height:
-        return "None (Start coordinate is out of bounds)"
-    if goal[0] < 0 or goal[1] < 0 or goal[0] >= grid_width or goal[1] >= grid_height:
-        return "None (Goal coordinate is out of bounds)"
+    # if start[0] < 0 or start[1] < 0 or start[0] >= grid_width or start[1] >= grid_height:
+    #     return "None (Start coordinate is out of bounds)"
+    # if goal[0] < 0 or goal[1] < 0 or goal[0] >= grid_width or goal[1] >= grid_height:
+    #     return "None (Goal coordinate is out of bounds)"
     
     obstacles =set()
     for obstacle in obstacles_px:
@@ -134,10 +134,10 @@ obstacles = [
 #     print(path)
 # end_time = time.time()
 
-print("time taken:")
-print(st_time)
-print(end_time)
-print(end_time-st_time)
+# print("time taken:")
+# print(st_time)
+# print(end_time)
+# print(end_time-st_time)
 
 # print(path)
 
