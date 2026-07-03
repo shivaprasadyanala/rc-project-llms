@@ -100,7 +100,7 @@ def set_crop_state():
       if crops[crop[0],crop[1]]["needs_water"] == False:
         value+=1
     print("value of goal completed:" + str(value))
-    if value ==3:
+    if value ==2:
         state["goal_completed"]= True
     return state["goal_completed"]
 
@@ -246,6 +246,16 @@ def move(dx:int, dy:int)-> str:
         "action":"move",
         "player_pos": state["player_pos"],
         "error":"diagonal move not allowed"
+        })
+    VALID_PAIRS = {(0, -25), (0, 25), (-25, 0),(25, 0)}
+    if (dx,dy) not in VALID_PAIRS:
+        invalid_moves+=1
+        invalid_move_object["move tool argument values are not 25px"] = invalid_move_object.get("move tool argument values are not 25px", 0) + 1
+        return json.dumps({
+        "status":"false",
+        "action":"move",
+        "player_pos": state["player_pos"],
+        "error":"invalid tool argument values check the rules again."
         })
     if not (0 <= new_x < state["grid_size"][0] and
             0 <= new_y < state["grid_size"][1]):
@@ -714,8 +724,14 @@ if len(time_taken)>0:
     print("total output tokens: "+str(total_output_tokens))
     logger.info("total input tokens: "+str(total_input_tokens))
     logger.info("total output tokens: "+str(total_output_tokens))
-    print("sequence of tool calls:"+ str(tool_calls))
-    logger.info("sequence of tool calls:"+ str(tool_calls))
+    
+    result = [tool_calls[0]]
+    for action in tool_calls[1:]:
+        if action != result[-1]:
+            result.append(action)
+    tool_calls_final = result
+    print("sequence of tool calls:"+ str(tool_calls_final))
+    logger.info("sequence of tool calls:"+ str(tool_calls_final))
     threshold = 25
     points = player_positions
 
