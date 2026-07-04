@@ -11,6 +11,12 @@ import json
 import logging
 import yaml,os,sys
 from speech_to_text import audio_text
+import queue
+import threading
+import copy
+task_queue = queue.Queue()
+
+
 logger = logging.getLogger(__name__)
 
 def read_config(file_path):
@@ -107,27 +113,39 @@ def set_crop_state():
 def crops_parser(crops):
     i = 0
     new_crops = {}
-    for k,v in crops.items():   
+    for k,v in crops.items(): 
         i+=1
         if crops.get(k) != None:
-            if state["player_pos"] == list(k):
-                new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
+            # if state["player_pos"] == list(k):
+            new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":crops.get(k)["needs_water"],"planted":crops.get(k)["planted"]}
     return new_crops
+# cro = {(400, 275): {'name': 'wheat', 'planted': False, 'needs_water': True}, (300, 200): {'name': 'rice', 'planted': True, 'needs_water': True}}
+# print(crops_parser(cro))
 
-def api_call(new_state):
-    print(state)
-    new_crops = crops_parser(state)
-    new_state["crops"] = new_crops
-    time.sleep(1)
-    requests.post(url, json=new_state, headers=headers)
+# breakpoint()
+
+
+def api_call(current_state):
+    # Parse crops and format the state
+    # print("api call current_state")
+    # print(current_state)
+    new_crops = crops_parser(current_state["crops"])
+    
+    # Create a deep copy so future LLM moves don't overwrite this data 
+    # before the background thread has a chance to send it
+    state_to_send = copy.deepcopy(current_state)
+    state_to_send["crops"] = new_crops
+    
+    # Push to background thread instantly
+    task_queue.put(state_to_send)
+
 def follow_path(path:list)-> str:
     """
       follow path tool takes the path from the astar algorithm to the goal and make api call to the game server.
     """
     for step in path:
         state["player_pos"] = step
-        print(state)
-        modified_state =state.copy()
+        modified_state =state
         api_call(modified_state)
     return json.dumps({
         "status":"true",
@@ -175,6 +193,7 @@ def water()-> str:
 
     crop["needs_water"] = False
     state["goal_completed"] = set_crop_state()
+    api_call(state)
     # return "Crop watered successfully"
     return json.dumps({
         "status":"true",
@@ -198,6 +217,7 @@ def collect_water()-> str:
     """
 
     state["water_available"] = True
+    api_call(state)
     # print("in collect water tool.............")
     return json.dumps({
         "status":"true",
@@ -280,8 +300,7 @@ def plant_crop(x:int, y:int)-> str:
     """
 
     crop = state["crops"].get((x, y))
-    print("plant crop tool:-")
-    print(state)
+    
     if not crop:
         return json.dumps({
             "status": False,
@@ -297,27 +316,60 @@ def plant_crop(x:int, y:int)-> str:
         })
 
     crop["planted"] = True
-
+    print("plant crop tool:-")
+    print(state)
+    api_call(state)
     return json.dumps({
         "status": True,
         "action": "plant_crop",
         "position": [x, y],
         "planted": True
     })
-# tool_call = response.message.tool_calls[0]
 
-#     result = function_to_call(**tool_call.function.arguments)
+# def api_worker():
+#     print("API worker started")
+#     while True:
+#         try:
+#             # Wait for a state snapshot
+#             state_snapshot = task_queue.get(timeout=30)  
+            
+#             # The network latency and sleep happen HERE, in the background
+#             time.sleep(1)
+#             requests.post(url, json=state_snapshot, headers=headers)
+            
+#         except queue.Empty:
+#             print("No more tasks. Worker exiting.")
+#             break
+#         except Exception as e:
+#             print(f"Error in API call: {e}")
+#         finally:
+#             task_queue.task_done()
 
-#     messages.append({
-#         "role": "tool",
-#         "content": json.dumps({
-#             "tool": tool_call.function.name,
-#             "result": result,
-#             "state": state
-#         })
-#     })
+def api_worker():
+    print("API worker started")
+    while True:
+        try:
+            # 1. Try to get a task
+            state_snapshot = task_queue.get(timeout=30) 
+            # print("state: "+str(state_snapshot) )
+        except queue.Empty:
+            print("No more tasks. Worker exiting.")
+            break # Exit the loop if no tasks arrive for 30 seconds
+        # 2. Process the task (only runs if we successfully got an item)
+        try:
+            time.sleep(1)
+            requests.post(url, json=state_snapshot, headers=headers)
+        except Exception as e:
+            print(f"Error in API call: {e}")
+        finally:
+            # 3. Mark THIS specific task as done
+            task_queue.task_done()
 
-#     continue
+# Start the thread
+t = threading.Thread(target=api_worker)
+t.start()
+
+
 
 available_tools = {"follow_path":follow_path,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
 
@@ -392,99 +444,92 @@ player_positions = []
 agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
-try:
-    # needs_water_state1 = True
-    # needs_water_state2 = True
-    # crop_planted1 = False
-    # crop_planted2 = False
-    new_crops = {}
-    while True:
-        st_time = time.time()    
-        response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
-        print(f"input_tokens: {response['prompt_eval_count']}")
-        print(f"output_tokens: {response['eval_count']}")
-        total_output_tokens += response['eval_count']
-        total_input_tokens = response['prompt_eval_count']
-        print(f"reponse time: {(response['total_duration']/1e9)}")
+# try:
+# needs_water_state1 = True
+# needs_water_state2 = True
+# crop_planted1 = False
+# crop_planted2 = False
+new_crops = {}
+while True:
+    st_time = time.time()    
+    response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
+    print(f"input_tokens: {response['prompt_eval_count']}")
+    print(f"output_tokens: {response['eval_count']}")
+    total_output_tokens += response['eval_count']
+    total_input_tokens = response['prompt_eval_count']
+    print(f"reponse time: {(response['total_duration']/1e9)}")
 
-        if response.message.content:
-          print('Content: ')
-          print(response.message.content + '\n')
-          agent_messages.append(response.message.content)
-        if response.message.thinking:
-          print('Thinking: ')
-          print(response.message.thinking + '\n')
-          agent_messages.append(response.message.thinking)
+    if response.message.content:
+      print('Content: ')
+      print(response.message.content + '\n')
+      agent_messages.append(response.message.content)
+    if response.message.thinking:
+      print('Thinking: ')
+      print(response.message.thinking + '\n')
+      agent_messages.append(response.message.thinking)
 
-        messages.append(response.message)
-        if response.message.tool_calls:
-          for tool_call in response.message.tool_calls:
-            # LLM decides which function to call
-            function_to_call = available_tools.get(tool_call.function.name)
-            if function_to_call:
-              print(tool_call.function.arguments)
-              result = function_to_call(**tool_call.function.arguments)
-              print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
-              # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-              agent_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-              print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-              time_taken.append(time.time()-st_time)
-              new_crops = crops_parser(state["crops"])                
-              print(new_crops)
-              new_state = {
-                  "grid_size": [5, 5],
-                  "player_pos": state["player_pos"],
-                  "crops": new_crops,
-                  "obstacles": [250,100],
-                  "water_available":state["water_available"],
-                  "goal_completed": state["goal_completed"]
-              }
-              messages.append({
-                "role": "tool",
-                "content": json.dumps({
-                    "action_result": result,
-                    "current_state": new_state
-                }),
-                "tool_name": tool_call.function.name
-            })
+    messages.append(response.message)
+    if response.message.tool_calls:
+      for tool_call in response.message.tool_calls:
+        # LLM decides which function to call
+        function_to_call = available_tools.get(tool_call.function.name)
+        if function_to_call:
+          print("Executing tool instantly in Python:", tool_call.function.name)
+            
+          # 1. Execute instantly. (Network calls are sent to the queue inside the tool)
+          real_result_json = function_to_call(**tool_call.function.arguments)
+          print("tool result:")
+          print(real_result_json)
+          # 2. Parse the result back to a dict for the LLM context
+          # real_result = json.loads(real_result_json) if isinstance(real_result_json, str) else real_result_json
+          real_result = real_result_json
+            
+          # 3. Get the correct crop state (Make sure crops_parser logic is correct!)
+          new_crops = crops_parser(state["crops"])
+          new_state = {
+            "grid_size": [800, 600],
+            "player_pos": state["player_pos"],
+            "crops": new_crops,
+            "obstacles": state["obstacles"],
+            "water_available": state["water_available"],
+            "goal_completed": state["goal_completed"]
+            }
+        
+          # 5. Tell the LLM exactly what happened
+          messages.append({
+            "role": "tool",
+            "content": json.dumps({
+                "action_result": real_result,
+                "current_state": new_state
+            }),
+            "name": tool_call.function.name
+          })
 
-              print("new_state")
-              print(new_state)
-              player_positions.append(state["player_pos"])
-              new_state["task"] = new_content
-              new_task_state = new_state
-              response = requests.post(url, json=new_task_state, headers=headers)
-              print(response)
-            else:
-              print(f'Tool {tool_call.function.name} not found')
-              messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
-        elif state["goal_completed"]:
-          break
-        elif response.message.tool_calls == None:
-          print("LLm did not call the tools")
-          logger.error(f"LLm failed to call the tools: {str(e)}")
-          break
-except Exception as e:
-    logger.error(f"LLm failed due to error: {str(e)}")
-    logger.info(agent_messages)
+          # print("new_state")
+          # print(new_state)
+          # player_positions.append(state["player_pos"])
+          # new_state["task"] = new_content
+          # new_task_state = new_state
+          # response = requests.post(url, json=new_task_state, headers=headers)
+          # print(response)
+        else:
+          print(f'Tool {tool_call.function.name} not found')
+          messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+    elif state["goal_completed"]:
+      break
+    elif response.message.tool_calls == None:
+      print("LLm did not call the tools")
+      logger.error(f"LLm failed to call the tools")
+      break
+# except Exception as e:
+#     logger.error(f"LLm failed due to error: {str(e)}")
+#     print(f"LLm failed due to error: {str(e)}")
+#     logger.info(agent_messages)
 if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
 
-# if state["crops"].get(tuple([400,275]))["planted"]==True:
-#     points_gained+=1
-#     points_gained_object["plant_crop_1"] = 1
-# if state["crops"].get(tuple([400,275]))["needs_water"]==False:
-#     points_gained+=1
-#     points_gained_object["needs_water_1"] = 1
 
-# if state["crops"].get(tuple([300,200]))["planted"]==True:
-#     points_gained+=1
-#     points_gained_object["plant_crop_2"] = 1
-
-# if state["crops"].get(tuple([300,200]))["needs_water"]==False:
-#     points_gained+=1
-#     points_gained_object["needs_water_2"] = 1
 
 reset_crop = {}
 j = 0
@@ -503,47 +548,19 @@ for k,v in crops.items():
 reset_state = {
             "grid_size": [5, 5],
             "player_pos": [200,100],
-
             "crops": reset_crop,
-            # {
-            #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":True,"planted":False},
-            #     "crop2":{"pos":[300,200],"name":"rice","needs_water":True,"planted":False},
-            #     # "crop3":{"pos":[200,475],"needs_water":True,"planted":False},
-            #     # "crop4":{"pos":[150,300],"needs_water":True,"planted":False},
-            #     # "crop5":{"pos":[275,325],"needs_water":True,"planted":False}
-            # },
-            "obstacles": [250,100],
+            "obstacles": state["obstacles"][0],
             "water_available":False,
             "goal_completed": state["goal_completed"]
         }
+task_queue.put(reset_state)
 
-response = requests.post(url, json=reset_state, headers=headers)
+# response = requests.post(url, json=reset_state, headers=headers)
 
 
 
 print(time_taken)
 if len(time_taken)>0:
-    data = time_taken
-    mean = np.mean(data)
-    median = np.median(data)
-    variance = np.var(data)
-    std_dev = np.std(data)
-    min_val = np.min(data)
-    max_val = np.max(data)
-
-    stats = {
-        "mean": mean,
-        "median": median,
-        "variance": variance,
-        "std_dev": std_dev,
-        "min": min_val,
-        "max": max_val
-    }
-
-    normalized = (data - min_val) / (max_val - min_val)
-    z_scores = (data - mean) / std_dev
-
-
     print("No of llms calls:-")
     print(len(time_taken))
     logger.info(f"No of llms calls: {len(time_taken)}")
@@ -569,36 +586,3 @@ else:
     logger.info("llm tool failed") 
     print("llm tool failed")
 
-# plt.xlabel('llm call run')
-# plt.ylabel('time')
-# plt.title('llm processing time for each agentic all')
-# plt.show()
-
-
-def safe_execute(tool_call):
-    func = available_tools[tool_call.function.name]
-
-    args = tool_call.function.arguments
-
-    # validate before execution
-    print("ARGS:", args)
-
-    return func(**args)
-
-
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "water",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "crop_id": {"type": "integer"},
-                    "amount": {"type": "number"}
-                },
-                "required": ["crop_id", "amount"]
-            }
-        }
-    }
-]
