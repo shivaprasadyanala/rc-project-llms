@@ -123,14 +123,14 @@ def crops_parser(crops):
 # print(crops_parser(cro))
 
 # breakpoint()
-
+player_positions = []
 
 def api_call(current_state):
     # Parse crops and format the state
     # print("api call current_state")
     # print(current_state)
     new_crops = crops_parser(current_state["crops"])
-    
+    player_positions.append(current_state["player_pos"])
     # Create a deep copy so future LLM moves don't overwrite this data 
     # before the background thread has a chance to send it
     state_to_send = copy.deepcopy(current_state)
@@ -349,8 +349,9 @@ def api_worker():
     print("API worker started")
     while True:
         try:
+
             # 1. Try to get a task
-            state_snapshot = task_queue.get(timeout=30) 
+            state_snapshot = task_queue.get(timeout=45) 
             # print("state: "+str(state_snapshot) )
         except queue.Empty:
             print("No more tasks. Worker exiting.")
@@ -409,8 +410,7 @@ Water_tank:
 
 
 move 25pxs and one side at a time
-and not allowed to pass through the crop and crops are not obstacles.
-
+and not allowed to pass through the crops and water tank they are obstacles.
 Never output tool arguments as text, JSON, markdown, or code blocks.
 When an action is required, invoke the corresponding tool. 
 If a tool is available, emitting its arguments in text form is always incorrect.
@@ -440,10 +440,10 @@ model = config_data["model"]["name"]
 # a loop is needed to call the tools and get the results
 
 time_taken = []
-player_positions = []
 agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
+tool_calls = []
 # try:
 # needs_water_state1 = True
 # needs_water_state2 = True
@@ -475,11 +475,12 @@ while True:
         function_to_call = available_tools.get(tool_call.function.name)
         if function_to_call:
           print("Executing tool instantly in Python:", tool_call.function.name)
-            
           # 1. Execute instantly. (Network calls are sent to the queue inside the tool)
           real_result_json = function_to_call(**tool_call.function.arguments)
           print("tool result:")
           print(real_result_json)
+          tool_calls.append(tool_call.function.name)
+          time_taken.append(time.time()-st_time)
           # 2. Parse the result back to a dict for the LLM context
           # real_result = json.loads(real_result_json) if isinstance(real_result_json, str) else real_result_json
           real_result = real_result_json
@@ -505,9 +506,6 @@ while True:
             "name": tool_call.function.name
           })
 
-          # print("new_state")
-          # print(new_state)
-          # player_positions.append(state["player_pos"])
           # new_state["task"] = new_content
           # new_task_state = new_state
           # response = requests.post(url, json=new_task_state, headers=headers)
@@ -564,7 +562,12 @@ if len(time_taken)>0:
     print("No of llms calls:-")
     print(len(time_taken))
     logger.info(f"No of llms calls: {len(time_taken)}")
-
+    result = [tool_calls[0]]
+    for action in tool_calls[1:]:
+        if action != result[-1]:
+            result.append(action)
+    tool_calls_final = result
+    print("sequence of tool calls:"+ str(tool_calls_final))
 
     print("player positons:")
     print(player_positions)
@@ -575,7 +578,6 @@ if len(time_taken)>0:
     print(f"points gained object: {str(points_gained_object)}")
     logger.info(f"points gained object: {str(points_gained_object)}")
 
-    plt.plot(time_taken)
     logger.info(f"time taken values: {time_taken}")
     print("total input tokens: "+str(total_input_tokens))
     print("total output tokens: "+str(total_output_tokens))
