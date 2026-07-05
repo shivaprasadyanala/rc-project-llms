@@ -561,21 +561,6 @@ if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
 
-# if state["crops"].get(tuple([400,275]))["planted"]==True:
-#     points_gained+=1
-#     points_gained_object["plant_crop_1"] = 1
-# if state["crops"].get(tuple([400,275]))["needs_water"]==False:
-#     points_gained+=1
-#     points_gained_object["needs_water_1"] = 1
-
-# if state["crops"].get(tuple([300,200]))["planted"]==True:
-#     points_gained+=1
-#     points_gained_object["plant_crop_2"] = 1
-
-# if state["crops"].get(tuple([300,200]))["needs_water"]==False:
-#     points_gained+=1
-#     points_gained_object["needs_water_2"] = 1
-
 reset_crop = {}
 j = 0
 crops = state["crops"]
@@ -610,43 +595,9 @@ reset_state = {
 response = requests.post(url, json=reset_state, headers=headers)
 
 
-# def check_sequence(actual, correct):
-#     i = 0  # pointer for correct sequence
-
-#     for j, action in enumerate(actual):
-
-#         # if we've already exhausted correct sequence
-#         if i >= len(correct):
-#             return {
-#                 "valid": False,
-#                 "matched_until": j,
-#                 "reason": "Correct sequence already finished"
-#             }
-
-#         # match → advance correct pointer
-#         if action == correct[i]:
-#             i += 1
-#         else:
-#             # mismatch → stop immediately
-#             return {
-#                 "valid": False,
-#                 "matched_until": j,
-#                 "expected": correct[i],
-#                 "found": action
-#             }
-
-#     return {
-#         "valid": True,
-#         "matched_until": len(actual),
-#         "remaining_expected": correct[i:]
-#     }
 
 
-# # actual = ['move', 'move', 'move', 'plant_crop', 'move', 'move', 'water']
 
-# correct = ['move', 'collect_water', 'move', 'plant_crop', 'move', 'plant_crop']
-
-# print(check_sequence(tool_calls, correct))
 
 def check_sequence_details(actual, correct):
     matched_elements = []
@@ -676,7 +627,7 @@ def check_sequence_details(actual, correct):
 
 
 
-correct_seq = ['move', 'collect_water', 'move', 'plant_crop', 'move', 'plant_crop']
+correct_seq = ['move', 'collect_water', 'move', 'plant_crop','water', 'move', 'plant_crop','water']
 
 # print("--- Test sequence ---")
 # actual_1 = tool_calls
