@@ -732,6 +732,9 @@ if len(time_taken)>0:
         if action != result[-1]:
             result.append(action)
     tool_calls_final = result
+    print("--- Test sequence ---")
+    actual_1 = tool_calls_final
+    check_sequence_details(actual_1, correct_seq)
     print("sequence of tool calls:"+ str(tool_calls_final))
     logger.info("sequence of tool calls:"+ str(tool_calls_final))
     threshold = 25
