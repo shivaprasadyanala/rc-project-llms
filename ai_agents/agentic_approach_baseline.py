@@ -398,7 +398,7 @@ Water_tank:
 
 
 move 25pxs and one side at a time
-and not allowed to pass through the crop and crops are not obstacles.
+and not allowed to pass through the crop, water tank, they are obstacles.
 
 call only one tool at a time.
 Never output tool arguments as text, JSON, markdown, or code blocks.
@@ -449,7 +449,9 @@ try:
       # time.sleep(1)
       i+=1
       st_time = time.time()    
-      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
+      # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0})
+      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=False,options={"temperature": 0.0})
+
       print(f"input_tokens: {response['prompt_eval_count']}")
       print(f"output_tokens: {response['eval_count']}")
       total_output_tokens += response['eval_count']
