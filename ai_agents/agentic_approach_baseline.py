@@ -450,7 +450,7 @@ try:
       i+=1
       st_time = time.time()    
       # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0})
-      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=False,options={"temperature": 0.0})
+      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
 
       print(f"input_tokens: {response['prompt_eval_count']}")
       print(f"output_tokens: {response['eval_count']}")
@@ -557,9 +557,20 @@ try:
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
   logger.info(log_messages)
-if state["water_available"] == True:
-    points_gained +=1
-    points_gained_object["water_available"] = 1
+
+
+result = [tool_calls[0]]
+for action in tool_calls[1:]:
+    if action != result[-1]:
+        result.append(action)
+tool_calls_final = result
+
+if "collect_water" in tool_calls_final:
+    idx = tool_calls_final.index('collect_water')
+    value_before = tool_calls_final[idx - 1]
+    if value_before == "move" and state["water_available"] == True:
+        points_gained +=1
+        points_gained_object["water_available"] = 1
 
 reset_crop = {}
 j = 0
@@ -567,12 +578,19 @@ crops = state["crops"]
 for k,v in crops.items():
     j+=1    
     reset_crop[f"crop{j}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":True,"planted":False}
-    if crops.get(k)["planted"] == True:
-        points_gained_object[f"plant_crop_{j}"] = 1
-        points_gained+=1
-    if crops.get(k)["needs_water"] == False:
-        points_gained_object[f"needs_water_{j}"] = 1
-        points_gained+=1
+    if "plant_crop" in tool_calls_final:
+        idx = tool_calls_final.index('plant_crop')
+        value_before = tool_calls_final[idx - 1]
+        value_before2 = tool_calls_final[idx - 2]
+        if "move" in (value_before) and crops.get(k)["planted"] == True:
+            points_gained_object[f"plant_crop_{j}"] = 1
+            points_gained+=1
+    if "water" in tool_calls_final:
+        idx = tool_calls_final.index('water')
+        value_before = tool_calls_final[idx - 1]
+        if value_before in ("plant_crop", "move") and crops.get(k)["needs_water"] == False:
+            points_gained_object[f"needs_water_{j}"] = 1
+            points_gained+=1
 
 
 reset_state = {
@@ -677,13 +695,6 @@ if len(time_taken)>0:
     print("total output tokens: "+str(total_output_tokens))
     logger.info("total input tokens: "+str(total_input_tokens))
     logger.info("total output tokens: "+str(total_output_tokens))
-    
-    result = [tool_calls[0]]
-    for action in tool_calls[1:]:
-        if action != result[-1]:
-            result.append(action)
-    tool_calls_final = result
-    print("--- Test sequence ---")
     actual_1 = tool_calls_final
     check_sequence_details(actual_1, correct_seq)
     print("sequence of tool calls:"+ str(tool_calls_final))
