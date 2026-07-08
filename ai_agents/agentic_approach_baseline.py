@@ -10,6 +10,7 @@ import json
 import logging
 import yaml,os,sys
 from speech_to_text import audio_text
+import argparse
 logger = logging.getLogger(__name__)
 
 def read_config(file_path):
@@ -25,12 +26,31 @@ def read_config(file_path):
         sys.exit(1)
 config_data = read_config("config.yaml")
 
-log_file_name = config_data["log_file"]["name"]
-logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--model",
+    type=str,
+    required=True,
+    help="LLM model name"
+)
+args = parser.parse_args()
+model = args.model
+print(f"Running model: {model}")
+log_folder = "../../experiments/test_logs_baseline"
+os.makedirs(log_folder, exist_ok=True)
+
+# log_file_name = config_data["log_file"]["name"]
+log_file_name = f"baseline_{model}"
+f_log_file_name = log_file_name.replace(":","_").replace(".","_")
+formatted_log_file_name = f"{f_log_file_name}.log"
+
+log_file_folder_path = os.path.join(log_folder, formatted_log_file_name)
+
+logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
-logger.info("model_used_for_baseline: "+ config_data["model"]["name"])
+logger.info("model_used_for_baseline: "+ model)
 
 url = config_data["server_urls"]["game_state_url"]
 
@@ -425,7 +445,7 @@ client = Client(
 )
 
 # model = 'gpt-oss:20b'
-model = config_data["model"]["name"]
+# model = config_data["model"]["name"]
 # model = 'qwen3.5:27b'
 
 # gpt-oss can call tools while "thinking"
@@ -449,8 +469,8 @@ try:
       # time.sleep(1)
       i+=1
       st_time = time.time()    
-      # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0})
-      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=False,options={"temperature": 0.0})
+      # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0,"seed":42})
+      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
 
       print(f"input_tokens: {response['prompt_eval_count']}")
       print(f"output_tokens: {response['eval_count']}")
@@ -714,6 +734,14 @@ if len(time_taken)>0:
     print("no of revisits:")
     print(str(revisits))
     logger.info("no of revisits:"+ str(revisits))
+    crossed_obstacle = 0
+    for play_pos in player_positions:
+        if play_pos == state["obstacles"][0]:
+            crossed_obstacle+=1
+        if play_pos == state["water_tank"]:
+            crossed_obstacle+=1
+    print("crossed_obstacles:")
+    print(crossed_obstacle)
 
 else:
     logger.info(log_messages)
