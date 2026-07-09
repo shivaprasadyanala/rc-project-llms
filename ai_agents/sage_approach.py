@@ -52,7 +52,7 @@ headers = {"Content-Type": "application/json"}
 
 state = {
     "grid_size": (800, 600),
-    "player_pos": [300, 100], 
+    "player_pos": [200, 100], 
     "crops": {
         (400, 275): {"name":"wheat","planted":False,"needs_water": True},
         (300, 200): {"name":"rice","planted":False,"needs_water": True},
@@ -234,8 +234,8 @@ def plant_crop(x:int, y:int) -> str:
 
     if not crop:
         invalid_moves+=1
-        invalid_move_object["No crop here"] = invalid_move_object.get("No crop here", 0) + 1
-        return json.dumps({"status": "false", "message": "No crop here", "position": [x, y]})
+        invalid_move_object["No crop here."] = invalid_move_object.get("No crop here", 0) + 1
+        return json.dumps({"status": "false", "message": "wrong position to plant crop", "position": [x, y]})
 
     if crop["planted"]:
         invalid_move_object["Already planted"] = invalid_move_object.get("Already planted", 0) + 1
@@ -280,14 +280,85 @@ Move 25pxs and one side at a time. Not allowed to pass through crops or water ta
 Call only one tool at a time.
 Never output tool arguments as text, JSON, markdown, or code blocks.
 """
+client = Client(host=config_data["server_urls"]["ollama_url"], timeout=60)
+model = config_data["model"]["name"]
 
+reasoning_model = config_data["reasoning_model"]["name"]
 messages = [
     {'role':'system','content':system_message2},
     {'role': 'user', 'content': new_content}
 ]
 
-client = Client(host=config_data["server_urls"]["ollama_url"], timeout=60)
-model = config_data["model"]["name"]
+def consolidate_memory(client, model, memory_data, threshold=5):
+    """
+    Checks if memory exceeds the threshold. If so, uses the LLM to merge 
+    duplicate or overlapping lessons into generalized rules.
+    """
+    lessons = memory_data.get("lessons", [])
+    
+    if len(lessons) <= threshold:
+        return memory_data
+
+    logger.info("Memory threshold reached. Consolidating lessons...")
+    print("\n[SAGE] Consolidating and pruning redundant memories...")
+
+    # We provide explicit environment constraints so the LLM doesn't invent fake rules
+    prune_prompt = f"""
+    You are a memory optimizer for an AI farming agent. 
+    Below is a list of lessons the agent has learned from failing. Merge duplicate or overlapping lessons into single, generalized rules.
+    
+    CRITICAL GAME ENGINE RULES (Do not contradict these):
+    - The 'move' tool requires exactly 25px steps relative displacements. Valid pairs are only (0, -25), (0, 25), (-25, 0), or (25, 0).
+    - Diagonal moves are strictly forbidden.
+    - Absolute coordinates cannot be passed to the 'move' tool.
+    
+    Current Lessons to Consolidate:
+    {json.dumps(lessons, indent=2)}
+    
+    Your task:
+    1. Merge duplicates into generalized, accurate rules.
+    2. Keep the rules concise and actionable.
+    
+    Respond ONLY with a valid JSON array of strings representing the new consolidated rules.
+    Example output format:
+    [
+        "Rule 1 text here",
+        "Rule 2 text here"
+    ]
+    """
+
+    try:
+        response = client.chat(
+            model=model, 
+            messages=[{"role": "user", "content": prune_prompt}],
+            format="json" 
+        )
+        
+        raw_output = json.loads(response.message.content)
+        consolidated_lessons = []
+        
+        # Flexibly handle if the LLM returns a list directly, OR wraps it in a dict
+        if isinstance(raw_output, list):
+            consolidated_lessons = raw_output
+        elif isinstance(raw_output, dict):
+            # Grab the first list found in the dictionary keys (like 'rules' or 'lessons')
+            for key, val in raw_output.items():
+                if isinstance(val, list):
+                    consolidated_lessons = val
+                    break
+
+        if consolidated_lessons:
+            print(f"[SAGE] Successfully reduced {len(lessons)} lessons to {len(consolidated_lessons)} generalized rules.")
+            memory_data["lessons"] = consolidated_lessons
+            return memory_data
+        else:
+            logger.error(f"LLM output could not be parsed into a clean list. Raw: {raw_output}")
+            return memory_data
+
+    except Exception as e:
+        logger.error(f"Failed to consolidate memory due to error: {e}")
+        return memory_data
+
 
 time_taken = []
 player_positions = []
@@ -330,6 +401,8 @@ try:
                     player_positions.append(state["player_pos"])
                     print("tool call name:")
                     print(tool_call.function.name)
+                    print("tool call arguments:")
+                    print(tool_call.function.arguments)
                     # ==========================================
                     # SAGE: Reflection Generation on Failure
                     # ==========================================
@@ -343,11 +416,13 @@ try:
                             "Write a concise, 1-sentence rule so you don't make this exact mistake again in the future."
                         )
                         
-                        reflection_resp = client.chat(model=model, messages=[{"role": "user", "content": reflection_prompt}])
+                        reflection_resp = client.chat(model=reasoning_model, messages=[{"role": "user", "content": reflection_prompt}])
                         lesson = reflection_resp.message.content.strip()
                         
                         # Store in long term memory
                         sage_memory["lessons"].append(lesson)
+
+                        sage_memory = consolidate_memory(client, model, sage_memory, threshold=5)
                         save_memory(sage_memory)
                         
                         # Inject directly into short term memory (current episode context)
@@ -358,17 +433,18 @@ try:
                     # ==========================================
 
                     # State update formatting for server
-                    # p = 0
-                    # for k,v in crops.items():   
-                    #   p+=1
-                    #   if crops.get(k) != None:
-                    #     if state["player_pos"] == list(k):
-                    #       new_crops[f"crop{p}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
+                    crops = state["crops"]
+                    p = 0
+                    for k,v in crops.items():   
+                      p+=1
+                      if crops.get(k) != None:
+                        if state["player_pos"] == list(k):
+                          new_crops[f"crop{p}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
                 
                     new_state = {
                         "grid_size": [5, 5],
                         "player_pos": state["player_pos"],
-                        # "crops": new_crops,
+                        "crops": new_crops,
                         "obstacles": [250,100],
                         "water_available":state["water_available"],
                         "goal_completed": state["goal_completed"]
@@ -394,10 +470,11 @@ try:
             break
         elif response.message.tool_calls == None:
             messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
-            if len(messages) > 50: 
+            if len(messages) > 150: 
                 logger.error(f"Message limit reached, aborting to prevent infinite loop.")
                 break
 except Exception as e:
+    print("llm failed due to error: "+{str(e)})
     logger.error(f"LLm failed due to error: {str(e)}")
 
 # Remaining script logic (scoring, stats formatting, etc) goes here...
