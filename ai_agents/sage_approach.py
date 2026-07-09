@@ -367,11 +367,11 @@ total_output_tokens = 0
 total_input_tokens = 0
 tool_calls = []
 new_crops = {}
-
+llm_mistakes = 0
 try:
     new_crops = {}
     i = 0
-    while i < 50:
+    while i < 70:
         i += 1
         st_time = time.time()    
         
@@ -392,12 +392,38 @@ try:
                 function_to_call = available_tools.get(tool_call.function.name)
                 
                 if function_to_call:
-                    result = function_to_call(**tool_call.function.arguments)
-                    result_dict = json.loads(result)
-                    
-                    log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+                    is_failure = False
+                    error_reason = ""
+                    result_dict = {}
+
+                    # ==================================================
+                    # LOCALIZED TOOL CALL EXECUTION (Safeguard Against TypeErrors)
+                    # ==================================================
+                    try:
+                        result = function_to_call(**tool_call.function.arguments)
+                        result_dict = json.loads(result)
+                        
+                        # Check for logical validation failures
+                        if result_dict.get("status") in ["false", False]:
+                            is_failure = True
+                            error_reason = result_dict.get("message", "Logical rule violation")
+
+                    except TypeError as e:
+                        # This catches the model passing bad arguments like 'x' to water()
+                        is_failure = True
+                        error_reason = f"Invalid Tool Arguments! TypeError: {str(e)}"
+                        result_dict = {"status": "false", "message": error_reason}
+                        
+                    except Exception as e:
+                        # Catches any other unexpected runtime exceptions
+                        is_failure = True
+                        error_reason = f"Execution Error: {str(e)}"
+                        result_dict = {"status": "false", "message": error_reason}
+
+                    # Track analytics
+                    log_messages.append({'role': 'tool', 'content': json.dumps(result_dict), 'tool_name': tool_call.function.name})
                     tool_calls.append(tool_call.function.name)
-                    time_taken.append(time.time()-st_time)
+                    time_taken.append(time.time() - st_time)
                     player_positions.append(state["player_pos"])
                     print("tool call name:")
                     print(tool_call.function.name)
@@ -406,9 +432,10 @@ try:
                     # ==========================================
                     # SAGE: Reflection Generation on Failure
                     # ==========================================
-                    if result_dict.get("status") in ["false", False]:
-                        logger.info("Failure detected. Triggering SAGE Reflection.")
-                        error_reason = result_dict.get("message", "Unknown error")
+                    if result_dict.get("status") in ["false", False] or is_failure:
+                        llm_mistakes +=1
+                        logger.info(f"Failure detected ({error_reason}). Triggering SAGE Reflection.")
+                        print(f"\n[SAGE] Learning from error: {error_reason}")
                         
                         reflection_prompt = (
                             f"You attempted the action '{tool_call.function.name}' with arguments {tool_call.function.arguments}, "
@@ -467,14 +494,20 @@ try:
                     messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
                     
         elif state["goal_completed"]:
+            print("goal_completed")
             break
+        elif llm_mistakes == 10:
+            logger.error(f"llm mistakes limit reached")
+            print("llm mistakes limit reached")
+            break
+
         elif response.message.tool_calls == None:
             messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
             if len(messages) > 150: 
                 logger.error(f"Message limit reached, aborting to prevent infinite loop.")
                 break
 except Exception as e:
-    print("llm failed due to error: "+{str(e)})
+    print(f"llm failed due to error: {e}")
     logger.error(f"LLm failed due to error: {str(e)}")
 
 # Remaining script logic (scoring, stats formatting, etc) goes here...
