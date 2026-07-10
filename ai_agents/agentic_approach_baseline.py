@@ -10,6 +10,7 @@ import json
 import logging
 import yaml,os,sys
 from speech_to_text import audio_text
+from a_star_algo import astar
 logger = logging.getLogger(__name__)
 
 def read_config(file_path):
@@ -64,16 +65,10 @@ state = {
     "grid_size": (800, 600),
 
     # Player
-    "player_pos": [300, 100],  # use list for mutability
+    "player_pos": [200, 100],  # use list for mutability
 
     # Crops indexed by position
-    "crops": {
-        (400, 275): {"name":"wheat","planted":False,"needs_water": True},
-        (300, 200): {"name":"rice","planted":False,"needs_water": True},
-        # (200,475): {"name":"sugarcane","planted":False,"needs_water": True},
-        # (150,300): {"planted":False,"needs_water": True},
-        # (275,325): {"planted":False,"needs_water": True}
-    },
+    
 
     # Obstacles as a set for fast lookup
     "obstacles": [[250, 100]],
@@ -84,6 +79,13 @@ state = {
     "goal_completed": False
 }
 
+crops_object = {
+"crops": {
+        (400, 275): {"name":"wheat","is_planted":False,"needs_water": True},
+        (300, 200): {"name":"rice","is_planted":False,"needs_water": True},
+        # (200,475): {"name":"sugarcane","is_planted":False,"needs_water": True},
+    }}
+
 invalid_moves = 0
 revisits = 0
 visited = set()
@@ -93,11 +95,11 @@ def set_crop_state():
     """
     sets the water state of the crop
     """
-    crops = state["crops"]
+    crops = crops_object["crops"]
     is_goal_completed = False
     value = 0
     for crop in crops:
-      if  crops[crop[0],crop[1]]["planted"] == True and crops[crop[0],crop[1]]["needs_water"] == False:
+      if  crops[crop[0],crop[1]]["is_planted"] == True and crops[crop[0],crop[1]]["needs_water"] == False:
         value+=1
     print("value of goal completed:" + str(value))
     if value ==2:
@@ -123,7 +125,7 @@ def water()-> str:
     global invalid_moves,invalid_move_object
     pos = tuple(state["player_pos"])
     print(pos)
-    crop = state["crops"].get(pos)
+    crop = crops_object["crops"].get(pos)
     print(crop)
     if not crop:
         invalid_moves+=1
@@ -133,7 +135,7 @@ def water()-> str:
         "action":"water",
         "message": "no crop here"
         }
-    if not crop["planted"]:
+    if not crop["is_planted"]:
         invalid_moves+=1
         invalid_move_object["crop not planted"] = invalid_move_object.get("crop not planted", 0) + 1
         return {
@@ -189,12 +191,12 @@ def collect_water()-> str:
     if new_x != water_tank[0] or new_y != water_tank[1]:
         invalid_moves +=1
         invalid_move_object["no water tank here"] = invalid_move_object.get("no water tank here", 0) + 1
-        {
+        return json.dumps({
         "status":"false",
         "action":"collect water",
         "message":"no water tank here",
         "water_available": state["water_available"]
-        }
+        })
 
     # water_tank_y = state["water_tank"][1]
     state["water_available"] = True
@@ -212,7 +214,8 @@ def collect_water()-> str:
 def crops_to_text(crops):
     lines = []
     for pos, info in crops.items():
-      lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+        # Added name and is_planted to the prompt output
+        lines.append(f"- {pos}: {info['name']} (is_planted = {info['is_planted']}, needs_water = {info['needs_water']})")
     return "\n".join(lines)
 
 def move(dx:int, dy:int)-> str:
@@ -312,12 +315,12 @@ def plant_crop(x:int, y:int)-> str:
             "status": true/false,
             "action": "plant_crop",
             "position": [x, y],
-            "planted": true/false,
+            "is_planted": true/false,
             "error": optional string
         }
     """
     global invalid_moves,invalid_move_object
-    crop = state["crops"].get((x, y))
+    crop = crops_object["crops"].get((x, y))
 
     if not crop:
         invalid_moves+=1
@@ -328,7 +331,7 @@ def plant_crop(x:int, y:int)-> str:
             "position": [x, y]
         })
 
-    if crop["planted"]:
+    if crop["is_planted"]:
         invalid_move_object["Already planted"] = invalid_move_object.get("Already planted", 0) + 1
         invalid_moves+=1
         return json.dumps({
@@ -337,13 +340,13 @@ def plant_crop(x:int, y:int)-> str:
             "position": [x, y]
         })
 
-    crop["planted"] = True
+    crop["is_planted"] = True
 
     return json.dumps({
         "status": True,
         "action": "plant_crop",
         "position": [x, y],
-        "planted": True
+        "is_planted": True
     })
 # tool_call = response.message.tool_calls[0]
 
@@ -370,9 +373,11 @@ system_message2 = f"""
 you are smart farm game agent.
 
 Your task:
-1. planting the crops by going to the given coordinates.
-2. Water needs to collected to plant water.
-3. Reach the water tank to collect water.
+You have access to tools that let you move and interact with the world.
+When the user gives a task, determine whether the task is already satisfied using the current world state.
+If no task is provided, do nothing.
+Only perform actions that are necessary to accomplish the user's requested task.
+Think step-by-step.
 
 IMPORTANT.
  check if the crops are planted.
@@ -385,8 +390,8 @@ CURRENT STATE (authoritative):
 Grid size: {state['grid_size']}
 Player position: {tuple(state['player_pos'])}
   
-Crops:
-{crops_to_text(state['crops'])}
+Crops to planted:
+{crops_to_text(crops_object['crops'])}
 
 Obstacles:
 {list(state['obstacles'])}
@@ -409,7 +414,8 @@ Tools available:
 {available_tools}
 
 """
-
+# new_content = " oh wheat crop is drying up"
+new_content = "water the crops"
 messages = [
 {'role':'system','content':system_message2},
  # {'role': 'user', 'content': 'go to all crops and water them'}
@@ -438,6 +444,7 @@ total_output_tokens = 0
 total_input_tokens = 0
 
 tool_calls = []
+
 try:
   # needs_water_state1 = True
   # needs_water_state2 = True
@@ -449,8 +456,8 @@ try:
       # time.sleep(1)
       i+=1
       st_time = time.time()    
-      # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0})
-      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=False,options={"temperature": 0.0})
+      # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0,"seed":42})
+      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
 
       print(f"input_tokens: {response['prompt_eval_count']}")
       print(f"output_tokens: {response['eval_count']}")
@@ -486,7 +493,7 @@ try:
             print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
             tool_calls.append(tool_call.function.name)
             time_taken.append(time.time()-st_time)
-            crops = state["crops"]
+            crops = crops_object["crops"]
             # if crops.get(tuple(state["player_pos"])) != None:
             #     if state["player_pos"] == [400,275]:
             #         needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
@@ -497,16 +504,17 @@ try:
             #     print(needs_water_state1,needs_water_state2)
             #     print(crop_planted1,crop_planted2)
             
+            # Replace your existing 'for k,v in crops.items():' block inside the while loop with this:
+            new_crops = {}
             i = 0
-            for k,v in crops.items():   
-              i+=1
-              if crops.get(k) != None:
-                if state["player_pos"] == list(k):
-                  new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
-                # else:
-                  # print(k)
-                  # print(state["player_pos"])
-                  # print("wrong position")
+            for k, v in crops.items():   
+                i += 1
+                new_crops[f"crop{i}"] = {
+                    "pos": list(k),
+                    "name": v["name"],
+                    "needs_water": v["needs_water"],
+                    "is_planted": v["is_planted"]
+                }
             print(new_crops)
             new_state = {
                 "grid_size": [5, 5],
@@ -548,12 +556,12 @@ try:
       #   break
       elif response.message.tool_calls == None:
         print("LLM did not call tools but goal is not complete.")
-        messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
-        # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
-        if len(messages) > 50: 
-            print("Message limit reached, aborting to prevent infinite loop.")
-            logger.error(f"Message limit reached, aborting to prevent infinite loop.")
-            break
+        # messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
+        # # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
+        # if len(messages) > 50: 
+        #     print("Message limit reached, aborting to prevent infinite loop.")
+        #     logger.error(f"Message limit reached, aborting to prevent infinite loop.")
+        break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
   logger.info(log_messages)
@@ -563,11 +571,11 @@ if state["water_available"] == True:
 
 reset_crop = {}
 j = 0
-crops = state["crops"]
+crops = crops_object["crops"]
 for k,v in crops.items():
     j+=1    
-    reset_crop[f"crop{j}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":True,"planted":False}
-    if crops.get(k)["planted"] == True:
+    reset_crop[f"crop{j}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":True,"is_planted":False}
+    if crops.get(k)["is_planted"] == True:
         points_gained_object[f"plant_crop_{j}"] = 1
         points_gained+=1
     if crops.get(k)["needs_water"] == False:
@@ -623,39 +631,24 @@ def check_sequence_details(actual, correct):
     # If it finishes the loop, it's a perfect prefix match
     print(f"Result: CORRECT")
     print(f" -> Matched until: {matched_elements}")
-    return True, matched_elements
+    return True,matched_elements
 
 
 
 correct_seq = ['move', 'collect_water', 'move', 'plant_crop','water', 'move', 'plant_crop','water']
 
-# print("--- Test sequence ---")
-# actual_1 = tool_calls
-# check_sequence_details(actual_1, correct_seq)
+def compute_similarity(list1, list2):
+    common = len(set(list1) & set(list2))
+    return common / len(list2) 
 
+def find_optimal_path():
+    starts = [[200,100],[75,250],[300,200]]
+    goals = [[75,250],[300,200],[400,275]]
+    obstacle = state["obstacles"]
+    return len(astar(starts[0],goals[0],obstacle)) + len(astar(starts[1],goals[1],obstacle))+len(astar(starts[2],goals[2],obstacle))
 
 print(time_taken)
 if len(time_taken)>0:
-    data = time_taken
-    mean = np.mean(data)
-    median = np.median(data)
-    variance = np.var(data)
-    std_dev = np.std(data)
-    min_val = np.min(data)
-    max_val = np.max(data)
-
-    stats = {
-        "mean": mean,
-        "median": median,
-        "variance": variance,
-        "std_dev": std_dev,
-        "min": min_val,
-        "max": max_val
-    }
-
-    normalized = (data - min_val) / (max_val - min_val)
-    z_scores = (data - mean) / std_dev
-
 
     print("No of llms calls:-")
     print(len(time_taken))
@@ -685,7 +678,7 @@ if len(time_taken)>0:
     tool_calls_final = result
     print("--- Test sequence ---")
     actual_1 = tool_calls_final
-    check_sequence_details(actual_1, correct_seq)
+    is_matched,matched_sequence = check_sequence_details(actual_1, correct_seq)
     print("sequence of tool calls:"+ str(tool_calls_final))
     logger.info("sequence of tool calls:"+ str(tool_calls_final))
     threshold = 25
@@ -700,6 +693,12 @@ if len(time_taken)>0:
         if abs(x2 - x1) > threshold or abs(y2 - y1) > threshold:
             jumps +=1
             print(f"Jump > {threshold}px: {points[i]} -> {points[i+1]}")
+
+    obs = 0
+    for pp in player_positions:
+        if state["obstacles"][0] == pp:
+            obs += 1 
+    invalid_moves+=obs
     print("game character jumps:"+ str(jumps))
     logger.info("game character jumps:"+ str(jumps))
     invalid_moves+=jumps
@@ -713,43 +712,41 @@ if len(time_taken)>0:
     logger.info("game character jumps:"+ str(jumps))
     print("no of revisits:")
     print(str(revisits))
+    revisit_rate = revisits/len(player_positions)
     logger.info("no of revisits:"+ str(revisits))
+    success_rate = 0
+    if points_gained > 0:
+        success_rate = 1
+    print("success_rate:")
+    print(success_rate)
+
+    a1 = list(set(tool_calls_final))
+    a2 = ['move', 'collect_water','plant_crop','water']
+
+    tool_call_accuracy = compute_similarity(a1.copy(),a2.copy())
+    print("tool tool_call_accuracy:")
+    print(tool_call_accuracy)
+    print(a1,a2)
+
+    optimal_path_length = find_optimal_path()
+
+    nav_efficiency = len(player_positions)/optimal_path_length
+    new_nav_efficieny = nav_efficiency
+    if nav_efficiency > 1:
+        new_nav_efficieny = 1 / nav_efficiency
+    print("navigation efficiency:")
+    print(new_nav_efficieny)
+
+    final_score =  (0.50 * success_rate) + (0.20 * tool_call_accuracy) + (0.15 * nav_efficiency) + (0.10 * (1 - invalid_move_rate)) + (0.05 * (1 - revisit_rate))
+
+    print("final_score:")
+    print(final_score)
 
 else:
     logger.info(log_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
 
-# plt.xlabel('llm call run')
-# plt.ylabel('time')
-# plt.title('llm processing time for each agentic all')
-# plt.show()
 
 
-def safe_execute(tool_call):
-    func = available_tools[tool_call.function.name]
 
-    args = tool_call.function.arguments
-
-    # validate before execution
-    print("ARGS:", args)
-
-    return func(**args)
-
-
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "water",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "crop_id": {"type": "integer"},
-                    "amount": {"type": "number"}
-                },
-                "required": ["crop_id", "amount"]
-            }
-        }
-    }
-]
