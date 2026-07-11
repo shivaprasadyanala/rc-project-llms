@@ -548,12 +548,12 @@ try:
       #   break
       elif response.message.tool_calls == None:
         print("LLM did not call tools but goal is not complete.")
-        messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
-        # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
-        if len(messages) > 50: 
-            print("Message limit reached, aborting to prevent infinite loop.")
-            logger.error(f"Message limit reached, aborting to prevent infinite loop.")
-            break
+        # messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
+        # # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
+        # if len(messages) > 50: 
+        #     print("Message limit reached, aborting to prevent infinite loop.")
+        #     logger.error(f"Message limit reached, aborting to prevent infinite loop.")
+        break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
   logger.info(log_messages)
