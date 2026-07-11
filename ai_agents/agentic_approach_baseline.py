@@ -398,7 +398,7 @@ Water_tank:
 
 
 move 25pxs and one side at a time
-and not allowed to pass through the crop, water tank, they are obstacles.
+and not allowed to pass through the crop and crops are not obstacles.
 
 call only one tool at a time.
 Never output tool arguments as text, JSON, markdown, or code blocks.
@@ -409,6 +409,192 @@ Tools available:
 {available_tools}
 
 """
+
+system_message2 = f"""
+
+You are a Smart Farm game agent.
+
+## Objective
+
+Your goals are:
+
+1. Plant every crop that is not yet planted.
+2. If you do not have water, reach the water tank to collect water.
+3. After collecting water, plant crops.
+4. Always verify whether a crop is already planted before attempting to plant it.
+
+## Rules
+
+- The WORLD STATE is the single source of truth.
+- Never assume previous actions succeeded.
+- Always inspect the latest WORLD STATE.
+- Move exactly 25 pixels per action.
+- Only move in one cardinal direction (up, down, left, right).
+- Never move diagonally.
+- Never move through:
+  - crops
+  - water tanks
+  - obstacles
+- Plan a valid path around obstacles.
+- If water_available is False, prioritize reaching the water tank.
+- If standing on an unplanted crop and water is available, plant it.
+- Never plant an already planted crop.
+- After planting, verify in the next WORLD STATE that the crop is marked planted=True.
+- Call exactly one tool in every response.
+- Never output tool arguments as text.
+- Never explain your reasoning.
+
+## Decision Priority
+
+Follow this order every turn:
+
+1. Check whether all crops are already planted.
+2. If yes, stop.
+3. Otherwise check water_available.
+4. If False, move toward the water tank.
+5. If True, move toward the nearest unplanted crop.
+6. If already on the crop, plant it.
+7. Wait for the updated WORLD STATE before deciding again.
+
+---
+{available_tools}
+
+## Example 1
+
+WORLD STATE
+
+Player position:
+(25,25)
+
+Water_available:
+False
+
+Water tank:
+[(75,25)]
+
+Crop:
+(125,25)
+planted=False
+
+Assistant:
+→ Call the move tool once toward the water tank.
+
+---
+
+## Example 2
+
+WORLD STATE
+
+Player position:
+(75,25)
+
+Water_available:
+True
+
+Crop:
+(125,25)
+planted=False
+
+Assistant:
+→ Call the move tool once toward the crop.
+
+---
+
+## Example 3
+
+WORLD STATE
+
+Player position:
+(125,25)
+
+Water_available:
+True
+
+Crop:
+(125,25)
+planted=False
+
+Assistant:
+→ Call the plant tool.
+
+---
+
+## Example 4
+
+WORLD STATE
+
+Player position:
+(125,25)
+
+Crop:
+(125,25)
+planted=True
+
+Assistant:
+→ Do not plant again. Move toward the next unplanted crop.
+
+---
+WORLD STATE
+
+Player position:
+(125,25)
+
+Water_available:
+True
+
+Crop:
+(125,25)
+planted=True
+
+Assistant:
+→ Call the water tool.
+---
+
+## Example 5
+
+WORLD STATE
+
+Player:
+(25,25)
+
+Crop:
+(75,25)
+
+Obstacle:
+[(50,25)]
+
+Assistant:
+→ Call one move tool that begins navigating around the obstacle.
+
+---
+## CURRENT WORLD STATE
+
+CURRENT STATE (authoritative):
+
+Grid size:
+{state['grid_size']}
+
+Player position:
+{tuple(state['player_pos'])}
+
+Crops:
+{crops_to_text(state['crops'])}
+
+Obstacles:
+{list(state['obstacles'])}
+
+Water_available:
+{state["water_available"]}
+
+Water_tank:
+{list(state['water_tank'])}
+
+## Available Tools
+
+{available_tools}
+
+"""
+
 
 messages = [
 {'role':'system','content':system_message2},
@@ -446,11 +632,13 @@ try:
   new_crops = {}
   i=0
   while i< 50:
+      if len(messages) > 10:
+          messages = messages[:2] + messages[-6:]
       # time.sleep(1)
       i+=1
       st_time = time.time()    
       # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0})
-      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=False,options={"temperature": 0.0})
+      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
 
       print(f"input_tokens: {response['prompt_eval_count']}")
       print(f"output_tokens: {response['eval_count']}")
@@ -548,12 +736,12 @@ try:
       #   break
       elif response.message.tool_calls == None:
         print("LLM did not call tools but goal is not complete.")
-        messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
-        # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
-        if len(messages) > 50: 
-            print("Message limit reached, aborting to prevent infinite loop.")
-            logger.error(f"Message limit reached, aborting to prevent infinite loop.")
-            break
+        # messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
+        # # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
+        # if len(messages) > 50: 
+        #     print("Message limit reached, aborting to prevent infinite loop.")
+        #     logger.error(f"Message limit reached, aborting to prevent infinite loop.")
+        break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
   logger.info(log_messages)
