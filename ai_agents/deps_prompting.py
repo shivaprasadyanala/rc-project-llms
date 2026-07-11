@@ -10,6 +10,7 @@ import json
 import logging
 import yaml,os,sys
 from speech_to_text import audio_text
+import argparse
 logger = logging.getLogger(__name__)
 
 def read_config(file_path):
@@ -25,8 +26,27 @@ def read_config(file_path):
         sys.exit(1)
 config_data = read_config("config.yaml")
 
-log_file_name = config_data["log_file"]["name"]
-logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--model",
+    type=str,
+    required=True,
+    help="LLM model name"
+)
+args = parser.parse_args()
+model = args.model
+print(f"Running model: {model}")
+log_folder = "../../experiments/test_logs_baseline"
+os.makedirs(log_folder, exist_ok=True)
+
+# log_file_name = config_data["log_file"]["name"]
+log_file_name = f"baseline_{model}"
+f_log_file_name = log_file_name.replace(":","_").replace(".","_")
+formatted_log_file_name = f"{f_log_file_name}.log"
+
+log_file_folder_path = os.path.join(log_folder, formatted_log_file_name)
+
+logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
@@ -236,6 +256,27 @@ def move(dx:int, dy:int)-> str:
     new_y = state["player_pos"][1] + int(dy)
 
     # Bounds check
+    if int(dx) > 0 and int(dy) > 0:
+        invalid_moves+=1
+        invalid_move_object["diagonal_move"] = invalid_move_object.get("diagonal_move", 0) + 1
+        return json.dumps({
+        "status":"false",
+        "action":"move",
+        "player_pos": state["player_pos"],
+        "error":"diagonal move not allowed"
+        })
+        
+    VALID_PAIRS = {(0, -25), (0, 25), (-25, 0),(25, 0)}
+    if (dx,dy) not in VALID_PAIRS:
+        invalid_moves+=1
+        invalid_move_object["move tool argument values are not 25px"] = invalid_move_object.get("move tool argument values are not 25px", 0) + 1
+        return json.dumps({
+        "status":"false",
+        "action":"move",
+        "player_pos": state["player_pos"],
+        "error":"invalid tool argument values check the rules again."
+        })
+
     if not (0 <= new_x < state["grid_size"][0] and
             0 <= new_y < state["grid_size"][1]):
         invalid_moves+=1
