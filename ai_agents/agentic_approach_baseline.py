@@ -10,6 +10,7 @@ import json
 import logging
 import yaml,os,sys
 from speech_to_text import audio_text
+import argparse
 logger = logging.getLogger(__name__)
 
 def read_config(file_path):
@@ -25,12 +26,31 @@ def read_config(file_path):
         sys.exit(1)
 config_data = read_config("config.yaml")
 
-log_file_name = config_data["log_file"]["name"]
-logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--model",
+    type=str,
+    required=True,
+    help="LLM model name"
+)
+args = parser.parse_args()
+model = args.model
+print(f"Running model: {model}")
+log_folder = "../../experiments/test_logs_baseline"
+os.makedirs(log_folder, exist_ok=True)
+
+# log_file_name = config_data["log_file"]["name"]
+log_file_name = f"baseline_{model}"
+f_log_file_name = log_file_name.replace(":","_").replace(".","_")
+formatted_log_file_name = f"{f_log_file_name}.log"
+
+log_file_folder_path = os.path.join(log_folder, formatted_log_file_name)
+
+logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
-logger.info("model_used_for_baseline: "+ config_data["model"]["name"])
+logger.info("model_used_for_baseline: "+ model)
 
 url = config_data["server_urls"]["game_state_url"]
 
@@ -76,9 +96,9 @@ state = {
     },
 
     # Obstacles as a set for fast lookup
-    "obstacles": {(250, 100)},
+    "obstacles": [[250, 100]],
     "water_available":False,
-    "water_tank":{(75,250)},
+    "water_tank":[75,250],
 
     # Goal tracking
     "goal_completed": False
@@ -97,10 +117,10 @@ def set_crop_state():
     is_goal_completed = False
     value = 0
     for crop in crops:
-      if crops[crop[0],crop[1]]["needs_water"] == False:
+      if  crops[crop[0],crop[1]]["planted"] == True and crops[crop[0],crop[1]]["needs_water"] == False:
         value+=1
     print("value of goal completed:" + str(value))
-    if value ==3:
+    if value ==2:
         state["goal_completed"]= True
     return state["goal_completed"]
 
@@ -127,7 +147,7 @@ def water()-> str:
     print(crop)
     if not crop:
         invalid_moves+=1
-        invalid_move_object["no crop"] +=1
+        invalid_move_object["no crop"] = invalid_move_object.get("no crop", 0) + 1
         return {
         "status":"false",
         "action":"water",
@@ -135,7 +155,7 @@ def water()-> str:
         }
     if not crop["planted"]:
         invalid_moves+=1
-        invalid_move_object["crop not planted"] +=1
+        invalid_move_object["crop not planted"] = invalid_move_object.get("crop not planted", 0) + 1
         return {
         "status":"false",
         "action":"water",
@@ -145,7 +165,7 @@ def water()-> str:
     if not crop["needs_water"]:
         invalid_moves+=1
         # return "Crop already watered"
-        invalid_move_object["crop already watered"] +=1
+        invalid_move_object["crop already watered"] = invalid_move_object.get("crop already watered", 0) + 1
         return {
         "status":"false",
         "action":"water",
@@ -161,8 +181,7 @@ def water()-> str:
         "action":"water",
         "message": "crop watered successfully"
         })
-# water()
-# breakpoint()
+
 
 def collect_water()-> str:
     """
@@ -185,10 +204,11 @@ def collect_water()-> str:
     new_x = state["player_pos"][0]
     new_y = state["player_pos"][1]
 
-    water_tank = list(state["water_tank"])[0]
+    water_tank = (state["water_tank"])
+    print(water_tank)
     if new_x != water_tank[0] or new_y != water_tank[1]:
         invalid_moves +=1
-        invalid_move_object["no water tank here"] +=1
+        invalid_move_object["no water tank here"] = invalid_move_object.get("no water tank here", 0) + 1
         {
         "status":"false",
         "action":"collect water",
@@ -205,6 +225,8 @@ def collect_water()-> str:
         "message":"water collected successfully",
         "water_available": state["water_available"]
     })
+
+
 
 
 def crops_to_text(crops):
@@ -236,10 +258,30 @@ def move(dx:int, dy:int)-> str:
     new_y = state["player_pos"][1] + int(dy)
 
     # Bounds check
+    if int(dx) > 0 and int(dy) > 0:
+        invalid_moves+=1
+        invalid_move_object["diagonal_move"] = invalid_move_object.get("diagonal_move", 0) + 1
+        return json.dumps({
+        "status":"false",
+        "action":"move",
+        "player_pos": state["player_pos"],
+        "error":"diagonal move not allowed"
+        })
+    VALID_PAIRS = {(0, -25), (0, 25), (-25, 0),(25, 0)}
+    if (dx,dy) not in VALID_PAIRS:
+        invalid_moves+=1
+        invalid_move_object["move tool argument values are not 25px"] = invalid_move_object.get("move tool argument values are not 25px", 0) + 1
+        return json.dumps({
+        "status":"false",
+        "action":"move",
+        "player_pos": state["player_pos"],
+        "error":"invalid tool argument values check the rules again."
+        })
     if not (0 <= new_x < state["grid_size"][0] and
             0 <= new_y < state["grid_size"][1]):
         invalid_moves+=1
-        invalid_move_object["out of bounds"] +=1
+        invalid_move_object["out of bounds"] = invalid_move_object.get("out of bounds", 0) + 1
+
         return json.dumps({
         "status":"false",
         "action":"move",
@@ -250,7 +292,7 @@ def move(dx:int, dy:int)-> str:
     # Obstacle check
     if (new_x, new_y) in state["obstacles"]:
         invalid_moves+=1
-        invalid_move_object["blocked obstacle"] +=1
+        invalid_move_object["blocked obstacle"] = invalid_move_object.get("blocked obstacle", 0) + 1
         return json.dumps({
         "status":"false",
         "action":"move",
@@ -276,6 +318,7 @@ def move(dx:int, dy:int)-> str:
         })
 
 
+
 def plant_crop(x:int, y:int)-> str:
     """
     Plant a crop at the given grid coordinate (x,y).
@@ -298,7 +341,7 @@ def plant_crop(x:int, y:int)-> str:
 
     if not crop:
         invalid_moves+=1
-        invalid_move_object["No crop here"] +=1
+        invalid_move_object["No crop here"] = invalid_move_object.get("No crop here", 0) + 1
         return json.dumps({
             "status": False,
             "error": "No crop here",
@@ -306,7 +349,7 @@ def plant_crop(x:int, y:int)-> str:
         })
 
     if crop["planted"]:
-        invalid_move_object["Already planted"] +=1
+        invalid_move_object["Already planted"] = invalid_move_object.get("Already planted", 0) + 1
         invalid_moves+=1
         return json.dumps({
             "status": False,
@@ -375,7 +418,7 @@ Water_tank:
 
 
 move 25pxs and one side at a time
-and not allowed to pass through the crop and crops are not obstacles.
+and not allowed to pass through the crop, water tank, they are obstacles.
 
 call only one tool at a time.
 Never output tool arguments as text, JSON, markdown, or code blocks.
@@ -402,7 +445,7 @@ client = Client(
 )
 
 # model = 'gpt-oss:20b'
-model = config_data["model"]["name"]
+# model = config_data["model"]["name"]
 # model = 'qwen3.5:27b'
 
 # gpt-oss can call tools while "thinking"
@@ -426,7 +469,9 @@ try:
       # time.sleep(1)
       i+=1
       st_time = time.time()    
+      # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0,"seed":42})
       response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
+
       print(f"input_tokens: {response['prompt_eval_count']}")
       print(f"output_tokens: {response['eval_count']}")
       total_output_tokens += response['eval_count']
@@ -517,31 +562,24 @@ try:
             messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
       elif state["goal_completed"]:
         break
+      # elif response.message.tool_calls == None:
+      #   print("LLm did not call the tools")
+      #   logger.error(f"LLm failed to call the tools: {str(e)}")
+      #   break
       elif response.message.tool_calls == None:
-        print("LLm did not call the tools")
-        logger.error(f"LLm failed to call the tools: {str(e)}")
-        break
+        print("LLM did not call tools but goal is not complete.")
+        messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
+        # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
+        if len(messages) > 50: 
+            print("Message limit reached, aborting to prevent infinite loop.")
+            logger.error(f"Message limit reached, aborting to prevent infinite loop.")
+            break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
   logger.info(log_messages)
 if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
-
-# if state["crops"].get(tuple([400,275]))["planted"]==True:
-#     points_gained+=1
-#     points_gained_object["plant_crop_1"] = 1
-# if state["crops"].get(tuple([400,275]))["needs_water"]==False:
-#     points_gained+=1
-#     points_gained_object["needs_water_1"] = 1
-
-# if state["crops"].get(tuple([300,200]))["planted"]==True:
-#     points_gained+=1
-#     points_gained_object["plant_crop_2"] = 1
-
-# if state["crops"].get(tuple([300,200]))["needs_water"]==False:
-#     points_gained+=1
-#     points_gained_object["needs_water_2"] = 1
 
 reset_crop = {}
 j = 0
@@ -577,43 +615,9 @@ reset_state = {
 response = requests.post(url, json=reset_state, headers=headers)
 
 
-# def check_sequence(actual, correct):
-#     i = 0  # pointer for correct sequence
-
-#     for j, action in enumerate(actual):
-
-#         # if we've already exhausted correct sequence
-#         if i >= len(correct):
-#             return {
-#                 "valid": False,
-#                 "matched_until": j,
-#                 "reason": "Correct sequence already finished"
-#             }
-
-#         # match → advance correct pointer
-#         if action == correct[i]:
-#             i += 1
-#         else:
-#             # mismatch → stop immediately
-#             return {
-#                 "valid": False,
-#                 "matched_until": j,
-#                 "expected": correct[i],
-#                 "found": action
-#             }
-
-#     return {
-#         "valid": True,
-#         "matched_until": len(actual),
-#         "remaining_expected": correct[i:]
-#     }
 
 
-# # actual = ['move', 'move', 'move', 'plant_crop', 'move', 'move', 'water']
 
-# correct = ['move', 'collect_water', 'move', 'plant_crop', 'move', 'plant_crop']
-
-# print(check_sequence(tool_calls, correct))
 
 def check_sequence_details(actual, correct):
     matched_elements = []
@@ -643,7 +647,7 @@ def check_sequence_details(actual, correct):
 
 
 
-correct_seq = ['move', 'collect_water', 'move', 'plant_crop', 'move', 'plant_crop']
+correct_seq = ['move', 'collect_water', 'move', 'plant_crop','water', 'move', 'plant_crop','water']
 
 # print("--- Test sequence ---")
 # actual_1 = tool_calls
@@ -693,8 +697,17 @@ if len(time_taken)>0:
     print("total output tokens: "+str(total_output_tokens))
     logger.info("total input tokens: "+str(total_input_tokens))
     logger.info("total output tokens: "+str(total_output_tokens))
-    print("sequence of tool calls:"+ str(tool_calls))
-    logger.info("sequence of tool calls:"+ str(tool_calls))
+    
+    result = [tool_calls[0]]
+    for action in tool_calls[1:]:
+        if action != result[-1]:
+            result.append(action)
+    tool_calls_final = result
+    print("--- Test sequence ---")
+    actual_1 = tool_calls_final
+    check_sequence_details(actual_1, correct_seq)
+    print("sequence of tool calls:"+ str(tool_calls_final))
+    logger.info("sequence of tool calls:"+ str(tool_calls_final))
     threshold = 25
     points = player_positions
 
@@ -721,6 +734,14 @@ if len(time_taken)>0:
     print("no of revisits:")
     print(str(revisits))
     logger.info("no of revisits:"+ str(revisits))
+    crossed_obstacle = 0
+    for play_pos in player_positions:
+        if play_pos == state["obstacles"][0]:
+            crossed_obstacle+=1
+        if play_pos == state["water_tank"]:
+            crossed_obstacle+=1
+    print("crossed_obstacles:")
+    print(crossed_obstacle)
 
 else:
     logger.info(log_messages)
