@@ -22,7 +22,7 @@ for model in models:
         subprocess.run(
             [
                 sys.executable,
-                "agentic_approach_baseline.py",
+                "deps_prompting.py",
                 "--model",
                 model
             ],
