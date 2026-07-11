@@ -84,7 +84,7 @@ state = {
     "grid_size": (800, 600),
 
     # Player
-    "player_pos": [300, 100],  # use list for mutability
+    "player_pos": [200, 100],  # use list for mutability
 
     # Crops indexed by position
     "crops": {
@@ -117,10 +117,10 @@ def set_crop_state():
     is_goal_completed = False
     value = 0
     for crop in crops:
-      if crops[crop[0],crop[1]]["needs_water"] == False:
+      if crops[crop[0],crop[1]]["needs_water"] == False and crops[crop[0],crop[1]]["needs_water"] == False:
         value+=1
     print("value of goal completed:" + str(value))
-    if value ==3:
+    if value ==2:
         state["goal_completed"]= True
     return state["goal_completed"]
 
@@ -265,7 +265,7 @@ def move(dx:int, dy:int)-> str:
         "player_pos": state["player_pos"],
         "error":"diagonal move not allowed"
         })
-        
+
     VALID_PAIRS = {(0, -25), (0, 25), (-25, 0),(25, 0)}
     if (dx,dy) not in VALID_PAIRS:
         invalid_moves+=1
