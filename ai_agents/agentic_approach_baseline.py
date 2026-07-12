@@ -79,7 +79,8 @@ for task in tasks:
                         (400, 275): {"name":"wheat","is_planted":False,"needs_water": True},
                         (300, 200): {"name":"rice","is_planted":False,"needs_water": True},
                         # (200,475): {"name":"sugarcane","is_planted":False,"needs_water": True},
-                    }}
+                    }
+                    }
 
                 invalid_moves = 0
                 revisits = 0
@@ -356,7 +357,7 @@ for task in tasks:
                         invalid_moves+=1
                         invalid_move_object["No crop here"] = invalid_move_object.get("No crop here", 0) + 1
                         return json.dumps({
-                            "status": False,
+                            "status": "false",
                             "error": "No crop here",
                             "position": [x, y]
                         })
@@ -365,7 +366,7 @@ for task in tasks:
                         invalid_move_object["Already planted"] = invalid_move_object.get("Already planted", 0) + 1
                         invalid_moves+=1
                         return json.dumps({
-                            "status": False,
+                            "status": "false",
                             "error": "Already planted",
                             "position": [x, y]
                         })
@@ -374,7 +375,7 @@ for task in tasks:
                     goal_completed(state)
 
                     return json.dumps({
-                        "status": True,
+                        "status": "true",
                         "action": "plant_crop",
                         "position": [x, y],
                         "is_planted": True
@@ -616,7 +617,7 @@ for task in tasks:
             results[task_name][difficulty] = final_score_array
 
     final_result.append(results)
-
+    # break
 
 print(final_result)
 

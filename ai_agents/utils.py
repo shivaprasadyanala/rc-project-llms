@@ -155,7 +155,6 @@ def find_final_score(time_taken,player_positions,points_gained_object,tool_calls
     else:
         task_score_rate = points_gained/max_task_points
         print("task score rate:")
-    print(task_score_rate)
     final_score =  (0.50 * task_score_rate) + (0.20 * tool_call_accuracy) + (0.15 * new_nav_efficieny) + (0.10 * (1 - invalid_move_rate)) + (0.05 * (1 - revisit_rate))
 
     # final_score =  task_score_rate *((0.5 * tool_call_accuracy) + (0.2 * nav_efficiency) + (0.2 * (1 - invalid_move_rate)) + (0.1 * (1 - revisit_rate)))
