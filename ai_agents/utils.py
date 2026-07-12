@@ -147,9 +147,16 @@ def find_final_score(time_taken,player_positions,points_gained_object,tool_calls
         new_nav_efficieny = 1 / nav_efficiency
     print("navigation efficiency:")
     print(new_nav_efficieny)
-    task_score_rate = points_gained/max_task_points
+    task_score_rate = 0
+    if points_gained > max_task_points:
+        if state["goal_completed"] == True:
+            # task_score_rate = 1
+            task_score_rate = max_task_points/points_gained
+    else:
+        task_score_rate = points_gained/max_task_points
+        print("task score rate:")
+    print(task_score_rate)
+    final_score =  (0.50 * task_score_rate) + (0.20 * tool_call_accuracy) + (0.15 * new_nav_efficieny) + (0.10 * (1 - invalid_move_rate)) + (0.05 * (1 - revisit_rate))
 
-    # final_score =  (0.50 * success_rate) + (0.20 * tool_call_accuracy) + (0.15 * nav_efficiency) + (0.10 * (1 - invalid_move_rate)) + (0.05 * (1 - revisit_rate))
-
-    final_score =  task_score_rate *((0.5 * tool_call_accuracy) + (0.2 * nav_efficiency) + (0.2 * (1 - invalid_move_rate)) + (0.1 * (1 - revisit_rate)))
+    # final_score =  task_score_rate *((0.5 * tool_call_accuracy) + (0.2 * nav_efficiency) + (0.2 * (1 - invalid_move_rate)) + (0.1 * (1 - revisit_rate)))
     return final_score
