@@ -8,6 +8,7 @@ from ollama._types import ChatResponse
 import json
 import logging
 import yaml, os, sys
+import argparse
 from speech_to_text import audio_text
 
 logger = logging.getLogger(__name__)
@@ -26,8 +27,27 @@ def read_config(file_path):
 
 config_data = read_config("config.yaml")
 
-log_file_name = config_data["log_file"]["name"]
-logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--model",
+    type=str,
+    required=True,
+    help="LLM model name"
+)
+args = parser.parse_args()
+model = args.model
+print(f"Running model: {model}")
+log_folder = "../../experiments/test_logs_sage"
+os.makedirs(log_folder, exist_ok=True)
+
+# log_file_name = config_data["log_file"]["name"]
+log_file_name = f"baseline_{model}"
+f_log_file_name = log_file_name.replace(":","_").replace(".","_")
+formatted_log_file_name = f"{f_log_file_name}.log"
+
+log_file_folder_path = os.path.join(log_folder, formatted_log_file_name)
+logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
@@ -253,6 +273,8 @@ available_tools = {"move":move, "water":water, "collect_water":collect_water, "p
 lessons_text = "\n".join([f"- {lesson}" for lesson in sage_memory["lessons"]])
 if not lessons_text:
     lessons_text = "None yet."
+points_gained = 0
+points_gained_object = {}
 
 system_message2 = f"""
 you are smart farm game agent.
@@ -511,3 +533,173 @@ except Exception as e:
     logger.error(f"LLm failed due to error: {str(e)}")
 
 # Remaining script logic (scoring, stats formatting, etc) goes here...
+if state["water_available"] == True:
+    points_gained +=1
+    points_gained_object["water_available"] = 1
+
+reset_crop = {}
+j = 0
+crops = state["crops"]
+for k,v in crops.items():
+    j+=1    
+    reset_crop[f"crop{j}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":True,"planted":False}
+    if crops.get(k)["planted"] == True:
+        points_gained_object[f"plant_crop_{j}"] = 1
+        points_gained+=1
+    if crops.get(k)["needs_water"] == False:
+        points_gained_object[f"needs_water_{j}"] = 1
+        points_gained+=1
+
+
+reset_state = {
+            "grid_size": [5, 5],
+            "player_pos": [200,100],
+
+            "crops": reset_crop,
+            # {
+            #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":True,"planted":False},
+            #     "crop2":{"pos":[300,200],"name":"rice","needs_water":True,"planted":False},
+            #     # "crop3":{"pos":[200,475],"needs_water":True,"planted":False},
+            #     # "crop4":{"pos":[150,300],"needs_water":True,"planted":False},
+            #     # "crop5":{"pos":[275,325],"needs_water":True,"planted":False}
+            # },
+            "obstacles": [250,100],
+            "water_available":False,
+            "goal_completed": state["goal_completed"]
+        }
+
+response = requests.post(url, json=reset_state, headers=headers)
+
+
+
+
+
+
+def check_sequence_details(actual, correct):
+    matched_elements = []
+    
+    for i, action in enumerate(actual):
+        # Case 1: Actual sequence is longer than the correct sequence
+        if i >= len(correct):
+            print(f"Result: WRONG")
+            print(f" -> Matched until: {matched_elements}")
+            print(f" -> Reason: 'actual' sequence is longer than 'correct' sequence.")
+            return False, matched_elements
+        
+        # Case 2: Element matches
+        if action == correct[i]:
+            matched_elements.append(action)
+        else:
+            # Case 3: Element does not match
+            print(f"Result: WRONG")
+            print(f" -> Matched until: {matched_elements}")
+            print(f" -> At position {i}, expected '{correct[i]}' but got '{action}'")
+            return False, matched_elements
+            
+    # If it finishes the loop, it's a perfect prefix match
+    print(f"Result: CORRECT")
+    print(f" -> Matched until: {matched_elements}")
+    return True, matched_elements
+
+
+
+correct_seq = ['move', 'collect_water', 'move', 'plant_crop','water', 'move', 'plant_crop','water']
+
+# print("--- Test sequence ---")
+# actual_1 = tool_calls
+# check_sequence_details(actual_1, correct_seq)
+
+
+print(time_taken)
+if len(time_taken)>0:
+    data = time_taken
+    mean = np.mean(data)
+    median = np.median(data)
+    variance = np.var(data)
+    std_dev = np.std(data)
+    min_val = np.min(data)
+    max_val = np.max(data)
+
+    stats = {
+        "mean": mean,
+        "median": median,
+        "variance": variance,
+        "std_dev": std_dev,
+        "min": min_val,
+        "max": max_val
+    }
+
+    normalized = (data - min_val) / (max_val - min_val)
+    z_scores = (data - mean) / std_dev
+
+
+    print("No of llms calls:-")
+    print(len(time_taken))
+    logger.info(f"No of llms calls: {len(time_taken)}")
+
+
+    print("player positons:")
+    print(player_positions)
+    logger.info(f"player_positions: {player_positions}")
+
+    print(f"points gained by agent: {str(points_gained)}")
+    logger.info(f"points gained by agent: {str(points_gained)}")
+    print(f"points gained object: {str(points_gained_object)}")
+    logger.info(f"points gained object: {str(points_gained_object)}")
+
+    plt.plot(time_taken)
+    logger.info(f"time taken values: {time_taken}")
+    print("total input tokens: "+str(total_input_tokens))
+    print("total output tokens: "+str(total_output_tokens))
+    logger.info("total input tokens: "+str(total_input_tokens))
+    logger.info("total output tokens: "+str(total_output_tokens))
+    
+    result = [tool_calls[0]]
+    for action in tool_calls[1:]:
+        if action != result[-1]:
+            result.append(action)
+    tool_calls_final = result
+    print("--- Test sequence ---")
+    actual_1 = tool_calls_final
+    check_sequence_details(actual_1, correct_seq)
+    print("sequence of tool calls:"+ str(tool_calls_final))
+    logger.info("sequence of tool calls:"+ str(tool_calls_final))
+    threshold = 25
+    points = player_positions
+
+    jumps = 0
+    for i in range(len(points) - 1):
+        
+        x1, y1 = points[i]
+        x2, y2 = points[i + 1]
+
+        if abs(x2 - x1) > threshold or abs(y2 - y1) > threshold:
+            jumps +=1
+            print(f"Jump > {threshold}px: {points[i]} -> {points[i+1]}")
+    print("game character jumps:"+ str(jumps))
+    logger.info("game character jumps:"+ str(jumps))
+    invalid_moves+=jumps
+    invalid_move_rate = invalid_moves / len(player_positions)
+    print("invalid move rate:")
+    print(invalid_move_rate)
+    print("no of invalid moves:"+ str(invalid_moves))
+    print("invalid move object:")
+    print(invalid_move_object)
+    logger.info("no of invalid moves:"+ str(invalid_moves))
+    logger.info("game character jumps:"+ str(jumps))
+    print("no of revisits:")
+    print(str(revisits))
+    logger.info("no of revisits:"+ str(revisits))
+    crossed_obstacle = 0
+    for play_pos in player_positions:
+        if play_pos == state["obstacles"][0]:
+            crossed_obstacle+=1
+        if play_pos == state["water_tank"]:
+            crossed_obstacle+=1
+    print("crossed_obstacles:")
+    print(crossed_obstacle)
+
+else:
+    logger.info(log_messages)
+    logger.info("llm tool failed") 
+    print("llm tool failed")
