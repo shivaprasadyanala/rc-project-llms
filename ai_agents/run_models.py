@@ -11,6 +11,9 @@ models = [
     "qwen3.6:27b",
     "glm-4.7-flash:q4_K_M",
     "nemotron3:33b",
+    "gemma4:26b",
+    "nemotron-3-nano:4b",
+    "gemma4:e4b"
 ]
 
 NUM_RUNS = 2
@@ -22,7 +25,7 @@ for model in models:
         subprocess.run(
             [
                 sys.executable,
-                "agentic_approach_baseline.py",
+                "sage_approach.py",
                 "--model",
                 model
             ],
