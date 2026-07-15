@@ -14,6 +14,7 @@ from speech_to_text import audio_text
 import queue
 import threading
 import copy
+import argparse
 task_queue = queue.Queue()
 
 
@@ -32,8 +33,29 @@ def read_config(file_path):
         sys.exit(1)
 config_data = read_config("config.yaml")
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--model",
+    type=str,
+    required=True,
+    help="LLM model name"
+)
+args = parser.parse_args()
+model = args.model
+print(f"Running model: {model}")
+log_folder = "../../experiments/test_logs_queue_local"
+os.makedirs(log_folder, exist_ok=True)
+
+# log_file_name = config_data["log_file"]["name"]
+log_file_name = f"{model}"
+f_log_file_name = log_file_name.replace(":","_").replace(".","_")
+formatted_log_file_name = f"{f_log_file_name}.log"
+
+log_file_folder_path = os.path.join(log_folder, formatted_log_file_name)
+
+
 log_file_name = config_data["log_file"]["name"]
-logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
@@ -326,24 +348,7 @@ def plant_crop(x:int, y:int)-> str:
         "planted": True
     })
 
-# def api_worker():
-#     print("API worker started")
-#     while True:
-#         try:
-#             # Wait for a state snapshot
-#             state_snapshot = task_queue.get(timeout=30)  
-            
-#             # The network latency and sleep happen HERE, in the background
-#             time.sleep(1)
-#             requests.post(url, json=state_snapshot, headers=headers)
-            
-#         except queue.Empty:
-#             print("No more tasks. Worker exiting.")
-#             break
-#         except Exception as e:
-#             print(f"Error in API call: {e}")
-#         finally:
-#             task_queue.task_done()
+
 
 def api_worker():
     print("API worker started")
