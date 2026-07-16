@@ -10,6 +10,7 @@ import json
 import logging
 import yaml,os,sys
 from speech_to_text import audio_text
+import argparse
 logger = logging.getLogger(__name__)
 
 def read_config(file_path):
@@ -25,8 +26,27 @@ def read_config(file_path):
         sys.exit(1)
 config_data = read_config("config.yaml")
 
-log_file_name = config_data["log_file"]["name"]
-logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--model",
+    type=str,
+    required=True,
+    help="LLM model name"
+)
+args = parser.parse_args()
+model = args.model
+print(f"Running model: {model}")
+log_folder = "../../experiments/test_logs_few_shot"
+os.makedirs(log_folder, exist_ok=True)
+
+# log_file_name = config_data["log_file"]["name"]
+log_file_name = f"baseline_{model}"
+f_log_file_name = log_file_name.replace(":","_").replace(".","_")
+formatted_log_file_name = f"{f_log_file_name}.log"
+
+log_file_folder_path = os.path.join(log_folder, formatted_log_file_name)
+
+logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
@@ -365,50 +385,7 @@ available_tools = {"move":move,"water":water,"collect_water":collect_water,"plan
 points_gained = 0
 points_gained_object = {}
 
-system_message2 = f"""
 
-you are smart farm game agent.
-
-Your task:
-1. planting the crops by going to the given coordinates.
-2. Water needs to collected to plant water.
-3. Reach the water tank to collect water.
-
-IMPORTANT.
- check if the crops are planted.
-
-
-WORLD STATE:
-
-CURRENT STATE (authoritative):
-  
-Grid size: {state['grid_size']}
-Player position: {tuple(state['player_pos'])}
-  
-Crops:
-{crops_to_text(state['crops'])}
-
-Obstacles:
-{list(state['obstacles'])}
-
-Water_available:
-{state["water_available"]}
-Water_tank:
-{list(state['water_tank'])}
-
-
-move 25pxs and one side at a time
-and not allowed to pass through the crop and crops are not obstacles.
-
-call only one tool at a time.
-Never output tool arguments as text, JSON, markdown, or code blocks.
-When an action is required, invoke the corresponding tool. 
-If a tool is available, emitting its arguments in text form is always incorrect.
-
-Tools available:
-{available_tools}
-
-"""
 
 system_message2 = f"""
 
@@ -632,6 +609,8 @@ try:
   new_crops = {}
   i=0
   while i< 50:
+      print("i value:")
+      print(i)
       if len(messages) > 10:
           messages = messages[:2] + messages[-6:]
       # time.sleep(1)
@@ -685,9 +664,9 @@ try:
             #     print(needs_water_state1,needs_water_state2)
             #     print(crop_planted1,crop_planted2)
             
-            i = 0
+            j = 0
             for k,v in crops.items():   
-              i+=1
+              j+=1
               if crops.get(k) != None:
                 if state["player_pos"] == list(k):
                   new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
@@ -742,6 +721,7 @@ try:
         #     print("Message limit reached, aborting to prevent infinite loop.")
         #     logger.error(f"Message limit reached, aborting to prevent infinite loop.")
         break
+
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
   logger.info(log_messages)
