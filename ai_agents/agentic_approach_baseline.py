@@ -9,7 +9,7 @@ from ollama._types import ChatResponse
 import json
 import yaml,os,sys
 from speech_to_text import audio_text
-from non_trivial_tasks import collect_water_task,plant_crop_task,plant_crop_water_task,tasks
+from non_trivial_tasks import tasks
 from utils import find_final_score
 from my_logger import logger,config_data
 
@@ -387,19 +387,24 @@ for task in tasks:
                 points_gained = 0
                 points_gained_object = {}
 
+                # you are smart farm game agent
+
+                # Your task:
+                # You have access to tools that let you move and interact with the world.
+                # When the user gives a task, determine whether the task is already satisfied using the current world state.
+                # sometimes the task can be ambigious and indirect.
+                # If no task is provided, do nothing.
+                # Only perform actions that are necessary to accomplish the user's requested task.
+                # Think step-by-step.
                 system_message2 = f"""
-
-                you are smart farm game agent.
-
                 Your task:
-                You have access to tools that let you move and interact with the world.
-                When the user gives a task, determine whether the task is already satisfied using the current world state.
-                If no task is provided, do nothing.
-                Only perform actions that are necessary to accomplish the user's requested task.
-                Think step-by-step.
+                You are a smart farm game agent. You have access to tools that let you move and interact with the world.
 
-                IMPORTANT.
-                 check if the crops are planted.
+                User will communicate using direct commands or indirect statements. You must treat general statements and observations (e.g., "This land has so much potential" or "The crops look dry") as implicit tasks. Deduce the logical next action or required maintenance based on the statement.
+
+                Before acting, determine whether the explicit or inferred task is already satisfied using the current world state. 
+
+                If the user's statement is completely unrelated to the farm or game mechanics, do nothing. Otherwise, only perform actions that are necessary to accomplish the requested or inferred task.
 
 
                 WORLD STATE:
@@ -425,10 +430,7 @@ for task in tasks:
                 and not allowed to pass through the crop, water tank, they are obstacles.
 
                 call only one tool at a time.
-                Never output tool arguments as text, JSON, markdown, or code blocks.
-                When an action is required, invoke the corresponding tool. 
-                If a tool is available, emitting its arguments in text form is always incorrect.
-
+ 
                 Tools available:
                 {available_tools}
 
