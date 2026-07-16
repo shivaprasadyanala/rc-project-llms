@@ -1,5 +1,5 @@
 from a_star_algo import astar
-from my_logger import logger
+from my_logger import logger,config_data
 
 def check_sequence_details(actual, correct):
 
@@ -155,7 +155,12 @@ def find_final_score(time_taken,player_positions,points_gained_object,tool_calls
     else:
         task_score_rate = points_gained/max_task_points
         print("task score rate:")
-    final_score =  (0.50 * task_score_rate) + (0.20 * tool_call_accuracy) + (0.15 * new_nav_efficieny) + (0.10 * (1 - invalid_move_rate)) + (0.05 * (1 - revisit_rate))
+
+    scoring_type = config_data["scoring"]["type"]
+    if scoring_type == "trajectory":
+        final_score =  (0.50 * task_score_rate) + (0.20 * tool_call_accuracy) + (0.15 * new_nav_efficieny) + (0.10 * (1 - invalid_move_rate)) + (0.05 * (1 - revisit_rate))
+    else:
+        return points_gained
 
     # final_score =  task_score_rate *((0.5 * tool_call_accuracy) + (0.2 * nav_efficiency) + (0.2 * (1 - invalid_move_rate)) + (0.1 * (1 - revisit_rate)))
     return final_score
