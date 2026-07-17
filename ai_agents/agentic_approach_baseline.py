@@ -345,20 +345,7 @@ def plant_crop(x:int, y:int)-> str:
         "position": [x, y],
         "planted": True
     })
-# tool_call = response.message.tool_calls[0]
 
-#     result = function_to_call(**tool_call.function.arguments)
-
-#     messages.append({
-#         "role": "tool",
-#         "content": json.dumps({
-#             "tool": tool_call.function.name,
-#             "result": result,
-#             "state": state
-#         })
-#     })
-
-#     continue
 
 available_tools = {"move":move,"water":water,"collect_water":collect_water,"plant_crop":plant_crop}
 
@@ -487,36 +474,18 @@ try:
             tool_calls.append(tool_call.function.name)
             time_taken.append(time.time()-st_time)
             crops = state["crops"]
-            # if crops.get(tuple(state["player_pos"])) != None:
-            #     if state["player_pos"] == [400,275]:
-            #         needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
-            #         crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
-            #     if state["player_pos"] == [300,200]:
-            #         needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
-            #         crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
-            #     print(needs_water_state1,needs_water_state2)
-            #     print(crop_planted1,crop_planted2)
             
-            i = 0
+            j = 0
             for k,v in crops.items():   
-              i+=1
+              j+=1
               if crops.get(k) != None:
                 if state["player_pos"] == list(k):
-                  new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
-                # else:
-                  # print(k)
-                  # print(state["player_pos"])
-                  # print("wrong position")
+                  new_crops[f"crop{j}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
             print(new_crops)
             new_state = {
-                "grid_size": [5, 5],
+                "grid_size": [800, 600],
                 "player_pos": state["player_pos"],
                 "crops": new_crops,
-                # {
-                #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":needs_water_state1,"planted":crop_planted1},
-                #     "crop2":{"pos":[300,200],"name":"rice","needs_water":needs_water_state2,"planted":crop_planted2}
-
-                # },
                 "obstacles": [250,100],
                 "water_available":state["water_available"],
                 "goal_completed": state["goal_completed"]
@@ -541,21 +510,14 @@ try:
             print(f'Tool {tool_call.function.name} not found')
             messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
       elif state["goal_completed"]:
+        print("goal completed")
         break
-      # elif response.message.tool_calls == None:
-      #   print("LLm did not call the tools")
-      #   logger.error(f"LLm failed to call the tools: {str(e)}")
-      #   break
       elif response.message.tool_calls == None:
         print("LLM did not call tools but goal is not complete.")
-        # messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
-        # # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
-        # if len(messages) > 50: 
-        #     print("Message limit reached, aborting to prevent infinite loop.")
-        #     logger.error(f"Message limit reached, aborting to prevent infinite loop.")
         break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
+  print(f"llm failed due to error: {e}")
   logger.info(log_messages)
 if state["water_available"] == True:
     points_gained +=1
@@ -578,15 +540,7 @@ for k,v in crops.items():
 reset_state = {
             "grid_size": [5, 5],
             "player_pos": [200,100],
-
             "crops": reset_crop,
-            # {
-            #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":True,"planted":False},
-            #     "crop2":{"pos":[300,200],"name":"rice","needs_water":True,"planted":False},
-            #     # "crop3":{"pos":[200,475],"needs_water":True,"planted":False},
-            #     # "crop4":{"pos":[150,300],"needs_water":True,"planted":False},
-            #     # "crop5":{"pos":[275,325],"needs_water":True,"planted":False}
-            # },
             "obstacles": [250,100],
             "water_available":False,
             "goal_completed": state["goal_completed"]
@@ -628,11 +582,6 @@ def check_sequence_details(actual, correct):
 
 
 correct_seq = ['move', 'collect_water', 'move', 'plant_crop','water', 'move', 'plant_crop','water']
-
-# print("--- Test sequence ---")
-# actual_1 = tool_calls
-# check_sequence_details(actual_1, correct_seq)
-
 
 print(time_taken)
 if len(time_taken)>0:
@@ -720,36 +669,4 @@ else:
     logger.info("llm tool failed") 
     print("llm tool failed")
 
-# plt.xlabel('llm call run')
-# plt.ylabel('time')
-# plt.title('llm processing time for each agentic all')
-# plt.show()
 
-
-def safe_execute(tool_call):
-    func = available_tools[tool_call.function.name]
-
-    args = tool_call.function.arguments
-
-    # validate before execution
-    print("ARGS:", args)
-
-    return func(**args)
-
-
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "water",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "crop_id": {"type": "integer"},
-                    "amount": {"type": "number"}
-                },
-                "required": ["crop_id", "amount"]
-            }
-        }
-    }
-]
