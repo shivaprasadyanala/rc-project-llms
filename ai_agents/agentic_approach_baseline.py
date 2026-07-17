@@ -11,7 +11,7 @@ import yaml,os,sys
 from speech_to_text import audio_text
 from non_trivial_tasks import tasks
 from utils import find_final_score
-from my_logger import logger,config_data
+from my_logger import logger,config_data,model
 
 
 
