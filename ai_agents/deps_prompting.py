@@ -36,11 +36,11 @@ parser.add_argument(
 args = parser.parse_args()
 model = args.model
 print(f"Running model: {model}")
-log_folder = "../../experiments/test_logs_baseline"
+log_folder = "../../experiments/test_logs_deps"
 os.makedirs(log_folder, exist_ok=True)
 
 # log_file_name = config_data["log_file"]["name"]
-log_file_name = f"baseline_{model}"
+log_file_name = f"{model}"
 f_log_file_name = log_file_name.replace(":","_").replace(".","_")
 formatted_log_file_name = f"{f_log_file_name}.log"
 
@@ -50,7 +50,7 @@ logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=loggi
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
-logger.info("model_used_for_baseline: "+ config_data["model"]["name"])
+logger.info("model_used_for_deps: "+ model)
 
 url = config_data["server_urls"]["game_state_url"]
 
