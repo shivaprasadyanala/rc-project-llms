@@ -43,7 +43,7 @@ parser.add_argument(
 args = parser.parse_args()
 model = args.model
 print(f"Running model: {model}")
-log_folder = "../../experiments/test_logs_queue_local"
+log_folder = "../../experiments/test_logs_queue"
 os.makedirs(log_folder, exist_ok=True)
 
 # log_file_name = config_data["log_file"]["name"]
@@ -438,7 +438,7 @@ client = Client(
    
 )
 # model = 'gpt-oss:20b'
-model = config_data["model"]["name"]
+# model = config_data["model"]["name"]
 # model = 'qwen3.5:27b'
 
 # gpt-oss can call tools while "thinking"
