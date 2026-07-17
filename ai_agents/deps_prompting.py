@@ -453,7 +453,7 @@ client = Client(
 )
 
 # model = 'gpt-oss:20b'
-model = config_data["model"]["name"]
+# model = config_data["model"]["name"]
 # model = 'qwen3.5:27b'
 
 # gpt-oss can call tools while "thinking"
