@@ -41,7 +41,7 @@ log_folder = "../../experiments/test_logs_sage"
 os.makedirs(log_folder, exist_ok=True)
 
 # log_file_name = config_data["log_file"]["name"]
-log_file_name = f"baseline_{model}"
+log_file_name = f"{model}"
 f_log_file_name = log_file_name.replace(":","_").replace(".","_")
 formatted_log_file_name = f"{f_log_file_name}.log"
 
@@ -51,7 +51,7 @@ logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=loggi
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
-logger.info("model_used_for_baseline: "+ config_data["model"]["name"])
+logger.info("model_used_for_sage: "+ model)
 
 url = config_data["server_urls"]["game_state_url"]
 url2 = config_data["server_urls"]["whisper_url"]
@@ -303,7 +303,7 @@ Call only one tool at a time.
 Never output tool arguments as text, JSON, markdown, or code blocks.
 """
 client = Client(host=config_data["server_urls"]["ollama_url"], timeout=60)
-model = config_data["model"]["name"]
+# model = config_data["model"]["name"]
 
 reasoning_model = config_data["reasoning_model"]["name"]
 messages = [
