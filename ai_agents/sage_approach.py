@@ -332,7 +332,7 @@ def consolidate_memory(client, model, memory_data, threshold=5):
     CRITICAL GAME ENGINE RULES (Do not contradict these):
     - The 'move' tool requires exactly 25px steps relative displacements. Valid pairs are only (0, -25), (0, 25), (-25, 0), or (25, 0).
     - Diagonal moves are strictly forbidden.
-    - Absolute coordinates cannot be passed to the 'move' tool.
+    - Absolute coordinates cannot be passed to the 'move' tool.f
     
     Current Lessons to Consolidate:
     {json.dumps(lessons, indent=2)}
@@ -403,9 +403,9 @@ try:
         total_input_tokens = response['prompt_eval_count']
         
         if response.message.content:
-            log_messages.append(response.message.content)
+            logger.info(f"content : {response.message.content}")
         if response.message.thinking:
-            log_messages.append(response.message.thinking)
+            logger.info(f"thinking : {response.message.thinking}")
 
         messages.append(response.message)
         
@@ -443,7 +443,8 @@ try:
                         result_dict = {"status": "false", "message": error_reason}
 
                     # Track analytics
-                    log_messages.append({'role': 'tool', 'content': json.dumps(result_dict), 'tool_name': tool_call.function.name})
+                    # log_messages.append({'role': 'tool', 'content': json.dumps(result_dict), 'tool_name': tool_call.function.name})
+                    logger.info(f"tool_res : {json.dumps(result_dict)}")
                     tool_calls.append(tool_call.function.name)
                     time_taken.append(time.time() - st_time)
                     player_positions.append(state["player_pos"])
@@ -700,6 +701,6 @@ if len(time_taken)>0:
     print(crossed_obstacle)
 
 else:
-    logger.info(log_messages)
+    # logger.info(log_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
