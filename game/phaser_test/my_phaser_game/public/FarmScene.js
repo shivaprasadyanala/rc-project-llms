@@ -86,6 +86,7 @@ class FarmScene extends Phaser.Scene {
     this.createPlayer();
     this.createInput();
     this.plant_cords = [[1, 2]];
+    this.stones = [];
     this.plantWatered = []
     for(let i = 0; i < 5;i++){
       this.plantWatered[i] = false
@@ -310,10 +311,10 @@ class FarmScene extends Phaser.Scene {
             for(let i = 0; i < 5;i++){
               this.plantWatered[i] = false
             }
-            if(this.stone){
-            this.stone.destroy();  
-             this.stone = null;            
+            for (const stone of this.stones) {
+                stone.destroy();
             }
+            this.stones = [];
             if(this.tank)
             {
             this.tank.destroy(); 
@@ -321,18 +322,29 @@ class FarmScene extends Phaser.Scene {
             }
 
           }else{
-            if(!this.stone){
-              let obstacles = data.obstacles;
-              for(let value of obstacles){
-                console.log(value)
-                const [xobs, yobs] = value;
-                this.stone = this.add.image(xobs, yobs, 'stone').setOrigin(0.5, 0.5);
-              }
+
+            // if(this.stones.length == 0){
+            //   for (const [xobs, yobs] of data.obstacles) {
+            //     const stone = this.add.image(xobs, yobs, 'stone').setOrigin(0.5, 0.5);
+            //     this.stones.push(stone);
+            // }
+            // }
+            for (const stone of this.stones) {
+                stone.destroy();
             }
+            this.stones = [];
+
+            for (const [xobs, yobs] of data.obstacles) {
+                const stone = this.add.image(xobs, yobs, 'stone')
+                    .setOrigin(0.5, 0.5);
+
+                this.stones.push(stone);
+            }
+
             if(!this.tank){
               const [xtank, ytank] = data.water_tank;
-            this.tank = this.add.image(xtank, ytank, 'water_tank').setOrigin(0.5, 0.5);
-            this.tank.setScale(0.10); // adjust size if needed
+              this.tank = this.add.image(xtank, ytank, 'water_tank').setOrigin(0.5, 0.5);
+              this.tank.setScale(0.10); // adjust size if needed
             }
             
           }
