@@ -631,7 +631,7 @@ for task in tasks:
             results[task_name][difficulty] = final_score_array
 
     final_result.append(results)
-    logger.info("final_result: "+str(final_result))
+logger.info("final_result: "+str(final_result))
     # break
 
 print(final_result)
