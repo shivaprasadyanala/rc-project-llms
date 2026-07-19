@@ -683,7 +683,7 @@ try:
             messages.append({
               "role": "tool",
               "content": json.dumps({
-                  "action_result": result_dict,
+                  "action_result": real_result_json,
                   "current_state": new_state
               }),
               "tool_name": tool_call.function.name
@@ -797,7 +797,7 @@ correct_seq = ['move', 'collect_water', 'move', 'plant_crop','water', 'move', 'p
 
 
 print(time_taken)
-if len(time_taken)>0:
+if len(time_taken)>0 and len(tool_calls)>0:
     data = time_taken
     mean = np.mean(data)
     median = np.median(data)
