@@ -494,7 +494,7 @@ try:
               logger.info(f"tool_result: {str(real_result_json)}") 
               if "false" not in real_result_json:
                 tool_calls.append(tool_call.function.name)
-              time_taken.append(time.time()-st_time)
+                time_taken.append(time.time()-st_time)
               # 2. Parse the result back to a dict for the LLM context
               # real_result = json.loads(real_result_json) if isinstance(real_result_json, str) else real_result_json
               real_result = real_result_json
@@ -571,7 +571,7 @@ task_queue.put(reset_state)
 
 
 print(time_taken)
-if len(time_taken)>0:
+if len(time_taken)>0 and len(tool_calls)>0:
     print("No of llms calls:-")
     print(len(time_taken))
     logger.info(f"No of llms calls: {len(time_taken)}")
