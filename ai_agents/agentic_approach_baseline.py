@@ -629,11 +629,13 @@ try:
       if response.message.content:
         print('Content: ')
         print(response.message.content + '\n')
-        log_messages.append(response.message.content)
+        # log_messages.append(response.message.content)
+        logger.info(f"content : {response.message.content}")
       if response.message.thinking:
         print('Thinking: ')
         print(response.message.thinking + '\n')
-        log_messages.append(response.message.thinking)
+        # log_messages.append(response.message.thinking)
+        logger.info(f"thinking : {response.message.thinking}")
 
       messages.append(response.message)
       
@@ -644,11 +646,17 @@ try:
           # time.sleep(1)
           # LLM decides which function to call
           function_to_call = available_tools.get(tool_call.function.name)
+          result_dict = {}
           if function_to_call:
-            result = function_to_call(**tool_call.function.arguments)
-            print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
+            try:
+                result = function_to_call(**tool_call.function.arguments)
+                result_dict = json.loads(result)
+            except Exception as e:
+                result_dict = {"status":"false", "message": f"{str(e)}"}
+            print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result_dict) + '\n')
             # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-            log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+            # log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+            logger.info(f"tool_res : {json.dumps(result_dict)}")
             print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
             tool_calls.append(tool_call.function.name)
             time_taken.append(time.time()-st_time)
@@ -690,7 +698,7 @@ try:
             messages.append({
               "role": "tool",
               "content": json.dumps({
-                  "action_result": result,
+                  "action_result": result_dict,
                   "current_state": new_state
               }),
               "tool_name": tool_call.function.name
@@ -714,6 +722,7 @@ try:
       #   break
       elif response.message.tool_calls == None:
         print("LLM did not call tools but goal is not complete.")
+        logger.info(f"LLM did not call tools but goal is not complete.")
         # messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
         # # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
         # if len(messages) > 50: 
@@ -723,7 +732,8 @@ try:
 
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
-  logger.info(log_messages)
+  print(f"LLm failed due to error: {str(e)}")
+  # logger.info(log_messages)
 if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
@@ -883,7 +893,7 @@ if len(time_taken)>0:
     logger.info("no of revisits:"+ str(revisits))
 
 else:
-    logger.info(log_messages)
+    # logger.info(log_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
 
