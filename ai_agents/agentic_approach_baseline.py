@@ -501,12 +501,11 @@ for task in tasks:
                       if response.message.content:
                         print('Content: ')
                         print(response.message.content + '\n')
-                        log_messages.append(response.message.content)
+                        logger.info(f"content : {response.message.content}")
                       if response.message.thinking:
                         print('Thinking: ')
                         print(response.message.thinking + '\n')
-                        log_messages.append(response.message.thinking)
-
+                        logger.info(f"thinking : {response.message.thinking}")
                       messages.append(response.message)
                       
                       if response.message.tool_calls:
@@ -516,15 +515,19 @@ for task in tasks:
                           # time.sleep(1)
                           # LLM decides which function to call
                           function_to_call = available_tools.get(tool_call.function.name)
+                          real_result_json = ""
                           if function_to_call:
-                            result = function_to_call(**tool_call.function.arguments)
-                            print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
-                            # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-                            log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+                            try:
+                                result = function_to_call(**tool_call.function.arguments)
+                                print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
+                                real_result_json = result
+                            except Exception as e:
+                                real_result_json = json.dumps({"status":"false", "message": f"Error in tool call: {str(e)}"})
+                            logger.info(f"tool: {str(tool_call.function.name)}  result: {str(real_result_json)}") 
                             print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-                            json_res = json.loads(result)
-                            if json_res["status"] == "true":
+                            if "false" not in real_result_json:
                                 tool_calls.append(tool_call.function.name)
+                                time_taken.append(time.time()-st_time)
                             time_taken.append(time.time()-st_time)
                             crops = crops_object["crops"]
                             new_crops = {}
@@ -549,7 +552,7 @@ for task in tasks:
                             messages.append({
                               "role": "tool",
                               "content": json.dumps({
-                                  "action_result": result,
+                                  "action_result": real_result_json,
                                   "current_state": new_state
                               }),
                               "tool_name": tool_call.function.name
@@ -583,7 +586,7 @@ for task in tasks:
                 except Exception as e:
                   logger.error(f"LLm failed due to error: {str(e)}")
                   print(f"llm failed due to error: {e}")
-                  logger.info(log_messages)
+                  # logger.info(log_messages)
                 if state["water_available"] == True:
                     points_gained +=1
                     points_gained_object["water_available"] = 1
@@ -623,7 +626,7 @@ for task in tasks:
                 else:
                     print("final_score:")
                     print(final_score)
-                    logger.info(log_messages)
+                    # logger.info(log_messages)
                     logger.info("llm tool call failed") 
                     print("llm tool call failed")
                 final_score_array.append(final_score)
