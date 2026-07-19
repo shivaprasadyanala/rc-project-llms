@@ -487,11 +487,11 @@ try:
       if response.message.content:
         print('Content: ')
         print(response.message.content + '\n')
-        log_messages.append(response.message.content)
+        logger.info(f"content : {response.message.content}")
       if response.message.thinking:
         print('Thinking: ')
         print(response.message.thinking + '\n')
-        log_messages.append(response.message.thinking)
+        logger.info(f"thinking : {response.message.thinking}")
 
       messages.append(response.message)
       
@@ -502,55 +502,62 @@ try:
           # time.sleep(1)
           # LLM decides which function to call
           function_to_call = available_tools.get(tool_call.function.name)
+          real_result_json = ""
           if function_to_call:
-            result = function_to_call(**tool_call.function.arguments)
-            print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
-            # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+            try:
+                result = function_to_call(**tool_call.function.arguments)
+                print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
+                real_result_json = result
+            except Exception as e:
+                real_result_json = json.dumps({"status":"false", "message": f"Error in tool call: {str(e)}"})
 
-            result_dict = json.loads(result) if isinstance(result, str) else result
-
-            log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+            logger.info(f"tool: {str(tool_call.function.name)}  result: {str(real_result_json)}") 
             print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-            tool_calls.append(tool_call.function.name)
-            time_taken.append(time.time()-st_time)
-            crops = state["crops"]
-            i = 0
-            for k,v in crops.items():   
-              i+=1
-              if crops.get(k) != None:
-                if state["player_pos"] == list(k):
-                  new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
-                # else:
-                  # print(k)
-                  # print(state["player_pos"])
-                  # print("wrong position")
-            print(new_crops)
-            new_state = {
-                "grid_size": [5, 5],
-                "player_pos": state["player_pos"],
-                "crops": new_crops,
-                # {
-                #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":needs_water_state1,"planted":crop_planted1},
-                #     "crop2":{"pos":[300,200],"name":"rice","needs_water":needs_water_state2,"planted":crop_planted2}
-
-                # },
-                "obstacles": [250,100],
-                "water_available":state["water_available"],
-                "goal_completed": state["goal_completed"]
-            }
-            messages.append({
-              "role": "tool",
-              "content": json.dumps({
-                  "action_result": result_dict,
-                  "current_state": new_state
-              }),
-              "tool_name": tool_call.function.name
-          })
+            new_state = {}
+            if "false" not in real_result_json:
+                tool_calls.append(tool_call.function.name)
+                time_taken.append(time.time()-st_time)
+                crops = state["crops"]
+                i = 0
+                for k,v in crops.items():   
+                  i+=1
+                  if crops.get(k) != None:
+                    if state["player_pos"] == list(k):
+                      new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
+                    # else:
+                      # print(k)
+                      # print(state["player_pos"])
+                      # print("wrong position")
+                print(new_crops)
+                new_state = {
+                    "grid_size": [5, 5],
+                    "player_pos": state["player_pos"],
+                    "crops": new_crops,
+                    "obstacles": [250,100],
+                    "water_available":state["water_available"],
+                    "goal_completed": state["goal_completed"]
+                }
+                messages.append({
+                  "role": "tool",
+                  "content": json.dumps({
+                      "action_result": real_result_json,
+                      "current_state": new_state
+                  }),
+                  "tool_name": tool_call.function.name
+                })
             # --- DEPS: EXPLAIN PHASE ---
             # If the action failed, force the model to explain the failure and re-plan
 
-            if str(result_dict.get("status")).lower() == "false":
-                error_msg = result_dict.get("error", result_dict.get("message", "Unknown error"))
+            # if str(real_result_json.get("status")).lower() == "false":
+            if "false" in real_result_json:
+                # error_msg = result_dict.get("error", result_dict.get("message", "Unknown error"))
+                error_msg = ""
+                if "message" in real_result_json:
+                    error_msg = json.loads(real_result_json)["message"]
+                elif "error" in real_result_json:
+                    error_msg = json.loads(real_result_json)["error"]
+                print("error_msg:")
+                print(error_msg)
                 explanation_prompt = f"The previous action failed because: {error_msg}. Explain why this happened based on your coordinates and the environment, and update your step-by-step plan to recover."
                 messages.append({'role': 'user', 'content': explanation_prompt})
                 print("--> Triggered DEPS Explain/Re-plan phase due to failure.")
@@ -569,36 +576,22 @@ try:
         print("goal completed")
         break
       elif response.message.tool_calls == None:
-        # print("LLm did not call the tools")
-        # logger.error(f"LLm failed to call the tools: {str(e)}")
-        # break
         print("LLM did not call tools but goal is not complete.")
+        logger.info("LLM did not call tools but goal is not complete.")
         messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
         # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
         if len(messages) > 50: 
             print("Message limit reached, aborting to prevent infinite loop.")
+            logger.info("Message limit reached, aborting to prevent infinite loop.")
             break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
-  logger.info(log_messages)
+  print(f"llm failed due to error: {str(e)}")
 if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
 
-# if state["crops"].get(tuple([400,275]))["planted"]==True:
-#     points_gained+=1
-#     points_gained_object["plant_crop_1"] = 1
-# if state["crops"].get(tuple([400,275]))["needs_water"]==False:
-#     points_gained+=1
-#     points_gained_object["needs_water_1"] = 1
 
-# if state["crops"].get(tuple([300,200]))["planted"]==True:
-#     points_gained+=1
-#     points_gained_object["plant_crop_2"] = 1
-
-# if state["crops"].get(tuple([300,200]))["needs_water"]==False:
-#     points_gained+=1
-#     points_gained_object["needs_water_2"] = 1
 
 reset_crop = {}
 j = 0
@@ -615,17 +608,10 @@ for k,v in crops.items():
 
 
 reset_state = {
-            "grid_size": [5, 5],
+            "grid_size": [800, 600],
             "player_pos": [200,100],
 
             "crops": reset_crop,
-            # {
-            #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":True,"planted":False},
-            #     "crop2":{"pos":[300,200],"name":"rice","needs_water":True,"planted":False},
-            #     # "crop3":{"pos":[200,475],"needs_water":True,"planted":False},
-            #     # "crop4":{"pos":[150,300],"needs_water":True,"planted":False},
-            #     # "crop5":{"pos":[275,325],"needs_water":True,"planted":False}
-            # },
             "obstacles": [250,100],
             "water_available":False,
             "goal_completed": state["goal_completed"]
@@ -670,7 +656,7 @@ correct_seq = ['move', 'collect_water', 'move', 'plant_crop', 'move', 'plant_cro
 
 
 print(time_taken)
-if len(time_taken)>0:
+if len(time_taken)>0 and len(tool_calls)>0:
     data = time_taken
     mean = np.mean(data)
     median = np.median(data)
@@ -742,40 +728,5 @@ if len(time_taken)>0:
     logger.info("no of revisits:"+ str(revisits))
 
 else:
-    logger.info(log_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
-
-# plt.xlabel('llm call run')
-# plt.ylabel('time')
-# plt.title('llm processing time for each agentic all')
-# plt.show()
-
-
-def safe_execute(tool_call):
-    func = available_tools[tool_call.function.name]
-
-    args = tool_call.function.arguments
-
-    # validate before execution
-    print("ARGS:", args)
-
-    return func(**args)
-
-
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "water",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "crop_id": {"type": "integer"},
-                    "amount": {"type": "number"}
-                },
-                "required": ["crop_id", "amount"]
-            }
-        }
-    }
-]
