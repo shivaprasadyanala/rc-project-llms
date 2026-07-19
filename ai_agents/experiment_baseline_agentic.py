@@ -12,6 +12,7 @@ import yaml,os,sys
 from speech_to_text import audio_text
 from game_states import states
 import argparse
+from collections import defaultdict
 logger = logging.getLogger(__name__)
 
 def read_config(file_path):
@@ -103,7 +104,9 @@ state = {
     # Goal tracking
     "goal_completed": False
 }
-for key,state in states.items():
+game_states = []
+for state_key,state in states.items():
+    state_result = defaultdict(dict)
     print("state:")
     print(state)
     invalid_moves = 0
@@ -500,58 +503,54 @@ for key,state in states.items():
               # time.sleep(1)
               # LLM decides which function to call
               function_to_call = available_tools.get(tool_call.function.name)
+              real_result_json = ""
               if function_to_call:
-                result = function_to_call(**tool_call.function.arguments)
-                print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
-                # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-                # log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-                logger.info(f"tool: {str(tool_call.function.name)}  result: {str(result)}") 
+
+                try:
+                    result = function_to_call(**tool_call.function.arguments)
+                    print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
+                    real_result_json = result
+                except Exception as e:
+                    real_result_json = json.dumps({"status":"false", "message": f"Error in tool call: {str(e)}"})
+
+                logger.info(f"tool: {str(tool_call.function.name)}  result: {str(real_result_json)}") 
                 print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-                if "error" not in result:
+                if "false" not in real_result_json:
                     tool_calls.append(tool_call.function.name)
                     time_taken.append(time.time()-st_time)
-                    crops = state["crops"]
-                    j = 0
-                    for k,v in crops.items():   
-                      j+=1
-                      if crops.get(k) != None:
-                        if state["player_pos"] == list(k):
-                          new_crops[f"crop{j}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
-                    print(new_crops)
-                    new_state = {
-                        "grid_size": [800, 600],
-                        "player_pos": state["player_pos"],
-                        "crops": new_crops,
-                        "obstacles": state["obstacles"],
-                        "water_available":state["water_available"],
-                        "goal_completed": state["goal_completed"]
-                    }
-                    messages.append({
-                      "role": "tool",
-                      "content": json.dumps({
-                          "action_result": result,
-                          "current_state": new_state
-                      }),
-                      "tool_name": tool_call.function.name
-                  })
+                crops = state["crops"]
+                j = 0
+                for k,v in crops.items():   
+                  j+=1
+                  if crops.get(k) != None:
+                    if state["player_pos"] == list(k):
+                      new_crops[f"crop{j}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
+                print(new_crops)
+                new_state = {
+                    "grid_size": [800, 600],
+                    "player_pos": state["player_pos"],
+                    "crops": new_crops,
+                    "obstacles": state["obstacles"],
+                    "water_available":state["water_available"],
+                    "goal_completed": state["goal_completed"]
+                }
+                messages.append({
+                  "role": "tool",
+                  "content": json.dumps({
+                      "action_result": real_result_json,
+                      "current_state": new_state
+                  }),
+                  "tool_name": tool_call.function.name
+              })
 
-                    print("new_state")
-                    print(new_state)
-                    player_positions.append(state["player_pos"])
-                    new_state["task"] = new_content
-                    new_state["water_tank"] = state["water_tank"]
-                    new_task_state = new_state
-                    response = requests.post(url, json=new_task_state, headers=headers)
-                    print(response)
-                else:
-                    messages.append({
-                      "role": "tool",
-                      "content": json.dumps({
-                          "action_result": result,
-                          "current_state": new_state
-                      }),
-                      "tool_name": tool_call.function.name
-                  })
+                print("new_state")
+                print(new_state)
+                player_positions.append(state["player_pos"])
+                new_state["task"] = new_content
+                new_state["water_tank"] = state["water_tank"]
+                new_task_state = new_state
+                response = requests.post(url, json=new_task_state, headers=headers)
+                print(response)
               else:
                 print(f'Tool {tool_call.function.name} not found')
                 messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
@@ -646,7 +645,7 @@ for key,state in states.items():
 
 
     print(time_taken)
-    if len(time_taken)>0:
+    if len(time_taken)>0 and len(tool_calls)>0:
         data = time_taken
         mean = np.mean(data)
         median = np.median(data)
@@ -671,16 +670,20 @@ for key,state in states.items():
         print("No of llms calls:-")
         print(len(time_taken))
         logger.info(f"No of llms calls: {len(time_taken)}")
+        state_result[state_key]["llm_tool_calls"] = tool_calls
 
 
+        state_result[state_key]["time_taken"] = time_taken
         print("player positons:")
         print(player_positions)
         logger.info(f"player_positions: {player_positions}")
 
         print(f"points gained by agent: {str(points_gained)}")
-        logger.info(f"points gained by agent: {str(points_gained)}")
+        # logger.info(f"points gained by agent: {str(points_gained)}")
+        state_result[state_key]["points_gained"] = points_gained
         print(f"points gained object: {str(points_gained_object)}")
-        logger.info(f"points gained object: {str(points_gained_object)}")
+        # logger.info(f"points gained object: {str(points_gained_object)}")
+        state_result[state_key]["points_gained_object"] = points_gained_object
 
         plt.plot(time_taken)
         logger.info(f"time taken values: {time_taken}")
@@ -725,10 +728,13 @@ for key,state in states.items():
         print("no of revisits:")
         print(str(revisits))
         logger.info("no of revisits:"+ str(revisits))
-
     else:
         # logger.info(log_messages)
         logger.info("llm tool failed") 
         print("llm tool failed")
+    game_states.append(state_result)
+
+
+logger.info(f"game_states: {game_states}")
 
 
