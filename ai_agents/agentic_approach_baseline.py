@@ -646,20 +646,19 @@ try:
           # time.sleep(1)
           # LLM decides which function to call
           function_to_call = available_tools.get(tool_call.function.name)
-          result_dict = ""
+          real_result_json = ""
           if function_to_call:
             try:
                 result = function_to_call(**tool_call.function.arguments)
-                result_dict = result
+                print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
+                real_result_json = result
             except Exception as e:
-                result_dict = json.dumps({"status":"false", "message": f"{str(e)}"})
-            print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', result_dict + '\n')
-            # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-            # log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-            logger.info(f"tool_res : {json.dumps(result_dict)}")
+                real_result_json = json.dumps({"status":"false", "message": f"Error in tool call: {str(e)}"})
+            logger.info(f"tool: {str(tool_call.function.name)}  result: {str(real_result_json)}") 
             print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-            tool_calls.append(tool_call.function.name)
-            time_taken.append(time.time()-st_time)
+            if "false" not in real_result_json:
+                tool_calls.append(tool_call.function.name)
+                time_taken.append(time.time()-st_time)
             crops = state["crops"]
             
             j = 0
