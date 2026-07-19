@@ -646,14 +646,14 @@ try:
           # time.sleep(1)
           # LLM decides which function to call
           function_to_call = available_tools.get(tool_call.function.name)
-          result_dict = {}
+          result_dict = ""
           if function_to_call:
             try:
                 result = function_to_call(**tool_call.function.arguments)
-                result_dict = json.loads(result)
+                result_dict = result
             except Exception as e:
-                result_dict = {"status":"false", "message": f"{str(e)}"}
-            print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result_dict) + '\n')
+                result_dict = json.dumps({"status":"false", "message": f"{str(e)}"})
+            print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', result_dict + '\n')
             # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
             # log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
             logger.info(f"tool_res : {json.dumps(result_dict)}")
@@ -661,15 +661,6 @@ try:
             tool_calls.append(tool_call.function.name)
             time_taken.append(time.time()-st_time)
             crops = state["crops"]
-            # if crops.get(tuple(state["player_pos"])) != None:
-            #     if state["player_pos"] == [400,275]:
-            #         needs_water_state1 = crops.get(tuple(state["player_pos"]))["needs_water"]
-            #         crop_planted1 = crops.get(tuple(state["player_pos"]))["planted"]
-            #     if state["player_pos"] == [300,200]:
-            #         needs_water_state2 = crops.get(tuple(state["player_pos"]))["needs_water"]
-            #         crop_planted2 = crops.get(tuple(state["player_pos"]))["planted"]
-            #     print(needs_water_state1,needs_water_state2)
-            #     print(crop_planted1,crop_planted2)
             
             j = 0
             for k,v in crops.items():   
@@ -686,11 +677,6 @@ try:
                 "grid_size": [5, 5],
                 "player_pos": state["player_pos"],
                 "crops": new_crops,
-                # {
-                #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":needs_water_state1,"planted":crop_planted1},
-                #     "crop2":{"pos":[300,200],"name":"rice","needs_water":needs_water_state2,"planted":crop_planted2}
-
-                # },
                 "obstacles": [250,100],
                 "water_available":state["water_available"],
                 "goal_completed": state["goal_completed"]
