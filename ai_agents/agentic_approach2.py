@@ -449,85 +449,93 @@ agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
 tool_calls = []
-# try:
-# needs_water_state1 = True
-# needs_water_state2 = True
-# crop_planted1 = False
-# crop_planted2 = False
-new_crops = {}
-while True:
-    st_time = time.time()    
-    response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
-    print(f"input_tokens: {response['prompt_eval_count']}")
-    print(f"output_tokens: {response['eval_count']}")
-    total_output_tokens += response['eval_count']
-    total_input_tokens = response['prompt_eval_count']
-    print(f"reponse time: {(response['total_duration']/1e9)}")
+try:
+    # needs_water_state1 = True
+    # needs_water_state2 = True
+    # crop_planted1 = False
+    # crop_planted2 = False
+    new_crops = {}
+    while True:
+        st_time = time.time()    
+        response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
+        print(f"input_tokens: {response['prompt_eval_count']}")
+        print(f"output_tokens: {response['eval_count']}")
+        total_output_tokens += response['eval_count']
+        total_input_tokens = response['prompt_eval_count']
+        print(f"reponse time: {(response['total_duration']/1e9)}")
 
-    if response.message.content:
-      print('Content: ')
-      print(response.message.content + '\n')
-      agent_messages.append(response.message.content)
-    if response.message.thinking:
-      print('Thinking: ')
-      print(response.message.thinking + '\n')
-      agent_messages.append(response.message.thinking)
+        if response.message.content:
+          print('Content: ')
+          print(response.message.content + '\n')
+          # agent_messages.append(response.message.content)
+          logger.info(f"´content : {response.message.content}")
+        if response.message.thinking:
+          print('Thinking: ')
+          print(response.message.thinking + '\n')
+          # agent_messages.append(response.message.thinking)
+          logger.info(f"thinking : {response.message.thinking}")
 
-    messages.append(response.message)
-    if response.message.tool_calls:
-      for tool_call in response.message.tool_calls:
-        # LLM decides which function to call
-        function_to_call = available_tools.get(tool_call.function.name)
-        if function_to_call:
-          print("Executing tool instantly in Python:", tool_call.function.name)
-          # 1. Execute instantly. (Network calls are sent to the queue inside the tool)
-          real_result_json = function_to_call(**tool_call.function.arguments)
-          print("tool result:")
-          print(real_result_json)
-          tool_calls.append(tool_call.function.name)
-          time_taken.append(time.time()-st_time)
-          # 2. Parse the result back to a dict for the LLM context
-          # real_result = json.loads(real_result_json) if isinstance(real_result_json, str) else real_result_json
-          real_result = real_result_json
+        messages.append(response.message)
+        if response.message.tool_calls:
+          for tool_call in response.message.tool_calls:
+            # LLM decides which function to call
+            function_to_call = available_tools.get(tool_call.function.name)
+            real_result_json = ""
+            if function_to_call:
+              try:
+                print("Executing tool instantly in Python:", tool_call.function.name)
+                # 1. Execute instantly. (Network calls are sent to the queue inside the tool)
+                real_result_json = function_to_call(**tool_call.function.arguments)
+              except Exception as e:
+                real_result_json = json.dumps({"status":"false", "message": f"{str(e)}"})
+              
+              print("tool result:")
+              print(real_result_json)
+              logger.info(f"tool_result: {str(real_result_json)}") 
+              if "false" not in real_result_json:
+                tool_calls.append(tool_call.function.name)
+              time_taken.append(time.time()-st_time)
+              # 2. Parse the result back to a dict for the LLM context
+              # real_result = json.loads(real_result_json) if isinstance(real_result_json, str) else real_result_json
+              real_result = real_result_json
+                
+              # 3. Get the correct crop state (Make sure crops_parser logic is correct!)
+              new_crops = crops_parser(state["crops"])
+              new_state = {
+                "grid_size": [800, 600],
+                "player_pos": state["player_pos"],
+                "crops": new_crops,
+                "obstacles": state["obstacles"],
+                "water_available": state["water_available"],
+                "goal_completed": state["goal_completed"]
+                }
             
-          # 3. Get the correct crop state (Make sure crops_parser logic is correct!)
-          new_crops = crops_parser(state["crops"])
-          new_state = {
-            "grid_size": [800, 600],
-            "player_pos": state["player_pos"],
-            "crops": new_crops,
-            "obstacles": state["obstacles"],
-            "water_available": state["water_available"],
-            "goal_completed": state["goal_completed"]
-            }
-        
-          # 5. Tell the LLM exactly what happened
-          messages.append({
-            "role": "tool",
-            "content": json.dumps({
-                "action_result": real_result,
-                "current_state": new_state
-            }),
-            "name": tool_call.function.name
-          })
+              # 5. Tell the LLM exactly what happened
+              messages.append({
+                "role": "tool",
+                "content": json.dumps({
+                    "action_result": real_result,
+                    "current_state": new_state
+                }),
+                "name": tool_call.function.name
+              })
 
-          # new_state["task"] = new_content
-          # new_task_state = new_state
-          # response = requests.post(url, json=new_task_state, headers=headers)
-          # print(response)
-        else:
-          print(f'Tool {tool_call.function.name} not found')
-          messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
-    elif state["goal_completed"]:
-      break
-    elif response.message.tool_calls == None:
-      print("LLm did not call the tools")
-      logger.error(f"LLm failed to call the tools")
-      break
-# except Exception as e:
-#     logger.error(f"LLm failed due to error: {str(e)}")
-#     print(f"LLm failed due to error: {str(e)}")
-#     logger.info(agent_messages)
+              # new_state["task"] = new_content
+              # new_task_state = new_state
+              # response = requests.post(url, json=new_task_state, headers=headers)
+              # print(response)
+            else:
+              print(f'Tool {tool_call.function.name} not found')
+              messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+        elif state["goal_completed"]:
+          break
+        elif response.message.tool_calls == None:
+          print("LLm did not call the tools and goal not completed")
+          logger.error(f"LLm failed to call the tools and goal not completed")
+          break
+except Exception as e:
+        logger.error(f"LLm failed due to error: {str(e)}")
+        print(f"LLm failed due to error: {str(e)}")
 if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
@@ -589,7 +597,7 @@ if len(time_taken)>0:
     logger.info("total input tokens: "+str(total_input_tokens))
     logger.info("total output tokens: "+str(total_output_tokens))
 else:
-    logger.info(agent_messages)
+    # logger.info(agent_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
 
