@@ -11,6 +11,7 @@ import logging
 import yaml,os,sys
 from speech_to_text import audio_text
 from game_states import states
+import argparse
 logger = logging.getLogger(__name__)
 
 def read_config(file_path):
@@ -26,12 +27,30 @@ def read_config(file_path):
         sys.exit(1)
 config_data = read_config("config.yaml")
 
-log_file_name = config_data["log_file"]["name"]
-logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--model",
+    type=str,
+    required=True,
+    help="LLM model name"
+)
+args = parser.parse_args()
+model = args.model
+print(f"Running model: {model}")
+log_folder = "../../experiments/test_logs_ex_robutness"
+os.makedirs(log_folder, exist_ok=True)
+
+log_file_name = f"{model}"
+f_log_file_name = log_file_name.replace(":","_").replace(".","_")
+formatted_log_file_name = f"{f_log_file_name}.log"
+
+log_file_folder_path = os.path.join(log_folder, formatted_log_file_name)
+
+logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
-logger.info("model_used_for_baseline: "+ config_data["model"]["name"])
+logger.info("model_used_for_ex_robustness: "+ model)
 
 url = config_data["server_urls"]["game_state_url"]
 
@@ -65,7 +84,7 @@ state = {
     "grid_size": (800, 600),
 
     # Player
-    "player_pos": [300, 100],  # use list for mutability
+    "player_pos": [200, 100],  # use list for mutability
 
     # Crops indexed by position
     "crops": {
@@ -427,7 +446,7 @@ for key,state in states.items():
     )
 
     # model = 'gpt-oss:20b'
-    model = config_data["model"]["name"]
+    # model = config_data["model"]["name"]
     # model = 'qwen3.5:27b'
 
     # gpt-oss can call tools while "thinking"
@@ -461,15 +480,16 @@ for key,state in states.items():
           print(f"reponse time: {(response['total_duration']/1e9)}")
           print("reponse::")
           print(response.message)
-          # breakpoint()
           if response.message.content:
             print('Content: ')
             print(response.message.content + '\n')
-            log_messages.append(response.message.content)
+            # log_messages.append(response.message.content)
+            logger.info(f"content : {response.message.content}")
           if response.message.thinking:
             print('Thinking: ')
             print(response.message.thinking + '\n')
-            log_messages.append(response.message.thinking)
+            # log_messages.append(response.message.thinking)
+            logger.info(f"thinking : {response.message.thinking}")
 
           messages.append(response.message)
           
@@ -484,7 +504,8 @@ for key,state in states.items():
                 result = function_to_call(**tool_call.function.arguments)
                 print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
                 # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-                log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+                # log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+                logger.info(f"tool: {str(tool_call.function.name)}  result: {str(result)}") 
                 print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
                 if "error" not in result:
                     tool_calls.append(tool_call.function.name)
@@ -536,9 +557,12 @@ for key,state in states.items():
                 messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
           elif state["goal_completed"]:
             print("goal_completed")
+            logger.info("goal completed")
             break
           elif response.message.tool_calls == None:
             print("LLM did not call tools but goal is not complete.")
+            logger.info("LLM did not call tools but goal is not complete.")
+
             break
     except Exception as e:
           logger.error(f"LLm failed due to error: {str(e)}")
@@ -703,7 +727,7 @@ for key,state in states.items():
         logger.info("no of revisits:"+ str(revisits))
 
     else:
-        logger.info(log_messages)
+        # logger.info(log_messages)
         logger.info("llm tool failed") 
         print("llm tool failed")
 
