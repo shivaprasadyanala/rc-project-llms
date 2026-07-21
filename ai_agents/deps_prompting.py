@@ -473,7 +473,7 @@ try:
   # crop_planted2 = False
   new_crops = {}
   i=0
-  while 1:
+  while <100:
       # time.sleep(1)
       i+=1
       st_time = time.time()    
@@ -518,12 +518,12 @@ try:
                 tool_calls.append(tool_call.function.name)
                 time_taken.append(time.time()-st_time)
                 crops = state["crops"]
-                i = 0
+                j = 0
                 for k,v in crops.items():   
-                  i+=1
+                  j+=1
                   if crops.get(k) != None:
                     if state["player_pos"] == list(k):
-                      new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
+                      new_crops[f"crop{j}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
                     # else:
                       # print(k)
                       # print(state["player_pos"])
