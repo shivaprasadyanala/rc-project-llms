@@ -79,8 +79,8 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
                 current = came_from[current]
             path.append(to_pixel(start))
             path.reverse()
-            return f"path from start to destination is: {path}"
-            # return path
+            # return f"path from start to destination is: {path}"
+            return path
 
         x, y = current
 
@@ -116,16 +116,23 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
 
 
 
-start = [200, 100]
-goal = [400, 275]
+start = [[200, 100],[75, 250],[75, 200],[200, 175]]
+goal = [[75, 250],[75, 200],[200, 175],[50, 25]]
 
-goals = [[300, 275],[600, 275],[200, 375],[500, 225],[250, 250],[100, 75],[450, 155],[600, 175],[300, 575]]
+# goals = [[300, 275],[600, 275],[200, 375],[500, 225],[250, 250],[100, 75],[450, 155],[600, 175],[300, 575]]
 
+# obstacles = [
+#     (350, 100),
+#     (150, 100),
+#     (250, 50)
+# ]
 obstacles = [
-    (75, 75),
-    (100, 75),
-    (125, 75)
+    [250, 25],[250, 125],[225, 150],[100, 50],[150, 75],[325, 50],[50, 200]
 ]
+
+path = (astar(start[3], goal[3], obstacles, grid_width=32, grid_height=24))
+print(path)
+print(len(path))
 
 # st_time = time.time()
 # for goal in goals:
