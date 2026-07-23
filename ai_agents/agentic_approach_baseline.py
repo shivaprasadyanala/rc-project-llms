@@ -534,7 +534,7 @@ for task in tasks:
                             j = 0
                             for k, v in crops.items():   
                                 j += 1
-                                new_crops[f"crop{i}"] = {
+                                new_crops[f"crop{j}"] = {
                                     "pos": list(k),
                                     "name": v["name"],
                                     "needs_water": v["needs_water"],
