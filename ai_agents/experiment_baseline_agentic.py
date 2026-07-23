@@ -10,7 +10,7 @@ import json
 import logging
 import yaml,os,sys
 from speech_to_text import audio_text
-from game_states import states
+from game_states_gemini import states
 import argparse
 from collections import defaultdict
 logger = logging.getLogger(__name__)
