@@ -132,14 +132,35 @@ def set_crop_state():
 
 # set_crop_state()
 # breakpoint()
+# def crops_parser(crops):
+#     i = 0
+#     new_crops = {}
+#     for k,v in crops.items(): 
+#         i+=1
+#         if crops.get(k) != None:
+#             # if state["player_pos"] == list(k):
+#             new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":crops.get(k)["needs_water"],"planted":crops.get(k)["planted"]}
+#     return new_crops
 def crops_parser(crops):
-    i = 0
     new_crops = {}
-    for k,v in crops.items(): 
-        i+=1
-        if crops.get(k) != None:
-            # if state["player_pos"] == list(k):
-            new_crops[f"crop{i}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":crops.get(k)["needs_water"],"planted":crops.get(k)["planted"]}
+    # enumerate() handles your index counting 'i' automatically
+    for i, (k, v) in enumerate(crops.items(), start=1): 
+        if v is not None:
+            # Check if key 'k' is a stringified tuple/list and parse it correctly
+            if isinstance(k, str):
+                try:
+                    pos = list(ast.literal_eval(k))
+                except (ValueError, SyntaxError):
+                    pos = [k]
+            else:
+                pos = list(k)
+
+            new_crops[f"crop{i}"] = {
+                "pos": pos,
+                "name": v.get("name"),
+                "needs_water": v.get("needs_water"),
+                "planted": v.get("planted")
+            }
     return new_crops
 # cro = {(400, 275): {'name': 'wheat', 'planted': False, 'needs_water': True}, (300, 200): {'name': 'rice', 'planted': True, 'needs_water': True}}
 # print(crops_parser(cro))
