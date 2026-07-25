@@ -357,7 +357,8 @@ messages = [
 # {'role': 'user', 'content': 'go to the nearst crop and water it.'}]
 
 client = Client(
-   host=config_data["server_urls"]["ollama_url"]
+   host=config_data["server_urls"]["ollama_url"],
+    timeout=60
    
 )
 # model = 'gpt-oss:20b'
@@ -537,5 +538,8 @@ if len(time_taken)>0 and len(tool_calls_array)>0:
     logger.info("total input tokens: "+str(total_input_tokens))
     logger.info("total output tokens: "+str(total_output_tokens))
 else:
+    print(f"points gained by agent: {str(points_gained)}")
+    logger.info(f"points gained by agent: {str(points_gained)}")
     logger.info("llm tool failed") 
     print("llm tool failed")
+
