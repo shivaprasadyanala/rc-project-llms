@@ -698,6 +698,8 @@ if len(time_taken)>0 and len(tool_calls)>0:
     logger.info("no of revisits:"+ str(revisits))
 
 else:
+    print(f"points gained by agent: {str(points_gained)}")
+    logger.info(f"points gained by agent: {str(points_gained)}")
     logger.info("llm tool failed") 
     print("llm tool failed")
 
