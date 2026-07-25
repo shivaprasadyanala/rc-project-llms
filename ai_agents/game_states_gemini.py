@@ -1,5 +1,5 @@
 states = {
-    # STATE 1: Basic Detour - A small vertical wall blocks the direct path to the crop.
+    # # STATE 1: Basic Detour - A small vertical wall blocks the direct path to the crop.
     # "state1": {
     #     "grid_size": (800, 600),
     #     "player_pos": [100, 100], 
@@ -74,7 +74,7 @@ states = {
     #     "goal_completed": False
     # },
 
-    # # STATE 5: Zigzag Corridors - Forces serpentine movement and complex routing.
+    # STATE 5: Zigzag Corridors - Forces serpentine movement and complex routing.
     # "state5": {
     #     "grid_size": (800, 600),
     #     "player_pos": [50, 50], 
@@ -100,38 +100,6 @@ states = {
     #     "goal_completed": False
     # },
 
-    # STATE 6: The Spiral Maze - Requires deep pathing, backtracking, and memory.
-    "state5": {
-        "grid_size": (800, 600),
-        "player_pos": [50, 50], 
-        "crops": {
-            (250, 200): {"name": "rice", "planted": False, "needs_water": True},   # Deep inside the spiral
-            (450, 50): {"name": "wheat", "planted": False, "needs_water": True},
-            (450, 350): {"name": "tomato", "planted": False, "needs_water": True},
-            (50, 350): {"name": "corn", "planted": False, "needs_water": True},
-            (250, 400): {"name": "potato", "planted": False, "needs_water": True},
-            (100, 100): {"name": "carrot", "planted": False, "needs_water": True}
-        },
-        "obstacles": [
-            # Outer ring top
-            [150, 100], [175, 100], [200, 100], [225, 100], [250, 100], [275, 100], [300, 100], [325, 100], [350, 100],
-            # Outer ring right
-            [350, 125], [350, 150], [350, 175], [350, 200], [350, 225], [350, 250], [350, 275], [350, 300],
-            # Outer ring bottom
-            [150, 300], [175, 300], [200, 300], [225, 300], [250, 300], [275, 300], [300, 300], [325, 300],
-            # Outer ring left
-             [150, 150], [150, 175], [150, 200], [150, 225], [150, 250], [150, 275],
-            # Inner ring bottom
-            [200, 250], [225, 250], [250, 250], [275, 250], [300, 250],
-            # Inner ring right
-            [300, 150], [300, 175], [300, 200], [300, 225],
-            # Inner ring top
-            [200, 150], [225, 150], [250, 150], [275, 150]
-        ],
-        "water_available": False,
-        "water_tank": [200, 200], # Trapped in the center of the spiral
-        "goal_completed": False
-    },
     ## STATE 6: The Spiral Maze - Requires deep pathing, backtracking, and memory.
     "state6": {
         "grid_size": (800, 600),
