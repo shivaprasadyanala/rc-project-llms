@@ -478,12 +478,23 @@ try:
     new_crops = {}
     while True:
         st_time = time.time()    
+        # response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop],options= {"num_ctx": 30000})
         response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
         print(f"input_tokens: {response['prompt_eval_count']}")
+
+        print("Prompt evaluation time:",response["prompt_eval_duration"] / 1e9, "seconds")
+        logger.info(f"Prompt evaluation time:{response['prompt_eval_duration'] / 1e9:.2f}")
+
+        print("Generation time:",response["eval_duration"] / 1e9, "seconds")
+        logger.info(f"Generation time: {response['eval_duration'] / 1e9:.2f}")
+
         print(f"output_tokens: {response['eval_count']}")
+
         total_output_tokens += response['eval_count']
         total_input_tokens = response['prompt_eval_count']
-        print(f"reponse time: {(response['total_duration']/1e9)}")
+        print(f"response time: {(response['total_duration']/1e9)}")
+        logger.info(f"response time: {response['total_duration'] / 1e9:.2f}")
+
 
         if response.message.content:
           print('Content: ')
