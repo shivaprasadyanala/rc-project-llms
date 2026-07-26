@@ -52,17 +52,31 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
 
         if all(isinstance(x, tuple) for x in obstacles_px):
             if tuple(goal_px) in obstacles_px:
-                return "goal cannot be an obstacle. please pass the correct arguments."
+                # return "goal cannot be an obstacle. please pass the correct arguments."
+                return json.dumps({
+                    "status": False,
+                    "error": "goal cannot be an obstacle. please pass the correct arguments.",
+                })
         else:
             if list(goal_px) in obstacles_px:
-                 return "goal cannot be an obstacle. please pass the correct arguments."
+                 # return "goal cannot be an obstacle. please pass the correct arguments."
+                 return json.dumps({
+                    "status": False,
+                    "error": "goal cannot be an obstacle. please pass the correct arguments.",
+                })
 
 
         # Early validation: Check if start or goal are inherently out of bounds
         if start[0] < 0 or start[1] < 0 or start[0] >= int(grid_width) or start[1] >= int(grid_height):
-            return "None (Start coordinate is out of bounds)"
+            # return "None (Start coordinate is out of bounds)"
+            return json.dumps({
+            "status": False,
+            "error": "None (Start coordinate is out of bounds)"})
         if goal[0] < 0 or goal[1] < 0 or goal[0] >= int(grid_width) or goal[1] >= int(grid_height):
-            return "None (Goal coordinate is out of bounds)"
+            # return "None (Goal coordinate is out of bounds)"
+            return json.dumps({
+            "status": False,
+            "error": "None (Goal coordinate is out of bounds)"})
         
         obstacles =set()
         for obstacle in obstacles_px:
@@ -120,7 +134,11 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
 
         return None  # no path found
     except Exception as e:
-        return "pass correct argument to the tool."
+        # return "pass correct argument to the tool."
+        return json.dumps({
+            "status": False,
+            "error": "pass correct argument to the tool.",
+        })
 
 
 
