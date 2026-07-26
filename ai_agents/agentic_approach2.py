@@ -477,6 +477,8 @@ try:
     # crop_planted2 = False
     new_crops = {}
     while True:
+        if len(messages) > 10:
+            messages = messages[:2] + messages[-8:]
         st_time = time.time()    
         response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
         print(f"input_tokens: {response['prompt_eval_count']}")
@@ -553,10 +555,14 @@ try:
         elif response.message.tool_calls == None:
           print("LLm did not call the tools and goal not completed")
           logger.error(f"LLm failed to call the tools and goal not completed")
+          logger.info(state)
+
           break
 except Exception as e:
         logger.error(f"LLm failed due to error: {str(e)}")
         print(f"LLm failed due to error: {str(e)}")
+        logger.info(state)
+
 if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
@@ -621,4 +627,7 @@ else:
     # logger.info(agent_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
+    print(f"points gained object: {str(points_gained_object)}")
+    logger.info(f"points gained object: {str(points_gained_object)}")
+    logger.info(state)
 
