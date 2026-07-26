@@ -125,8 +125,6 @@ for state_key,state in states.items():
           if  crops[crop[0],crop[1]]["planted"] == True and crops[crop[0],crop[1]]["needs_water"] == False:
             value+=1
         print("value of goal completed:" + str(value))
-        if value ==2:
-            state["goal_completed"]= True
         return state["goal_completed"]
 
 
@@ -470,7 +468,8 @@ for state_key,state in states.items():
         new_crops = {}
         i=0
         while 50:
-          # time.sleep(1)
+          if len(messages) > 10:
+            messages = messages[:2] + messages[-8:]
           i+=1
           st_time = time.time()    
           # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0})
@@ -566,7 +565,7 @@ for state_key,state in states.items():
     except Exception as e:
           logger.error(f"LLm failed due to error: {str(e)}")
           print(f"LLm failed due to error: {str(e)}")
-          logger.info(log_messages)
+          # logger.info(log_messages)
     if state["water_available"] == True:
         points_gained +=1
         points_gained_object["water_available"] = 1
@@ -679,7 +678,7 @@ for state_key,state in states.items():
         logger.info(f"player_positions: {player_positions}")
 
         print(f"points gained by agent: {str(points_gained)}")
-        # logger.info(f"points gained by agent: {str(points_gained)}")
+        logger.info(f"points gained by agent: {str(points_gained)}")
         state_result[state_key]["points_gained"] = points_gained
         print(f"points gained object: {str(points_gained_object)}")
         # logger.info(f"points gained object: {str(points_gained_object)}")
@@ -732,6 +731,7 @@ for state_key,state in states.items():
         # logger.info(log_messages)
         logger.info("llm tool failed") 
         print("llm tool failed")
+        state_result[state_key]["points_gained"] = points_gained
     game_states.append(state_result)
 
 
