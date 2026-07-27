@@ -490,22 +490,22 @@ for task in tasks:
                       # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0,"seed":42})
                       response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
 
-                      print(f"input_tokens: {response['prompt_eval_count']}")
-                      print(f"output_tokens: {response['eval_count']}")
+                      # print(f"input_tokens: {response['prompt_eval_count']}")
+                      # print(f"output_tokens: {response['eval_count']}")
                       total_output_tokens += response['eval_count']
                       total_input_tokens = response['prompt_eval_count']
-                      print(f"reponse time: {(response['total_duration']/1e9)}")
-                      print("reponse::")
-                      print(response.message)
+                      # print(f"reponse time: {(response['total_duration']/1e9)}")
+                      # print("reponse::")
+                      # print(response.message)
                       # breakpoint()
-                      if response.message.content:
-                        print('Content: ')
-                        print(response.message.content + '\n')
-                        logger.info(f"content : {response.message.content}")
-                      if response.message.thinking:
-                        print('Thinking: ')
-                        print(response.message.thinking + '\n')
-                        logger.info(f"thinking : {response.message.thinking}")
+                      # if response.message.content:
+                        # print('Content: ')
+                        # print(response.message.content + '\n')
+                        # logger.info(f"content : {response.message.content}")
+                      # if response.message.thinking:
+                        # print('Thinking: ')
+                        # print(response.message.thinking + '\n')
+                        # logger.info(f"thinking : {response.message.thinking}")
                       messages.append(response.message)
                       
                       if response.message.tool_calls:
@@ -529,20 +529,20 @@ for task in tasks:
                                 tool_calls.append(tool_call.function.name)
                                 time_taken.append(time.time()-st_time)
                             time_taken.append(time.time()-st_time)
-                            crops = crops_object["crops"]
-                            new_crops = {}
-                            j = 0
-                            for k, v in crops.items():   
-                                j += 1
-                                new_crops[f"crop{j}"] = {
-                                    "pos": list(k),
-                                    "name": v["name"],
-                                    "needs_water": v["needs_water"],
-                                    "is_planted": v["is_planted"]
-                                }
-                            print(new_crops)
+                      #       crops = crops_object["crops"]
+                      #       new_crops = {}
+                      #       j = 0
+                      #       for k, v in crops.items():   
+                      #           j += 1
+                      #           new_crops[f"crop{j}"] = {
+                      #               "pos": list(k),
+                      #               "name": v["name"],
+                      #               "needs_water": v["needs_water"],
+                      #               "is_planted": v["is_planted"]
+                      #           }
+                      #       print(new_crops)
                             new_state = {
-                                "grid_size": [5, 5],
+                                "grid_size": [800, 600],
                                 "player_pos": state["player_pos"],
                                 "crops": new_crops,
                                 "obstacles": [250,100],
@@ -558,19 +558,19 @@ for task in tasks:
                               "tool_name": tool_call.function.name
                           })
 
-                            print("new_state")
-                            print(new_state)
-                            player_positions.append(state["player_pos"])
-                            new_state["task"] = new_content
-                            new_task_state = new_state
-                            response = requests.post(url, json=new_task_state, headers=headers)
-                            print(response)
+                      #       print("new_state")
+                      #       print(new_state)
+                      #       player_positions.append(state["player_pos"])
+                      #       new_state["task"] = new_content
+                      #       new_task_state = new_state
+                      #       response = requests.post(url, json=new_task_state, headers=headers)
+                      #       print(response)
                           else:
                             print(f'Tool {tool_call.function.name} not found')
                             messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
-                      elif state["goal_completed"]:
-                        print("goal completed")
-                        break
+                      # elif state["goal_completed"]:
+                      #   print("goal completed")
+                      #   break
                       # elif response.message.tool_calls == None:
                       #   print("LLm did not call the tools")
                       #   logger.error(f"LLm failed to call the tools: {str(e)}")
@@ -591,53 +591,55 @@ for task in tasks:
                     points_gained +=1
                     points_gained_object["water_available"] = 1
 
-                reset_crop = {}
-                j = 0
-                crops = crops_object["crops"]
-                for k,v in crops.items():
-                    j+=1    
-                    reset_crop[f"crop{j}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":True,"is_planted":False}
-                    if crops.get(k)["is_planted"] == True:
-                        points_gained_object[f"plant_crop_{j}"] = 1
-                        points_gained+=1
-                    if crops.get(k)["needs_water"] == False:
-                        points_gained_object[f"needs_water_{j}"] = 1
-                        points_gained+=1
+                # reset_crop = {}
+                # j = 0
+                # crops = crops_object["crops"]
+                # for k,v in crops.items():
+                #     j+=1    
+                #     reset_crop[f"crop{j}"] = {"pos":list(k),"name":crops.get(k)["name"],"needs_water":True,"is_planted":False}
+                #     if crops.get(k)["is_planted"] == True:
+                #         points_gained_object[f"plant_crop_{j}"] = 1
+                #         points_gained+=1
+                #     if crops.get(k)["needs_water"] == False:
+                #         points_gained_object[f"needs_water_{j}"] = 1
+                #         points_gained+=1
 
 
-                reset_state = {
-                            "grid_size": [5, 5],
-                            "player_pos": [200,100],
+                # reset_state = {
+                #             "grid_size": [5, 5],
+                #             "player_pos": [200,100],
 
-                            "crops": reset_crop,
-                            "obstacles": [250,100],
-                            "water_available":False,
-                            "goal_completed": state["goal_completed"]
-                        }
+                #             "crops": reset_crop,
+                #             "obstacles": [250,100],
+                #             "water_available":False,
+                #             "goal_completed": state["goal_completed"]
+                #         }
+        # print()
+                print("tool_calls_test:")
+                print(tool_calls)
+            #     response = requests.post(url, json=reset_state, headers=headers)
+            #     final_score = 0
+            #     print(time_taken)
+            #     if len(time_taken)>0 and len(tool_calls) > 0:
+            #         final_score = find_final_score(time_taken,player_positions,points_gained_object,tool_calls,points_gained,revisits,state,invalid_moves,invalid_move_object,task_type)
+            #         print("final_score:")
+            #         print(final_score)
 
-                response = requests.post(url, json=reset_state, headers=headers)
-                final_score = 0
-                print(time_taken)
-                if len(time_taken)>0 and len(tool_calls) > 0:
-                    final_score = find_final_score(time_taken,player_positions,points_gained_object,tool_calls,points_gained,revisits,state,invalid_moves,invalid_move_object,task_type)
-                    print("final_score:")
-                    print(final_score)
+            #     else:
+            #         print("final_score:")
+            #         print(final_score)
+            #         # logger.info(log_messages)
+            #         logger.info("llm tool call failed") 
+            #         print("llm tool call failed")
+            #     final_score_array.append(final_score)
 
-                else:
-                    print("final_score:")
-                    print(final_score)
-                    # logger.info(log_messages)
-                    logger.info("llm tool call failed") 
-                    print("llm tool call failed")
-                final_score_array.append(final_score)
+            # results[task_name][difficulty] = final_score_array
 
-            results[task_name][difficulty] = final_score_array
-
-    final_result.append(results)
-logger.info("final_result: "+str(final_result))
+    # final_result.append(results)
+# logger.info("final_result: "+str(final_result))
     # break
 
-print(final_result)
+# print(final_result)
 
 
 
