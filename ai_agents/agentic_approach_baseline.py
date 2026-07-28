@@ -12,7 +12,7 @@ from speech_to_text import audio_text
 from non_trivial_tasks import tasks
 from utils import find_final_score
 from my_logger import logger,config_data,model
-
+from collections import defaultdict
 
 
 url = config_data["server_urls"]["game_state_url"]
@@ -43,13 +43,14 @@ headers = {
 }
 final_result = []
 for task in tasks:
-    results = {}
+    results = defaultdict(lambda: defaultdict(dict))
     for task_name, difficulties in task.items():
-        results[task_name] = {}
+        # results[task_name] = {}
         print(f"Task: {task_name}")
         for difficulty, prompts in difficulties.items():
             print(f"  Difficulty: {difficulty}")
             final_score_array = []
+            tool_calls_array = []
             for prompt in prompts:
                 task_type =  task_name.replace("_task", "")
                 new_content = prompt
@@ -528,7 +529,7 @@ for task in tasks:
                             if "false" not in real_result_json:
                                 tool_calls.append(tool_call.function.name)
                                 time_taken.append(time.time()-st_time)
-                            time_taken.append(time.time()-st_time)
+                            # time_taken.append(time.time()-st_time)
                             crops = crops_object["crops"]
                             new_crops = {}
                             j = 0
@@ -630,8 +631,10 @@ for task in tasks:
                     logger.info("llm tool call failed") 
                     print("llm tool call failed")
                 final_score_array.append(final_score)
+                tool_calls_array.append(len(player_positions))
 
-            results[task_name][difficulty] = final_score_array
+            results[task_name][difficulty]["points"] = final_score_array
+            results[task_name][difficulty]["tool_calls"] = tool_calls_array
 
     final_result.append(results)
 logger.info("final_result: "+str(final_result))
