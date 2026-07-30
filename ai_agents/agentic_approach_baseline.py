@@ -473,6 +473,7 @@ for task in tasks:
 
                 time_taken = []
                 player_positions = []
+                tool_calls_array = []
                 log_messages = []
                 total_output_tokens = 0
                 total_input_tokens = 0
@@ -617,6 +618,13 @@ for task in tasks:
         # print()
                 print("tool_calls_test:")
                 print(tool_calls)
+                result = [tool_calls[0]]
+                for action in tool_calls[1:]:
+                    if action != result[-1]:
+                        result.append(action)
+                print("tool_calls_after:")
+                print(result)
+                tool_calls_array.append(result)
             #     response = requests.post(url, json=reset_state, headers=headers)
             #     final_score = 0
             #     print(time_taken)
@@ -632,14 +640,16 @@ for task in tasks:
             #         logger.info("llm tool call failed") 
             #         print("llm tool call failed")
             #     final_score_array.append(final_score)
-
             # results[task_name][difficulty] = final_score_array
 
-    # final_result.append(results)
-# logger.info("final_result: "+str(final_result))
+            results[task_name][difficulty] = tool_calls_array            
+
+
+    final_result.append(results)
+logger.info("final_result: "+str(final_result))
     # break
 
-# print(final_result)
+print(final_result)
 
 
 
