@@ -129,7 +129,8 @@ def set_crop_state():
 # breakpoint()
 def water()-> str:
     """
-      waters the crop and changes the state accordingly
+      waters the crop and changes the state accordingly.
+      This tool is only used when the crop is planted and player is at the crops position.
       Args:
           None: No argument 
       Returns:
@@ -148,29 +149,29 @@ def water()-> str:
     if not crop:
         invalid_moves+=1
         invalid_move_object["no crop"] = invalid_move_object.get("no crop", 0) + 1
-        return {
+        return json.dumps({
         "status":"false",
         "action":"water",
         "message": "no crop here"
-        }
+        })
     if not crop["planted"]:
         invalid_moves+=1
         invalid_move_object["crop not planted"] = invalid_move_object.get("crop not planted", 0) + 1
-        return {
+        return json.dumps({
         "status":"false",
         "action":"water",
         "message": "crop not planted"
-        }
+        })
 
     if not crop["needs_water"]:
         invalid_moves+=1
         # return "Crop already watered"
         invalid_move_object["crop already watered"] = invalid_move_object.get("crop already watered", 0) + 1
-        return {
+        return json.dumps({
         "status":"false",
         "action":"water",
         "message": "crop already watered"
-        }
+        })
 
     crop["needs_water"] = False
 
@@ -186,6 +187,7 @@ def water()-> str:
 def collect_water()-> str:
     """
       collectes the water from the water container and changes the state of water_available accordingly
+      This tool is only used when the player is at the water tanks position.
       Args:
           None: No argument 
       Returns:
@@ -209,12 +211,12 @@ def collect_water()-> str:
     if new_x != water_tank[0] or new_y != water_tank[1]:
         invalid_moves +=1
         invalid_move_object["no water tank here"] = invalid_move_object.get("no water tank here", 0) + 1
-        {
+        return json.dumps({
         "status":"false",
         "action":"collect water",
         "message":"no water tank here",
         "water_available": state["water_available"]
-        }
+        })
 
     # water_tank_y = state["water_tank"][1]
     state["water_available"] = True
@@ -322,6 +324,8 @@ def move(dx:int, dy:int)-> str:
 def plant_crop(x:int, y:int)-> str:
     """
     Plant a crop at the given grid coordinate (x,y).
+    (x,y) are the player coordinates.
+    This tool is only used when the player is at the crops position.
     Args:
         x (int): x coordinate
         y (int): y coordinate
@@ -338,6 +342,18 @@ def plant_crop(x:int, y:int)-> str:
     """
     global invalid_moves,invalid_move_object
     crop = state["crops"].get((x, y))
+
+    new_x = state["player_pos"][0]
+    new_y = state["player_pos"][1]
+
+    px,py = get_plant_cords()
+
+    if new_x!=px and new_y!=px:
+        return json.dumps({
+            "status": False,
+            "error": "the player is not at the crop.",
+            "position": [x, y]
+        })
 
     if not crop:
         invalid_moves+=1
