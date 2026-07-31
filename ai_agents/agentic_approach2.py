@@ -247,14 +247,14 @@ def water()-> str:
 
 def collect_water()-> str:
     """
-      collectes the water from the water container and changes the state of water_available accordingly
+      collects the water from the water container and changes the state of water_available accordingly.
       Args:
           None: No argument 
       Returns:
         JSON string
          {
         "status":"true",
-        "action":"move",
+        "action":"collect water",
         "water_available": state["water_available"]
        }
     """
@@ -322,11 +322,17 @@ def move(dx:int, dy:int)-> str:
         "action":"move",
         "player_pos": state["player_pos"]
     })
-
+def check_player_position(crops,x,y,sx,sy):
+    is_correct_position = False
+    for k,v in crops.items():  
+        if (x == k[0] and y == k[1]) and (x == sx and y == sy):
+            is_correct_position = True 
+    return is_correct_position
 
 def plant_crop(x:int, y:int)-> str:
     """
     Plant a crop at the given grid coordinate (x,y).
+    (x,y) are the player coordinates.
     Args:
         x (int): x coordinate
         y (int): y coordinate
@@ -343,7 +349,17 @@ def plant_crop(x:int, y:int)-> str:
     """
 
     crop = state["crops"].get((x, y))
-    
+    new_x = state["player_pos"][0]
+    new_y = state["player_pos"][1]
+
+    is_correct_position = check_player_position(state["crops"],new_x,new_y,x,y)
+
+    if not is_correct_position:
+        return json.dumps({
+            "status": False,
+            "error": "the player is not at the crop.",
+            "planted": True
+        })
     if not crop:
         return json.dumps({
             "status": False,
