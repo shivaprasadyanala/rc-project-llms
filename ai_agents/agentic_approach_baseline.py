@@ -50,6 +50,7 @@ for task in tasks:
         for difficulty, prompts in difficulties.items():
             print(f"  Difficulty: {difficulty}")
             final_score_array = []
+            tool_calls_array = []
             for prompt in prompts:
                 task_type =  task_name.replace("_task", "")
                 new_content = prompt
@@ -349,67 +350,67 @@ for task in tasks:
                     return is_correct_position
 
                 def plant_crop(x:int, y:int)-> str:
-                    try:
-                        """
-                        Plant a crop at the given grid coordinate (x,y).
-                        (x,y) are the player coordinates.
-                        This tool is only used when the player is at the crops position.
-                        Args:
-                            x (int): x coordinate
-                            y (int): y coordinate
+                    # try:
+                    """
+                    Plant a crop at the given grid coordinate (x,y).
+                    (x,y) are the player coordinates.
+                    This tool is only used when the player is at the crops position.
+                    Args:
+                        x (int): x coordinate
+                        y (int): y coordinate
 
-                        Returns:
-                            JSON string:
-                            {
-                                "status": true/false,
-                                "action": "plant_crop",
-                                "position": [x, y],
-                                "is_planted": true/false,
-                                "error": optional string
-                            }
-                        """
-                        global invalid_moves,invalid_move_object
-                        crop = crops_object["crops"].get((x, y))
-                        new_x = state["player_pos"][0]
-                        new_y = state["player_pos"][1]
-
-                        is_correct_position = check_player_postion(state["crops"],new_x,new_y,x,y)
-
-                        if not is_correct_position:
-                            return json.dumps({
-                                "status": False,
-                                "error": "the player is not at the crop.",
-                            "planted": True
-                        })
-                        if not crop:
-                            invalid_moves+=1
-                            invalid_move_object["No crop here"] = invalid_move_object.get("No crop here", 0) + 1
-                            return json.dumps({
-                                "status": "false",
-                                "error": "No crop here",
-                                "position": [x, y]
-                            })
-
-                        if crop["is_planted"]:
-                            invalid_move_object["Already planted"] = invalid_move_object.get("Already planted", 0) + 1
-                            invalid_moves+=1
-                            return json.dumps({
-                                "status": "false",
-                                "error": "Already planted",
-                                "position": [x, y]
-                            })
-
-                        crop["is_planted"] = True   
-                        goal_completed(state)
-
-                        return json.dumps({
-                            "status": "true",
+                    Returns:
+                        JSON string:
+                        {
+                            "status": true/false,
                             "action": "plant_crop",
                             "position": [x, y],
-                            "is_planted": True
+                            "is_planted": true/false,
+                            "error": optional string
+                        }
+                    """
+                    global invalid_moves,invalid_move_object
+                    crop = crops_object["crops"].get((x, y))
+                    new_x = state["player_pos"][0]
+                    new_y = state["player_pos"][1]
+
+                    is_correct_position = check_player_postion(crops_object["crops"],new_x,new_y,x,y)
+
+                    if not is_correct_position:
+                        return json.dumps({
+                            "status": False,
+                            "error": "the player is not at the crop.",
+                        "planted": True
+                    })
+                    if not crop:
+                        invalid_moves+=1
+                        invalid_move_object["No crop here"] = invalid_move_object.get("No crop here", 0) + 1
+                        return json.dumps({
+                            "status": "false",
+                            "error": "No crop here",
+                            "position": [x, y]
                         })
-                    except Exception as e:
-                        return "error : invalid arguments to the tool plant_crop"
+
+                    if crop["is_planted"]:
+                        invalid_move_object["Already planted"] = invalid_move_object.get("Already planted", 0) + 1
+                        invalid_moves+=1
+                        return json.dumps({
+                            "status": "false",
+                            "error": "Already planted",
+                            "position": [x, y]
+                        })
+
+                    crop["is_planted"] = True   
+                    goal_completed(state)
+
+                    return json.dumps({
+                        "status": "true",
+                        "action": "plant_crop",
+                        "position": [x, y],
+                        "is_planted": True
+                    })
+                    # except Exception as e:
+                    #     return "error : invalid arguments to the tool plant_crop"
 
 
                 available_tools = {"move":move,"water":water,"collect_water":collect_water,"plant_crop":plant_crop}
@@ -492,7 +493,7 @@ for task in tasks:
 
                 time_taken = []
                 player_positions = []
-                tool_calls_array = []
+                
                 log_messages = []
                 total_output_tokens = 0
                 total_input_tokens = 0
@@ -549,18 +550,6 @@ for task in tasks:
                                 tool_calls.append(tool_call.function.name)
                                 time_taken.append(time.time()-st_time)
                             time_taken.append(time.time()-st_time)
-                      #       crops = crops_object["crops"]
-                      #       new_crops = {}
-                      #       j = 0
-                      #       for k, v in crops.items():   
-                      #           j += 1
-                      #           new_crops[f"crop{j}"] = {
-                      #               "pos": list(k),
-                      #               "name": v["name"],
-                      #               "needs_water": v["needs_water"],
-                      #               "is_planted": v["is_planted"]
-                      #           }
-                      #       print(new_crops)
                             new_state = {
                                 "grid_size": [800, 600],
                                 "player_pos": state["player_pos"],
@@ -644,29 +633,10 @@ for task in tasks:
                 print("tool_calls_after:")
                 print(result)
                 tool_calls_array.append(result)
-            #     response = requests.post(url, json=reset_state, headers=headers)
-            #     final_score = 0
-            #     print(time_taken)
-            #     if len(time_taken)>0 and len(tool_calls) > 0:
-            #         final_score = find_final_score(time_taken,player_positions,points_gained_object,tool_calls,points_gained,revisits,state,invalid_moves,invalid_move_object,task_type)
-            #         print("final_score:")
-            #         print(final_score)
-
-            #     else:
-            #         print("final_score:")
-            #         print(final_score)
-            #         # logger.info(log_messages)
-            #         logger.info("llm tool call failed") 
-            #         print("llm tool call failed")
-            #     final_score_array.append(final_score)
-            # results[task_name][difficulty] = final_score_array
-
-            results[task_name][difficulty] = tool_calls_array            
-
+            results[task_name][difficulty]= (tool_calls_array)
 
     final_result.append(results)
 logger.info("final_result: "+str(final_result))
-    # break
 
 print(final_result)
 
