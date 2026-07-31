@@ -138,7 +138,8 @@ for task in tasks:
                 def water()-> str:
                     try:
                         """
-                          waters the crop and changes the state accordingly
+                          waters the crop and changes the state accordingly.
+                          This tool is only used when the crop is planted and player is at the crops position.
                           Args:
                               None: No argument 
                           Returns:
@@ -157,29 +158,29 @@ for task in tasks:
                         if not crop:
                             invalid_moves+=1
                             invalid_move_object["no crop"] = invalid_move_object.get("no crop", 0) + 1
-                            return {
+                            return json.dumps({
                             "status":"false",
                             "action":"water",
                             "message": "no crop here"
-                            }
+                            })
                         if not crop["is_planted"]:
                             invalid_moves+=1
                             invalid_move_object["crop not planted"] = invalid_move_object.get("crop not planted", 0) + 1
-                            return {
+                            return json.dumps({
                             "status":"false",
                             "action":"water",
                             "message": "crop not planted"
-                            }
+                            })
 
                         if not crop["needs_water"]:
                             invalid_moves+=1
                             # return "Crop already watered"
                             invalid_move_object["crop already watered"] = invalid_move_object.get("crop already watered", 0) + 1
-                            return {
+                            return json.dumps({
                             "status":"false",
                             "action":"water",
                             "message": "crop already watered"
-                            }
+                            })
 
                         crop["needs_water"] = False
 
@@ -199,6 +200,7 @@ for task in tasks:
                     try:
                         """
                           collectes the water from the water container and changes the state of water_available accordingly
+                          This tool is only used when the player is at the water tanks position.
                           Args:
                               None: No argument 
                           Returns:
@@ -339,12 +341,19 @@ for task in tasks:
                     except Exception as e:
                         return "error : invalid arguments to the tool move"
 
-
+                def check_player_postion(crops,x,y,sx,sy):
+                    is_correct_position = False
+                    for k,v in crops.items():  
+                        if (x == k[0] and y == k[1]) and (x == sx and y == sy):
+                            is_correct_position = True 
+                    return is_correct_position
 
                 def plant_crop(x:int, y:int)-> str:
                     try:
                         """
                         Plant a crop at the given grid coordinate (x,y).
+                        (x,y) are the player coordinates.
+                        This tool is only used when the player is at the crops position.
                         Args:
                             x (int): x coordinate
                             y (int): y coordinate
@@ -361,7 +370,17 @@ for task in tasks:
                         """
                         global invalid_moves,invalid_move_object
                         crop = crops_object["crops"].get((x, y))
+                        new_x = state["player_pos"][0]
+                        new_y = state["player_pos"][1]
 
+                        is_correct_position = check_player_postion(state["crops"],new_x,new_y,x,y)
+
+                        if not is_correct_position:
+                            return json.dumps({
+                                "status": False,
+                                "error": "the player is not at the crop.",
+                            "planted": True
+                        })
                         if not crop:
                             invalid_moves+=1
                             invalid_move_object["No crop here"] = invalid_move_object.get("No crop here", 0) + 1
