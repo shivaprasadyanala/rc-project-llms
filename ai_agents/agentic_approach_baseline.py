@@ -84,7 +84,7 @@ state = {
     "grid_size": (800, 600),
 
     # Player
-    "player_pos": [300, 100],  # use list for mutability
+    "player_pos": [200, 100],  # use list for mutability
 
     # Crops indexed by position
     "crops": {
@@ -319,6 +319,12 @@ def move(dx:int, dy:int)-> str:
             "player_pos": state["player_pos"]
         })
 
+def check_player_postion(crops,x,y,sx,sy):
+    is_correct_position = False
+    for k,v in crops.items():  
+        if (x == k[0] and y == k[1]) and (x == sx and y == sy):
+            is_correct_position = True 
+    return is_correct_position
 
 
 def plant_crop(x:int, y:int)-> str:
@@ -346,9 +352,9 @@ def plant_crop(x:int, y:int)-> str:
     new_x = state["player_pos"][0]
     new_y = state["player_pos"][1]
 
-    px,py = get_plant_cords()
+    is_correct_position = check_player_postion(state["crops"],new_x,new_y,x,y)
 
-    if new_x!=px and new_y!=px:
+    if not is_correct_position:
         return json.dumps({
             "status": False,
             "error": "the player is not at the crop.",
@@ -382,6 +388,12 @@ def plant_crop(x:int, y:int)-> str:
         "planted": True
     })
 
+# state["player_pos"][0] = 400
+# state["player_pos"][1] = 275
+
+# print(plant_crop(400,275))
+
+# breakpoint()
 
 available_tools = {"move":move,"water":water,"collect_water":collect_water,"plant_crop":plant_crop}
 
