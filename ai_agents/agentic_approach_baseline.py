@@ -404,13 +404,12 @@ system_message2 = f"""
 
 you are smart farm game agent.
 
-Your task:
-1. planting the crops by going to the given coordinates.
-2. Water needs to collected to plant water.
-3. Reach the water tank to collect water.
-
-IMPORTANT.
- check if the crops are planted.
+Rules
+- Execute only the next action.
+- Always use tools for movement and interaction.
+- always move 25px in one direction
+- calculate paths manually.
+- Stop after each completed tool call and wait for the updated world state.
 
 
 WORLD STATE:
@@ -431,14 +430,10 @@ Water_available:
 Water_tank:
 {list(state['water_tank'])}
 
+the crops are not planted and not watered
 
 move 25pxs and one side at a time
-and not allowed to pass through the crop, water tank, they are obstacles.
 
-call only one tool at a time.
-Never output tool arguments as text, JSON, markdown, or code blocks.
-When an action is required, invoke the corresponding tool. 
-If a tool is available, emitting its arguments in text form is always incorrect.
 
 Tools available:
 {available_tools}
