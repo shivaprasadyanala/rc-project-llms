@@ -73,8 +73,27 @@ parser.add_argument(
     required=True,
     help="LLM model name"
 )
+parser.add_argument(
+    "--think",
+    type=str,
+    choices=["default", "true", "false"],
+    default="default",
+    help="Whether to enable the model's thinking channel. "
+         "default = let the server decide (omit the think param). "
+         "gemma4:26b needs --think true for reliable tool calling; "
+         "gpt-oss:20b can use --think false for lower latency."
+)
 args = parser.parse_args()
 model = args.model
+
+# Build the think option for client.chat:
+#   default -> omit (server default)
+#   true/false -> pass the boolean
+think_option = None
+if args.think == "true":
+    think_option = True
+elif args.think == "false":
+    think_option = False
 print(f"Running model: {model}")
 log_folder = "../../experiments/test_logs_queue"
 os.makedirs(log_folder, exist_ok=True)
@@ -199,18 +218,149 @@ def api_call(current_state):
     task_queue.put(state_to_send)
 
 
-def follow_path(path: list) -> str:
+def _coerce_step(step):
+    """Coerce a single path step into a [x, y] list of ints, or None."""
+    if isinstance(step, (list, tuple)) and len(step) >= 2:
+        try:
+            return [int(step[0]), int(step[1])]
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _parse_path(path):
+    """
+    Normalize the 'path' argument into a list of [x, y] coordinate steps.
+
+    Handles the formats that llama3.1 / llama3.3 (and other models) produce:
+      - list/tuple of [x,y] or (x,y) coordinates
+      - a *string* containing the repr (e.g. "[(200, 100), (175, 100)]")
+      - a flat list/tuple of ints: alternating coordinates, or 25px deltas
+
+    Returns a list of [x, y] steps, or None if the path cannot be parsed.
+    """
+    if path is None:
+        return None
+
+    # 1) Strings: try literal_eval first, else regex-extract integer pairs.
+    if isinstance(path, str):
+        text = path.strip()
+        try:
+            parsed = ast.literal_eval(text)
+        except Exception:
+            parsed = None
+        if parsed is None:
+            nums = re.findall(r"-?\d+", text)
+            if len(nums) >= 4 and len(nums) % 2 == 0:
+                parsed = [[int(nums[i]), int(nums[i + 1])]
+                          for i in range(0, len(nums), 2)]
+            else:
+                return None
+        path = parsed
+
+    if isinstance(path, (list, tuple)) and len(path) == 0:
+        return None
+
+    # 2) List of coordinate pairs: [[x,y], (x,y), ...]
+    if isinstance(path, (list, tuple)) and isinstance(path[0], (list, tuple)):
+        steps = []
+        for step in path:
+            c = _coerce_step(step)
+            if c is not None:
+                steps.append(c)
+        return steps if steps else None
+
+    # 3) Flat list/tuple of numbers.
+    flat = []
+    for item in path:
+        try:
+            flat.append(int(item))
+        except (TypeError, ValueError):
+            return None
+    if len(flat) < 2 or len(flat) % 2 != 0:
+        return None
+
+    # 3a) All values are 25px move deltas -> accumulate from current position.
+    if all(v in (-25, 0, 25) for v in flat):
+        steps = []
+        px, py = int(state["player_pos"][0]), int(state["player_pos"][1])
+        for i in range(0, len(flat) - 1, 2):
+            px += flat[i]
+            py += flat[i + 1]
+            steps.append([px, py])
+        return steps if steps else None
+
+    # 3b) Alternating x,y coordinates.
+    return [[flat[i], flat[i + 1]] for i in range(0, len(flat), 2)]
+
+
+def _validate_steps(steps):
+    """
+    Validate a list of [x, y] steps.
+
+    Returns (valid_steps, error_message):
+      - each step must be an int pair on the 25px grid inside 800x600
+      - consecutive steps must be a single 25px axis move (no teleports/diagonals)
+      - the first step must be reachable by a 25px move from the player position,
+        or equal to it (astar returns the path INCLUDING the start position)
+    """
+    if not steps:
+        return None, "invalid path: call astar first and pass its returned path."
+
+    GRID_W, GRID_H = 800, 600
+    for x, y in steps:
+        if x % 25 != 0 or y % 25 != 0:
+            return None, f"invalid path: coordinates must be on the 25px grid (found {x},{y})."
+        if not (0 <= x < GRID_W and 0 <= y < GRID_H):
+            return None, f"invalid path: out-of-bounds step ({x},{y})."
+
+    cur = tuple(state["player_pos"])
+    first = tuple(steps[0])
+    if first != cur:
+        dx = first[0] - cur[0]
+        dy = first[1] - cur[1]
+        if (dx, dy) not in {(0, -25), (0, 25), (-25, 0), (25, 0)}:
+            return None, "invalid path: first step is not a 25px move from the player position."
+
+    prev = first
+    for step in steps[1:]:
+        s = tuple(step)
+        dx = s[0] - prev[0]
+        dy = s[1] - prev[1]
+        if (dx, dy) not in {(0, -25), (0, 25), (-25, 0), (25, 0)}:
+            return None, f"invalid path: teleport/diagonal between {prev} and {s}."
+        prev = s
+
+    return steps, None
+
+
+def follow_path(path) -> str:
     """
       follow path tool takes the path from the astar algorithm to the goal and make api call to the game server.
     """
-    for step in path:
-        state["player_pos"] = list(step)
-        modified_state = state
-        api_call(modified_state)
+    steps = _parse_path(path)
+    valid_steps, error = _validate_steps(steps) if steps else (None, None)
+    if error is None and not steps:
+        error = "invalid path: call astar and pass its returned path (list of [x, y] coordinates)."
+    if error:
+        return json.dumps({
+            "status": "false",
+            "action": "follow_path",
+            "message": error
+        })
+
+    MAX_PATH_STEPS = 40  # cap hallucinated mega-walks; legit astar paths are <= ~25 steps
+    if len(valid_steps) > MAX_PATH_STEPS:
+        valid_steps = valid_steps[:MAX_PATH_STEPS]
+
+    for x, y in valid_steps:
+        state["player_pos"] = [int(x), int(y)]
+        api_call(state)
     return json.dumps({
         "status": "true",
         "action": "follow_path",
-        "message": "followed path to the goal"
+        "message": "followed path to the goal",
+        "player_pos": state["player_pos"]
     })
 
 
@@ -597,8 +747,15 @@ try:
             messages = messages[:2] + messages[-24:]
 
         st_time = time.time()
-        response: ChatResponse = client.chat(model=model, messages=messages, tools=[
-                                             follow_path, water, astar, collect_water, plant_crop], think=False)
+        chat_kwargs = {}
+        if think_option is not None:
+            chat_kwargs["think"] = think_option
+        response: ChatResponse = client.chat(
+            model=model,
+            messages=messages,
+            tools=[follow_path, water, astar, collect_water, plant_crop],
+            **chat_kwargs
+        )
         print(f"input_tokens: {response['prompt_eval_count']}")
 
         print("Prompt evaluation time:",
@@ -674,7 +831,8 @@ try:
                             "action_result": real_result,
                             "current_state": new_state
                         }),
-                        "name": tool_call.function.name
+                        "name": tool_call.function.name,
+                        "tool_name": tool_call.function.name
                     })
                 else:
                     print(f'Tool {tool_call.function.name} not found')
