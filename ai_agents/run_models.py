@@ -6,22 +6,21 @@ import sys
 #     channel -> MUST use --think true (think=False breaks its tool calls).
 #   - gpt-oss:20b -> --think false keeps the thinking channel off for lower
 #     latency while tool calls still work.
-#   - everything else -> --think default (omit the param; server decides).
-MODEL_THINK_FLAGS = {
-    "gemma4:26b": "--think true",
-    "gpt-oss:20b": "--think false",
-    "qwen3:8b": "--think false"
+#   - everything else -> --think default (same as omitting the flag).
+MODEL_THINK = {
+    "gemma4:26b": "true",
+    "gpt-oss:20b": "false",
 }
 
 models = [
     "gpt-oss:20b",
     "llama3.1:8b",
-    # "qwen2.5:7b",
+    "qwen2.5:7b",
     "qwen3:8b",
-    # "qwen3.6:27b",
-    # "glm-4.7-flash:q4_K_M",
-    # "nemotron3:33b",
-    # "gemma4:e4b",
+    "qwen3.6:27b",
+    "glm-4.7-flash:q4_K_M",
+    "nemotron3:33b",
+    "gemma4:e4b",
     "gemma4:26b",
     "nemotron-3-nano:4b"
 ]
@@ -29,9 +28,9 @@ models = [
 NUM_RUNS = 1
 
 for model in models:
-    think_flag = MODEL_THINK_FLAGS.get(model, "--think default")
     for i in range(NUM_RUNS):
-        print(f"{model} (flag: {think_flag}) - run {i+1}/{NUM_RUNS}")
+        think_value = MODEL_THINK.get(model, "default")
+        print(f"{model} (flag: --think {think_value}) - run {i+1}/{NUM_RUNS}")
 
         subprocess.run(
             [
@@ -39,7 +38,8 @@ for model in models:
                 "agentic_approach2.py",
                 "--model",
                 model,
-                think_flag
+                "--think",
+                think_value,
             ],
             check=True
         )
