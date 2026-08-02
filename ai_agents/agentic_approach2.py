@@ -598,7 +598,7 @@ try:
 
         st_time = time.time()
         response: ChatResponse = client.chat(model=model, messages=messages, tools=[
-                                             follow_path, water, astar, collect_water, plant_crop])
+                                             follow_path, water, astar, collect_water, plant_crop], think=False)
         print(f"input_tokens: {response['prompt_eval_count']}")
 
         print("Prompt evaluation time:",
