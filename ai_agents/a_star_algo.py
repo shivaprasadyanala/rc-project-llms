@@ -15,8 +15,9 @@ def heuristic(a, b):
 
 def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list[tuple[int, int]], grid_width=32, grid_height=24)->str:
     """
-        a star algorithm which takes the start pixal, goal fixal, obstacle pixal, grid width, and gird height
+        a star algorithm which takes the start pixal, goal fixal, obstacle pixal, grid width, and grid height
         to calculate the path from the starting point to the goal by dodging the obstacles.
+        And should not include goal in obstacles list
         Args:
           start_px int,int: x,y coordinates of start
           goal_px int,int: x,y coordinate of goal
@@ -40,95 +41,108 @@ def astar(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px:list
     # print((goal_px))
     # print(obstacles_px)
     
-    # try:
+    try:
+        print("astar called")
+        new_st = (int(start_px[0]),int(start_px[1]))
+        new_goal = ( int(goal_px[0]),int(goal_px[1]))
+        # print(new_goal)
+        # print(new_st)
+        start = to_grid(new_st)
+        goal = to_grid(new_goal)
 
-    new_st = (int(start_px[0]),int(start_px[1]))
-    new_goal = ( int(goal_px[0]),int(goal_px[1]))
-    # print(new_goal)
-    # print(new_st)
-    start = to_grid(new_st)
-    goal = to_grid(new_goal)
-
-
-    # Early validation: Check if start or goal are inherently out of bounds
-    if start[0] < 0 or start[1] < 0 or start[0] >= grid_width or start[1] >= grid_height:
-        return "None (Start coordinate is out of bounds)"
-    if goal[0] < 0 or goal[1] < 0 or goal[0] >= grid_width or goal[1] >= grid_height:
-        return "None (Goal coordinate is out of bounds)"
-    
-    obstacles =set()
-    for obstacle in obstacles_px:
-        # obstacle_tuple = (obstacle[0],obstacle[1])
-        obstacles.add(to_grid((obstacle[0],obstacle[1])))
-
-    # print(obstacles)
-    open_set = []
-    heapq.heappush(open_set, (0, start))
-
-    came_from = {}
-    g_score = {start: 0}
-
-    while open_set:
-        _, current = heapq.heappop(open_set)
-        # print(current,goal)
-        if current == goal:
-            # reconstruct path
-            path = []
-            while current in came_from:
-                path.append(to_pixel(current))
-                current = came_from[current]
-            path.append(to_pixel(start))
-            path.reverse()
-            # return f"path from start to destination is: {path}"
-            return path
-
-        x, y = current
-
-        neighbors = [
-            (x+1, y),
-            (x-1, y),
-            (x, y+1),
-            (x, y-1),
-        ]
-
-        for nx, ny in neighbors:
-            neighbor = (nx, ny)
-
-            # bounds check
-            if nx < 0 or ny < 0 or nx >= int(grid_width) or ny >= int(grid_height):
-                continue
-
-            # obstacle check
-            if neighbor in obstacles:
-                continue
-
-            tentative_g = g_score[current] + 1
-
-            if neighbor not in g_score or tentative_g < g_score[neighbor]:
-                came_from[neighbor] = current
-                g_score[neighbor] = tentative_g
-                f_score = tentative_g + heuristic(neighbor, goal)
-                heapq.heappush(open_set, (f_score, neighbor))
-
-    return None  # no path found
-    # except Exception as e:
-    #     return "pass correct argument to the tool."
+        if all(isinstance(x, tuple) for x in obstacles_px):
+            if tuple(goal_px) in obstacles_px:
+                return "goal cannot be an obstacle. please pass the correct arguments."
+        else:
+            if list(goal_px) in obstacles_px:
+                 return "goal cannot be an obstacle. please pass the correct arguments."
 
 
+        # Early validation: Check if start or goal are inherently out of bounds
+        if start[0] < 0 or start[1] < 0 or start[0] >= int(grid_width) or start[1] >= int(grid_height):
+            return "None (Start coordinate is out of bounds)"
+        if goal[0] < 0 or goal[1] < 0 or goal[0] >= int(grid_width) or goal[1] >= int(grid_height):
+            return "None (Goal coordinate is out of bounds)"
+        
+        obstacles =set()
+        for obstacle in obstacles_px:
+            # obstacle_tuple = (obstacle[0],obstacle[1])
+            obstacles.add(to_grid((obstacle[0],obstacle[1])))
 
-start = [[200, 100],[75, 250],[75, 200],[200, 175]]
-goal = [[75, 250],[75, 200],[200, 175],[50, 25]]
+        # print(obstacles)
+        open_set = []
+        heapq.heappush(open_set, (0, start))
+
+        came_from = {}
+        g_score = {start: 0}
+
+        while open_set:
+            _, current = heapq.heappop(open_set)
+            # print(current,goal)
+            if current == goal:
+                # reconstruct path
+                path = []
+                while current in came_from:
+                    path.append(to_pixel(current))
+                    current = came_from[current]
+                path.append(to_pixel(start))
+                path.reverse()
+                return f"path from start to destination is: {path}"
+                # return path
+
+            x, y = current
+
+            neighbors = [
+                (x+1, y),
+                (x-1, y),
+                (x, y+1),
+                (x, y-1),
+            ]
+
+            for nx, ny in neighbors:
+                neighbor = (nx, ny)
+
+                # bounds check
+                if nx < 0 or ny < 0 or nx >= int(grid_width) or ny >= int(grid_height):
+                    continue
+
+                # obstacle check
+                if neighbor in obstacles:
+                    continue
+
+                tentative_g = g_score[current] + 1
+
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    f_score = tentative_g + heuristic(neighbor, goal)
+                    heapq.heappush(open_set, (f_score, neighbor))
+
+        return None  # no path found
+    except Exception as e:
+        return "pass correct argument to the tool."
+
+
+
+start = [200, 100]
+goal = [75, 250]
 
 # goals = [[300, 275],[600, 275],[200, 375],[500, 225],[250, 250],[100, 75],[450, 155],[600, 175],[300, 575]]
 
 # obstacles = [
-#     (350, 100),
-#     (150, 100),
-#     (250, 50)
+#     (75, 75),
+#     (100, 75),
+#     (125, 75),
+#     (200,100),
+#     (75,250)
 # ]
+
 obstacles = [
-    [250, 25],[250, 125],[225, 150],[100, 50],[150, 75],[325, 50],[50, 200]
+    [125, 75],
+    [200,100],
+    [75,250]
 ]
+# print(astar(start, goal, obstacles, grid_width=32, grid_height=24))
 
 path = (astar(start[3], goal[3], obstacles, grid_width=32, grid_height=24))
 print(path)
@@ -141,238 +155,12 @@ print(len(path))
 #     print(path)
 # end_time = time.time()
 
-print("time taken:")
-print(st_time)
-print(end_time)
-print(end_time-st_time)
+# print("time taken:")
+# print(st_time)
+# print(end_time)
+# print(end_time-st_time)
 
 # print(path)
 
 
 
-######################################
-
-
-
-
-# import heapq
-
-# TILE_SIZE = 25
-
-# DIRS = [
-#     ("UP", (0, -1)),
-#     ("LEFT", (-1, 0)),
-#     ("RIGHT", (1, 0)),
-#     ("DOWN", (0, 1)),
-# ]
-
-# def to_grid(pos):
-#     """
-#     Convert pixel coordinates into grid coordinates.
-
-#     Example:
-#         (50, 75) -> (2, 3)
-
-#     Since each tile is 25 pixels wide/high:
-#         x_grid = x_pixel // 25
-#         y_grid = y_pixel // 25
-
-#     Args:
-#         pos (tuple):
-#             Pixel coordinates (x, y)
-
-#     Returns:
-#         tuple:
-#             Grid coordinates (grid_x, grid_y)
-#     """
-#     return (pos[0] // TILE_SIZE, pos[1] // TILE_SIZE)
-
-# def astar_next_move(start_px, goal_px, obstacles_px,
-#                     crops_px=None,
-#                     grid_width=800,
-#                     grid_height=600):
-#     """
-#     Compute the NEXT optimal movement step using A* pathfinding.
-
-#     This function is designed for deterministic game-agent navigation.
-
-#     ---------------------------------------------------------
-#     MOVEMENT RULES
-#     ---------------------------------------------------------
-#     - Movement is restricted to:
-#         UP, DOWN, LEFT, RIGHT
-
-#     - No diagonal movement allowed.
-
-#     - Each move traverses exactly one tile.
-
-#     ---------------------------------------------------------
-#     BLOCKED TILES
-#     ---------------------------------------------------------
-#     - Obstacles are always blocked.
-
-#     - Crops are blocked UNLESS:
-#         the crop tile is the goal tile.
-
-#     - The agent cannot move outside the map.
-
-#     ---------------------------------------------------------
-#     DETERMINISM
-#     ---------------------------------------------------------
-#     If multiple shortest paths exist:
-#         UP > LEFT > RIGHT > DOWN
-
-#     This ensures stable and reproducible movement.
-
-#     ---------------------------------------------------------
-#     INPUT FORMAT
-#     ---------------------------------------------------------
-
-#     Pixel coordinates are expected.
-
-#     Example:
-#         start_px = (50, 75)
-#         goal_px  = (150, 125)
-
-#     Obstacles:
-#         [
-#             (75, 75),
-#             (100, 75),
-#             (125, 75)
-#         ]
-
-#     Crops:
-#         [
-#             (200, 100),
-#             (225, 100)
-#         ]
-
-#     ---------------------------------------------------------
-#     RETURNS
-#     ---------------------------------------------------------
-
-#     One of:
-#         "UP"
-#         "DOWN"
-#         "LEFT"
-#         "RIGHT"
-#         "STUCK"
-
-#     The function returns ONLY the next movement step,
-#     not the full path.
-
-#     ---------------------------------------------------------
-#     WHY ONLY NEXT MOVE?
-#     ---------------------------------------------------------
-
-#     In real-time game agents:
-#     - recalculating every frame is safer
-#     - dynamic obstacles may appear
-#     - world state may change
-
-#     Returning only the next action keeps the system robust.
-
-#     Args:
-#         start_px (tuple):
-#             Player pixel position (x, y)
-
-#         goal_px (tuple):
-#             Target pixel position (x, y)
-
-#         obstacles_px (list):
-#             List of obstacle pixel coordinates
-
-#         crops_px (list | None):
-#             List of crop pixel coordinates
-
-#         grid_width (int):
-#             World width in pixels
-
-#         grid_height (int):
-#             World height in pixels
-
-#     Returns:
-#         str:
-#             UP / DOWN / LEFT / RIGHT / STUCK
-#     """
-
-#     start = to_grid(start_px)
-#     goal = to_grid(goal_px)
-
-#     obstacles = {to_grid(o) for o in obstacles_px}
-
-#     crops = set()
-#     if crops_px:
-#         crops = {
-#             to_grid(c)
-#             for c in crops_px
-#             if to_grid(c) != goal
-#         }
-
-#     blocked = obstacles | crops
-
-#     grid_w = grid_width // TILE_SIZE
-#     grid_h = grid_height // TILE_SIZE
-
-#     open_set = []
-#     counter = 0
-
-#     heapq.heappush(open_set, (0, counter, start))
-
-#     came_from = {}
-#     g_score = {start: 0}
-
-#     while open_set:
-#         _, _, current = heapq.heappop(open_set)
-
-#         if current == goal:
-#             break
-
-#         x, y = current
-
-#         for _, (dx, dy) in DIRS:
-#             nx, ny = x + dx, y + dy
-
-#             if not (0 <= nx < grid_w and 0 <= ny < grid_h):
-#                 continue
-
-#             neighbor = (nx, ny)
-
-#             if neighbor in blocked:
-#                 continue
-
-#             tentative = g_score[current] + 1
-
-#             if tentative < g_score.get(neighbor, float("inf")):
-#                 came_from[neighbor] = current
-#                 g_score[neighbor] = tentative
-
-#                 f = tentative + heuristic(neighbor, goal)
-
-#                 counter += 1
-#                 heapq.heappush(
-#                     open_set,
-#                     (f, counter, neighbor)
-#                 )
-
-#     if goal not in came_from and goal != start:
-#         return "STUCK"
-
-#     current = goal
-
-#     while came_from.get(current) != start:
-#         current = came_from[current]
-
-#     dx = current[0] - start[0]
-#     dy = current[1] - start[1]
-
-#     if dy == -1:
-#         return "UP"
-#     if dx == -1:
-#         return "LEFT"
-#     if dx == 1:
-#         return "RIGHT"
-#     if dy == 1:
-#         return "DOWN"
-
-#     return "STUCK"

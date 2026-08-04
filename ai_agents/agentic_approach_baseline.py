@@ -10,6 +10,7 @@ import json
 import logging
 import yaml,os,sys
 from speech_to_text import audio_text
+import argparse
 logger = logging.getLogger(__name__)
 
 def read_config(file_path):
@@ -25,12 +26,31 @@ def read_config(file_path):
         sys.exit(1)
 config_data = read_config("config.yaml")
 
-log_file_name = config_data["log_file"]["name"]
-logging.basicConfig(filename=log_file_name, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--model",
+    type=str,
+    required=True,
+    help="LLM model name"
+)
+args = parser.parse_args()
+model = args.model
+print(f"Running model: {model}")
+log_folder = "../../experiments/test_logs_baseline"
+os.makedirs(log_folder, exist_ok=True)
+
+log_file_name = f"{model}"
+f_log_file_name = log_file_name.replace(":","_").replace(".","_")
+formatted_log_file_name = f"{f_log_file_name}.log"
+
+log_file_folder_path = os.path.join(log_folder, formatted_log_file_name)
+
+logging.basicConfig(filename=log_file_folder_path, encoding='utf-8', level=logging.INFO,format="%(asctime)s - %(levelname)s - %(message)s")
+
 logging.getLogger("httpx").disabled = True
 logging.getLogger("httpcore").disabled = True
 
-logger.info("model_used_for_baseline: "+ config_data["model"]["name"])
+logger.info("model_used_for_baseline: "+ model)
 
 url = config_data["server_urls"]["game_state_url"]
 
@@ -64,7 +84,7 @@ state = {
     "grid_size": (800, 600),
 
     # Player
-    "player_pos": [300, 100],  # use list for mutability
+    "player_pos": [200, 100],  # use list for mutability
 
     # Crops indexed by position
     "crops": {
@@ -105,11 +125,11 @@ def set_crop_state():
     return state["goal_completed"]
 
 
-# set_crop_state()
-# breakpoint()
+
 def water()-> str:
     """
-      waters the crop and changes the state accordingly
+      waters the crop and changes the state accordingly.
+      This tool is only used when the crop is planted and player is at the crops position.
       Args:
           None: No argument 
       Returns:
@@ -128,29 +148,29 @@ def water()-> str:
     if not crop:
         invalid_moves+=1
         invalid_move_object["no crop"] = invalid_move_object.get("no crop", 0) + 1
-        return {
+        return json.dumps({
         "status":"false",
         "action":"water",
         "message": "no crop here"
-        }
+        })
     if not crop["planted"]:
         invalid_moves+=1
         invalid_move_object["crop not planted"] = invalid_move_object.get("crop not planted", 0) + 1
-        return {
+        return json.dumps({
         "status":"false",
         "action":"water",
         "message": "crop not planted"
-        }
+        })
 
     if not crop["needs_water"]:
         invalid_moves+=1
         # return "Crop already watered"
         invalid_move_object["crop already watered"] = invalid_move_object.get("crop already watered", 0) + 1
-        return {
+        return json.dumps({
         "status":"false",
         "action":"water",
         "message": "crop already watered"
-        }
+        })
 
     crop["needs_water"] = False
 
@@ -166,6 +186,7 @@ def water()-> str:
 def collect_water()-> str:
     """
       collectes the water from the water container and changes the state of water_available accordingly
+      This tool is only used when the player is at the water tanks position.
       Args:
           None: No argument 
       Returns:
@@ -189,12 +210,12 @@ def collect_water()-> str:
     if new_x != water_tank[0] or new_y != water_tank[1]:
         invalid_moves +=1
         invalid_move_object["no water tank here"] = invalid_move_object.get("no water tank here", 0) + 1
-        {
+        return json.dumps({
         "status":"false",
         "action":"collect water",
         "message":"no water tank here",
         "water_available": state["water_available"]
-        }
+        })
 
     # water_tank_y = state["water_tank"][1]
     state["water_available"] = True
@@ -297,11 +318,19 @@ def move(dx:int, dy:int)-> str:
             "player_pos": state["player_pos"]
         })
 
+def check_player_postion(crops,x,y,sx,sy):
+    is_correct_position = False
+    for k,v in crops.items():  
+        if (x == k[0] and y == k[1]) and (x == sx and y == sy):
+            is_correct_position = True 
+    return is_correct_position
 
 
 def plant_crop(x:int, y:int)-> str:
     """
     Plant a crop at the given grid coordinate (x,y).
+    (x,y) are the player coordinates.
+    This tool is only used when the player is at the crops position.
     Args:
         x (int): x coordinate
         y (int): y coordinate
@@ -318,6 +347,18 @@ def plant_crop(x:int, y:int)-> str:
     """
     global invalid_moves,invalid_move_object
     crop = state["crops"].get((x, y))
+
+    new_x = state["player_pos"][0]
+    new_y = state["player_pos"][1]
+
+    is_correct_position = check_player_postion(state["crops"],new_x,new_y,x,y)
+
+    if not is_correct_position:
+        return json.dumps({
+            "status": False,
+            "error": "the player is not at the crop.",
+            "position": [x, y]
+        })
 
     if not crop:
         invalid_moves+=1
@@ -412,7 +453,7 @@ client = Client(
 )
 
 # model = 'gpt-oss:20b'
-model = config_data["model"]["name"]
+# model = config_data["model"]["name"]
 # model = 'qwen3.5:27b'
 
 # gpt-oss can call tools while "thinking"
@@ -437,7 +478,7 @@ try:
       i+=1
       st_time = time.time()    
       # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0})
-      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=False,options={"temperature": 0.0})
+      response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
 
       print(f"input_tokens: {response['prompt_eval_count']}")
       print(f"output_tokens: {response['eval_count']}")
@@ -450,11 +491,14 @@ try:
       if response.message.content:
         print('Content: ')
         print(response.message.content + '\n')
-        log_messages.append(response.message.content)
+        logger.info(f"content : {response.message.content}")
+
+
       if response.message.thinking:
         print('Thinking: ')
         print(response.message.thinking + '\n')
-        log_messages.append(response.message.thinking)
+        logger.info(f"thinking : {response.message.thinking}")
+
 
       messages.append(response.message)
       
@@ -465,13 +509,18 @@ try:
           # time.sleep(1)
           # LLM decides which function to call
           function_to_call = available_tools.get(tool_call.function.name)
+          real_result_json = ""
           if function_to_call:
-            result = function_to_call(**tool_call.function.arguments)
-            print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
-            # messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
-            log_messages.append({'role': 'tool', 'content': result, 'tool_name': tool_call.function.name})
+            try:
+                result = function_to_call(**tool_call.function.arguments)
+                print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
+                real_result_json = result
+            except Exception as e:
+                real_result_json = json.dumps({"status":"false", "message": f"Error in tool call: {str(e)}"})
+            logger.info(f"tool: {str(tool_call.function.name)}  result: {str(real_result_json)}") 
             print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
-            tool_calls.append(tool_call.function.name)
+            if "false" not in real_result_json:
+                tool_calls.append(tool_call.function.name)
             time_taken.append(time.time()-st_time)
             crops = state["crops"]
             
@@ -514,11 +563,11 @@ try:
         break
       elif response.message.tool_calls == None:
         print("LLM did not call tools but goal is not complete.")
+        logger.info(f"LLM did not call tools but goal is not complete.")
         break
 except Exception as e:
   logger.error(f"LLm failed due to error: {str(e)}")
   print(f"llm failed due to error: {e}")
-  logger.info(log_messages)
 if state["water_available"] == True:
     points_gained +=1
     points_gained_object["water_available"] = 1
@@ -538,7 +587,7 @@ for k,v in crops.items():
 
 
 reset_state = {
-            "grid_size": [5, 5],
+            "grid_size": [800, 600],
             "player_pos": [200,100],
             "crops": reset_crop,
             "obstacles": [250,100],
@@ -583,8 +632,11 @@ def check_sequence_details(actual, correct):
 
 correct_seq = ['move', 'collect_water', 'move', 'plant_crop','water', 'move', 'plant_crop','water']
 
+
+
+
 print(time_taken)
-if len(time_taken)>0:
+if len(time_taken)>0 and len(tool_calls)>0:
     data = time_taken
     mean = np.mean(data)
     median = np.median(data)
@@ -665,7 +717,8 @@ if len(time_taken)>0:
     logger.info("no of revisits:"+ str(revisits))
 
 else:
-    logger.info(log_messages)
+    print(f"points gained by agent: {str(points_gained)}")
+    logger.info(f"points gained by agent: {str(points_gained)}")
     logger.info("llm tool failed") 
     print("llm tool failed")
 
