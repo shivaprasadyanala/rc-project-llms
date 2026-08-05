@@ -241,7 +241,7 @@ for state_key,state in states.items():
     def crops_to_text(crops):
         lines = []
         for pos, info in crops.items():
-        lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+            lines.append(f"- {pos}: needs_water = {info['needs_water']}")
         return "\n".join(lines)
 
 
