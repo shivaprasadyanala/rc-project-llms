@@ -657,6 +657,7 @@ for state_key, state in states.items():
         print(f"points gained by agent: {str(points_gained)}")
         logger.info(f"points gained by agent: {str(points_gained)}")
         logger.info("llm tool failed")
+        
         print("llm tool failed")
     game_states.append(state_result)
 
