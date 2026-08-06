@@ -95,7 +95,7 @@ state = {
     # Obstacles as a set for fast lookup
     "obstacles": {(250, 100)},
     "water_available":False,
-    "water_tank":{(75,250)},
+    "water_tank":[75,250],
 
     # Goal tracking
     "goal_completed": False
