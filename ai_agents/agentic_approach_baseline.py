@@ -882,36 +882,5 @@ else:
     logger.info("llm tool failed") 
     print("llm tool failed")
 
-# plt.xlabel('llm call run')
-# plt.ylabel('time')
-# plt.title('llm processing time for each agentic all')
-# plt.show()
 
 
-def safe_execute(tool_call):
-    func = available_tools[tool_call.function.name]
-
-    args = tool_call.function.arguments
-
-    # validate before execution
-    print("ARGS:", args)
-
-    return func(**args)
-
-
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "water",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "crop_id": {"type": "integer"},
-                    "amount": {"type": "number"}
-                },
-                "required": ["crop_id", "amount"]
-            }
-        }
-    }
-]
