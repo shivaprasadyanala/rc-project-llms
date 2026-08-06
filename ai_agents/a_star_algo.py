@@ -144,9 +144,9 @@ obstacles = [
 ]
 # print(astar(start, goal, obstacles, grid_width=32, grid_height=24))
 
-path = (astar(start[3], goal[3], obstacles, grid_width=32, grid_height=24))
-print(path)
-print(len(path))
+# path = (astar(start[3], goal[3], obstacles, grid_width=32, grid_height=24))
+# print(path)
+# print(len(path))
 
 # st_time = time.time()
 # for goal in goals:
