@@ -536,7 +536,7 @@ for state_key, state in states.items():
                             tuple(state["player_pos"]))["needs_water"], "planted": crops.get(tuple(state["player_pos"]))["planted"]}
                   print(new_crops)
                   new_state = {
-                      "grid_size": [5, 5],
+                      "grid_size": [800, 600],
                       "player_pos": state["player_pos"],
                       "crops": new_crops,
                       "obstacles": [250, 100],
