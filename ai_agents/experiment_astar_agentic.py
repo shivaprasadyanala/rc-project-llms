@@ -45,7 +45,7 @@ parser.add_argument(
 args = parser.parse_args()
 model = args.model
 print(f"Running model: {model}")
-log_folder = "../../experiments/test_logs_astar"
+log_folder = "../../experiments/test_logs_experiment_astar"
 os.makedirs(log_folder, exist_ok=True)
 
 log_file_name = f"{model}"
@@ -631,6 +631,11 @@ for state_key, state in states.items():
         print("No of llms calls:-")
         print(len(time_taken))
         logger.info(f"No of llms calls: {len(time_taken)}")
+        
+        state_result[state_key]["llm_tool_calls"] = tool_calls_array
+        
+        
+        state_result[state_key]["time_taken"] = time_taken
 
         print("total time taken:")
         print(np.sum(time_taken))
@@ -644,8 +649,11 @@ for state_key, state in states.items():
 
         print(f"points gained by agent: {str(points_gained)}")
         logger.info(f"points gained by agent: {str(points_gained)}")
+        state_result[state_key]["points_gained"] = points_gained
         print(f"points gained object: {str(points_gained_object)}")
         logger.info(f"points gained object: {str(points_gained_object)}")
+        
+        state_result[state_key]["points_gained_object"] = points_gained_object
 
         plt.plot(time_taken)
         logger.info(f"time taken values: {time_taken}")
@@ -659,6 +667,8 @@ for state_key, state in states.items():
         logger.info("llm tool failed")
         
         print("llm tool failed")
+        state_result[state_key]["points_gained"] = points_gained
+        
     game_states.append(state_result)
 
 logger.info(f"game_states: {game_states}")
