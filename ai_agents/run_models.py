@@ -15,7 +15,7 @@ models = [
     "gemma4:26b"
 ]
 
-NUM_RUNS = 1
+NUM_RUNS = 20
 
 for model in models:
     for i in range(NUM_RUNS):
