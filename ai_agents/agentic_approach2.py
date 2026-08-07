@@ -419,7 +419,7 @@ available_tools = {"follow_path":follow_path,"water":water,"astar":astar,"collec
 points_gained = 0
 points_gained_object = {}
 
-system_message2 = f"""
+system_message = f"""
 
 you are smart farm game agent.
 
@@ -463,7 +463,7 @@ Tools available:
 """
 
 
-system_message2_ = f"""
+system_message2 = f"""
 
 You are a Smart Farm game agent.
 
