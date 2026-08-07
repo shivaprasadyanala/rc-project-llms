@@ -204,6 +204,15 @@ def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_p
             (125, 75)
         ]
     """
+    obstacles_px.remove(goal_px) if goal_px in obstacles_px else None
+    
+    if goal_px in obstacles_px:
+        return json.dumps({
+        "status":"false",
+        "action":"follow_path",
+        "message": "goal is an obstacle"
+        })
+    
     
     path = astar(start_px, goal_px, obstacles_px)
     print(f"Path found: {path}")
@@ -216,8 +225,8 @@ def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_p
         "message": "followed path to the goal"
         })
 
-
-
+# print(follow_path((200,100),(400,275),[(250, 100),(75, 250),(200,100),(400,275),(300,200)]))
+# breakpoint()
 def water()-> str:
     """
       waters the crop and changes the state accordingly
@@ -435,7 +444,9 @@ t.start()
 
 
 
-available_tools = {"follow_path":follow_path,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
+available_tools = {"follow_path":follow_path,"water":water,"collect_water":collect_water,"plant_crop":plant_crop}
+# available_tools = {"follow_path":follow_path,"water":water,"astar":astar,"collect_water":collect_water,"plant_crop":plant_crop}
+
 
 points_gained = 0
 points_gained_object = {}
@@ -473,7 +484,7 @@ Water_tank:
 
 
 move 25pxs and one side at a time
-and not allowed to pass through the crops and water tank they are obstacles.
+
 Never output tool arguments as text, JSON, markdown, or code blocks.
 When an action is required, invoke the corresponding tool. 
 If a tool is available, emitting its arguments in text form is always incorrect.
@@ -482,7 +493,7 @@ Tools available:
 {available_tools}
 
 """
-
+# and not allowed to pass through the crops and water tank they are obstacles.
 messages = [
 {'role':'system','content':system_message2},
  # {'role': 'user', 'content': 'go to all crops and water them'}
@@ -516,7 +527,8 @@ try:
     while True:
         st_time = time.time()    
         # response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop],options= {"num_ctx": 30000})
-        response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
+        # response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
+        response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,collect_water,plant_crop])
         print(f"input_tokens: {response['prompt_eval_count']}")
 
         print("Prompt evaluation time:",response["prompt_eval_duration"] / 1e9, "seconds")
