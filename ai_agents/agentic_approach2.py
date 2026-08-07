@@ -170,8 +170,9 @@ player_positions = []
 
 def api_call(current_state):
     # Parse crops and format the state
-    # print("api call current_state")
-    # print(current_state)
+    print("api call current_state")
+    print(current_state)
+    
     new_crops = crops_parser(current_state["crops"])
     player_positions.append(current_state["player_pos"])
     # Create a deep copy so future LLM moves don't overwrite this data 
@@ -182,19 +183,39 @@ def api_call(current_state):
     # Push to background thread instantly
     task_queue.put(state_to_send)
 
-def follow_path(path:list)-> str:
+
+def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px: list[tuple[int, int]]) -> str:
     """
-      follow path tool takes the path from the astar algorithm to the goal and make api call to the game server.
+      follow path tool takes start and goal coordinates along with obstacles and makes an API call to the game server.
+      Args:
+            start_px int,int: x,y coordinates of start
+            goal_px int,int: x,y coordinate of goal
+            obstacles_px [(int,int)] : x,y coordinate of obstacles
+        Returns:
+            List: The list of tuples of the player coordinates to reach the destination
+        
+            A sample input for the function
+            start_px = (50,75)
+            goal_px = (150,125)
+
+            obstacles = [
+                (75, 75),
+            (100, 75),
+            (125, 75)
+        ]
     """
+    
+    path = astar(start_px, goal_px, obstacles_px)
+    print(f"Path found: {path}")
     for step in path:
         state["player_pos"] = step
         modified_state =state
-        api_call(modified_state)
     return json.dumps({
         "status":"true",
         "action":"follow_path",
         "message": "followed path to the goal"
         })
+
 
 
 def water()-> str:
