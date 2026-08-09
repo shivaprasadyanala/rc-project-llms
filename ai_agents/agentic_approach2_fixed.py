@@ -277,20 +277,96 @@ def _parse_path(path):
     return None
 
 
-def follow_path(path) -> str:
+_ASTAR_HINT = ("Required format: start_px=[x,y], goal_px=[x,y], "
+               "obstacles_px=[[x1,y1],[x2,y2],...], grid_width=800, grid_height=600. "
+               "Use integers, not strings.")
+
+def astar(start_px=None, goal_px=None, obstacles_px=None, grid_width=800, grid_height=600) -> str:
     """
-      follow path tool takes the path from the astar algorithm to the goal and make api call to the game server.
+    A* pathfinding tool. Calculates a path from start_px to goal_px while
+    avoiding the given obstacles. Do NOT include the goal in obstacles_px.
+
+    Args:
+        start_px (list[int, int]): x,y coordinates of the start position, e.g. [200, 100]
+        goal_px (list[int, int]): x,y coordinate of the goal position, e.g. [75, 250]
+        obstacles_px (list[list[int, int]]): list of obstacle coordinates, e.g. [[250, 100]]
+        grid_width (int): grid width in pixels, use 800
+        grid_height (int): grid height in pixels, use 600
+
+    Returns:
+        str: The path from the start to the destination as a list of pixel coordinates.
     """
-    steps = _parse_path(path)
-    if not steps:
+    try:
+        def to_pair(v, name):
+            if v is None:
+                raise ValueError(f"missing '{name}'")
+            if isinstance(v, (list, tuple)) and len(v) >= 2:
+                return [int(v[0]), int(v[1])]
+            if isinstance(v, str):
+                nums = re.findall(r"-?\d+", v)
+                if len(nums) >= 2:
+                    return [int(nums[0]), int(nums[1])]
+            raise ValueError(f"invalid '{name}': {v!r}")
+
+        start = to_pair(start_px, "start_px")
+        goal = to_pair(goal_px, "goal_px")
+
+        obs = []
+        if obstacles_px is not None:
+            if isinstance(obstacles_px, dict):
+                obstacles_px = list(obstacles_px.values())
+            if not isinstance(obstacles_px, (list, tuple)):
+                obstacles_px = [obstacles_px]
+            for o in obstacles_px:
+                obs.append(to_pair(o, "obstacles_px"))
+
+        gw = int(grid_width) if str(grid_width).strip() else 800
+        gh = int(grid_height) if str(grid_height).strip() else 600
+
+        result = _astar_impl(tuple(start), tuple(
+            goal), obs, grid_width=gw, grid_height=gh)
+        if result is None:
+            return json.dumps({"status": "false", "action": "astar", "message": "no path found"})
+        return result
+    except Exception as e:
+        return json.dumps({"status": "false", "action": "astar", "message": f"{_ASTAR_HINT} Error: {e}"})
+
+
+def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px: list[tuple[int, int]]) -> str:
+    """
+      follow path tool takes start and goal coordinates along with obstacles and makes an API call to the game server.
+      Args:
+            start_px int,int: x,y coordinates of start
+            goal_px int,int: x,y coordinate of goal
+            obstacles_px [(int,int)] : x,y coordinate of obstacles
+        Returns:
+            List: The list of tuples of the player coordinates to reach the destination
+        
+            A sample input for the function
+            start_px = (50,75)
+            goal_px = (150,125)
+
+            obstacles = [
+                (75, 75),
+            (100, 75),
+            (125, 75)
+        ]
+    """
+    obstacles_px.remove(goal_px) if goal_px in obstacles_px else None
+
+    if goal_px in obstacles_px:
         return json.dumps({
             "status": "false",
             "action": "follow_path",
-            "message": "invalid path: pass the list of [x, y] coordinates returned by astar."
+            "message": "goal is an obstacle"
         })
-    for x, y in steps:
-        state["player_pos"] = [int(x), int(y)]
+
+    path = astar(start_px, goal_px, obstacles_px)
+    print(f"Path found: {path}")
+    for step in path:
+        state["player_pos"] = [step[0],step[1]]
         api_call(state)
+        # modified_state = state
     return json.dumps({
         "status": "true",
         "action": "follow_path",
@@ -370,7 +446,6 @@ def collect_water() -> str:
         "action": "collect water",
         "water_available": state["water_available"]
     })
-
 
 def crops_to_text(crops):
     lines = []
@@ -498,60 +573,8 @@ def plant_crop(x: int, y: int) -> str:
 # slips no longer produce the useless "pass correct argument to the tool."
 # string).
 # ---------------------------------------------------------------------------
-_ASTAR_HINT = ("Required format: start_px=[x,y], goal_px=[x,y], "
-               "obstacles_px=[[x1,y1],[x2,y2],...], grid_width=800, grid_height=600. "
-               "Use integers, not strings.")
 
 
-def astar(start_px=None, goal_px=None, obstacles_px=None, grid_width=800, grid_height=600) -> str:
-    """
-    A* pathfinding tool. Calculates a path from start_px to goal_px while
-    avoiding the given obstacles. Do NOT include the goal in obstacles_px.
-
-    Args:
-        start_px (list[int, int]): x,y coordinates of the start position, e.g. [200, 100]
-        goal_px (list[int, int]): x,y coordinate of the goal position, e.g. [75, 250]
-        obstacles_px (list[list[int, int]]): list of obstacle coordinates, e.g. [[250, 100]]
-        grid_width (int): grid width in pixels, use 800
-        grid_height (int): grid height in pixels, use 600
-
-    Returns:
-        str: The path from the start to the destination as a list of pixel coordinates.
-    """
-    try:
-        def to_pair(v, name):
-            if v is None:
-                raise ValueError(f"missing '{name}'")
-            if isinstance(v, (list, tuple)) and len(v) >= 2:
-                return [int(v[0]), int(v[1])]
-            if isinstance(v, str):
-                nums = re.findall(r"-?\d+", v)
-                if len(nums) >= 2:
-                    return [int(nums[0]), int(nums[1])]
-            raise ValueError(f"invalid '{name}': {v!r}")
-
-        start = to_pair(start_px, "start_px")
-        goal = to_pair(goal_px, "goal_px")
-
-        obs = []
-        if obstacles_px is not None:
-            if isinstance(obstacles_px, dict):
-                obstacles_px = list(obstacles_px.values())
-            if not isinstance(obstacles_px, (list, tuple)):
-                obstacles_px = [obstacles_px]
-            for o in obstacles_px:
-                obs.append(to_pair(o, "obstacles_px"))
-
-        gw = int(grid_width) if str(grid_width).strip() else 800
-        gh = int(grid_height) if str(grid_height).strip() else 600
-
-        result = _astar_impl(tuple(start), tuple(
-            goal), obs, grid_width=gw, grid_height=gh)
-        if result is None:
-            return json.dumps({"status": "false", "action": "astar", "message": "no path found"})
-        return result
-    except Exception as e:
-        return json.dumps({"status": "false", "action": "astar", "message": f"{_ASTAR_HINT} Error: {e}"})
 
 
 def api_worker():
@@ -580,7 +603,7 @@ t.start()
 
 
 available_tools = {"follow_path": follow_path, "water": water,
-                   "astar": astar, "collect_water": collect_water, "plant_crop": plant_crop}
+                   "collect_water": collect_water, "plant_crop": plant_crop}
 
 points_gained = 0
 points_gained_object = {}
@@ -592,9 +615,8 @@ points_gained_object = {}
 # ---------------------------------------------------------------------------
 tools_description = """
 Tools available:
-- follow_path(path): Move along the full path returned by astar.
+- follow_path(path): Move along the full path by calling astar.
   path is a list of [x, y] pixel coordinates. Use this for ALL movement.
-- astar(start_px=[x,y], goal_px=[x,y], obstacles_px=[[x,y], ...], grid_width=800, grid_height=600):
   Returns the path from start_px to goal_px, avoiding obstacles_px.
   Pass integers, not strings. Do NOT include the goal in obstacles_px.
 - collect_water(): Collect water at the water tank (75,250). Only works when
@@ -611,7 +633,7 @@ you are smart farm game agent.
 
 Your task:
 1. Reach the water tank at (75,250) and call collect_water().
-2. Walk to the first crop (use astar + follow_path) and call plant_crop(x, y).
+2. Walk to the first crop (use follow_path) and call plant_crop(x, y).
 3. Call water() while standing on that crop.
 4. Repeat for the other crop.
 5. Only when EVERY crop is planted AND watered AND water_available=True, you may
@@ -621,14 +643,12 @@ Rules
 - Execute exactly one action per turn, and after each tool result IMMEDIATELY continue
   with the next tool call until the task is fully done. Never stop early and never
   just reply with text while the goal is still incomplete.
-- Always use tools: astar for pathfinding, follow_path for movement, plant_crop,
+- Always use tools: follow_path for pathfinding, movement, plant_crop,
   water, collect_water. Never describe a tool call as text, JSON, markdown or code -- call the tool directly.
-- Never calculate the distance manually. Always use the astar tool.
+- Never calculate the distance manually. Always use the follow_path tool.
 - move 25pxs and one side at a time, and not allowed to pass through the crops and
   water tank -- they are obstacles.
 
-astar argument format (use integers, not strings):
-    astar(start_px=[x,y], goal_px=[x,y], obstacles_px=[[x1,y1],[x2,y2],...], grid_width=800, grid_height=600)
 
 WORLD STATE:
 
@@ -662,11 +682,8 @@ DIRECTIVES & TASK ORDER:
 
 CRITICAL RULES:
 - THINKING LIMIT: Keep reasoning under 2 sentences. Focus ONLY on the immediate next action. Do NOT output multi-step plans or summaries.
-- OBSTACLES FOR ASTAR: Include static obstacles and unvisited crop/tank locations, but NEVER include your current goal_px in obstacles_px.
 - EXECUTION: Execute exactly 1 tool call per turn. Never output text descriptions of tool calls.
 
-astar syntax:
-astar(start_px=[x,y], goal_px=[x,y], obstacles_px=[[x1,y1],[x2,y2],...], grid_width=800, grid_height=600)
 
 WORLD STATE:
 Grid size: {state['grid_size']}
@@ -716,7 +733,7 @@ try:
 
         st_time = time.time()
         response: ChatResponse = client.chat(model=model, messages=messages, tools=[
-                                             follow_path, water, astar, collect_water, plant_crop], think=False)
+                                             follow_path, water, collect_water, plant_crop], think=False)
         print(f"input_tokens: {response['prompt_eval_count']}")
 
         print("Prompt evaluation time:",
@@ -825,7 +842,7 @@ try:
             "role": "user",
             "content": ("You answered with text but did not call a tool. "
                         "Continue the task now: make the next tool call "
-                        "(astar, follow_path, collect_water, plant_crop, or water) using the tool interface.")
+                         "(follow_path, collect_water, plant_crop, or water) using the tool interface.")
         })
 except Exception as e:
     logger.error(f"LLm failed due to error: {str(e)}")
