@@ -1,4 +1,5 @@
 
+import ast
 import random
 import requests
 import time
@@ -105,11 +106,35 @@ state = {
     "goal_completed": False
 }
 game_states = []
+
+
+def crops_parser(crops):
+    new_crops = {}
+    # enumerate() handles your index counting 'i' automatically
+    for i, (k, v) in enumerate(crops.items(), start=1):
+        if v is not None:
+            # Check if key 'k' is a stringified tuple/list and parse it correctly
+            if isinstance(k, str):
+                try:
+                    pos = list(ast.literal_eval(k))
+                except (ValueError, SyntaxError):
+                    pos = [k]
+            else:
+                pos = list(k)
+
+            new_crops[f"crop{i}"] = {
+                "pos": pos,
+                "name": v.get("name"),
+                "needs_water": v.get("needs_water"),
+                "planted": v.get("planted")
+            }
+    return new_crops
 for state_key,state in states.items():
     state_result = defaultdict(dict)
     print("state:")
     print(state)
     print(state_key)
+    initial_player_pos = list(state["player_pos"])
     invalid_moves = 0
     revisits = 0
     visited = set()
@@ -252,7 +277,7 @@ for state_key,state in states.items():
     def crops_to_text(crops):
         lines = []
         for pos, info in crops.items():
-            lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+            lines.append(f"- {pos}: planted = {info['planted']}, needs_water = {info['needs_water']}")
         return "\n".join(lines)
 
 
@@ -494,6 +519,8 @@ for state_key,state in states.items():
     total_input_tokens = 0
 
     tool_calls = []
+    max_llm_calls = 300
+    llm_call_count = 0
     try:
         # needs_water_state1 = True
         # needs_water_state2 = True
@@ -501,7 +528,12 @@ for state_key,state in states.items():
         # crop_planted2 = False
         new_crops = {}
         i=0
-        while 50:
+        while True:
+          if llm_call_count >= max_llm_calls:
+            print(f"Max LLM calls reached ({max_llm_calls}). Stopping.")
+            logger.info(f"Max LLM calls reached ({max_llm_calls}). Stopping.")
+            break
+          llm_call_count += 1
           if len(messages) > 10:
             messages = messages[:2] + messages[-8:]
           i+=1
@@ -552,19 +584,14 @@ for state_key,state in states.items():
                     tool_calls.append(tool_call.function.name)
                 time_taken.append(time.time()-st_time)
                 crops = state["crops"]
-                j = 0
-                for k,v in crops.items():   
-                  j+=1
-                  if crops.get(k) != None:
-                    if state["player_pos"] == list(k):
-                      new_crops[f"crop{j}"] = {"pos":list(k),"name":crops.get(tuple(state["player_pos"]))["name"],"needs_water":crops.get(tuple(state["player_pos"]))["needs_water"],"planted":crops.get(tuple(state["player_pos"]))["planted"]}
-                print(new_crops)
+                new_crops = crops_parser(crops)
                 new_state = {
-                    "grid_size": [800, 600],
+                    "grid_size": list(state["grid_size"]),
                     "player_pos": state["player_pos"],
                     "crops": new_crops,
                     "obstacles": state["obstacles"],
                     "water_available":state["water_available"],
+                    "water_tank": state["water_tank"],
                     "goal_completed": state["goal_completed"]
                 }
                 messages.append({
@@ -580,7 +607,6 @@ for state_key,state in states.items():
                 print(new_state)
                 player_positions.append(state["player_pos"])
                 new_state["task"] = new_content
-                new_state["water_tank"] = state["water_tank"]
                 new_task_state = new_state
                 response = requests.post(url, json=new_task_state, headers=headers)
                 print(response)
@@ -594,8 +620,10 @@ for state_key,state in states.items():
           elif response.message.tool_calls == None:
             print("LLM did not call tools but goal is not complete.")
             logger.info("LLM did not call tools but goal is not complete.")
-
-            break
+            messages.append({
+                "role": "user",
+                "content": "The task is NOT complete. You MUST continue and invoke a tool (move, plant_crop, water, collect_water) to finish the task."
+            })
     except Exception as e:
           logger.error(f"LLm failed due to error: {str(e)}")
           print(f"LLm failed due to error: {str(e)}")
@@ -619,20 +647,14 @@ for state_key,state in states.items():
 
 
     reset_state = {
-                "grid_size": [800, 600],
-                "player_pos": [200,100],
+                "grid_size": list(state["grid_size"]),
+                "player_pos": initial_player_pos,
 
                 "crops": reset_crop,
-                # {
-                #     "crop1":{"pos":[400,275],"name":"wheat","needs_water":True,"planted":False},
-                #     "crop2":{"pos":[300,200],"name":"rice","needs_water":True,"planted":False},
-                #     # "crop3":{"pos":[200,475],"needs_water":True,"planted":False},
-                #     # "crop4":{"pos":[150,300],"needs_water":True,"planted":False},
-                #     # "crop5":{"pos":[275,325],"needs_water":True,"planted":False}
-                # },
-                "obstacles": [],
+                "obstacles": state["obstacles"],
                 "water_available":False,
-                "goal_completed": state["goal_completed"]
+                "water_tank": state["water_tank"],
+                "goal_completed": False
             }
 
     response = requests.post(url, json=reset_state, headers=headers)
