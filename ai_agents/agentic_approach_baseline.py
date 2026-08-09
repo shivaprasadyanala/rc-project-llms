@@ -152,7 +152,7 @@ for task in tasks:
                     global invalid_moves, invalid_move_object
                     pos = tuple(state["player_pos"])
                     print(pos)
-                    crop = state["crops"].get(pos)
+                    crop = crops_object["crops"].get(pos)
                     print(crop)
                     if not crop:
                         invalid_moves += 1
@@ -163,7 +163,7 @@ for task in tasks:
                             "action": "water",
                             "message": "no crop here"
                         })
-                    if not crop["planted"]:
+                    if not crop["is_planted"]:
                         invalid_moves += 1
                         invalid_move_object["crop not planted"] = invalid_move_object.get(
                             "crop not planted", 0) + 1
@@ -186,13 +186,14 @@ for task in tasks:
 
                     crop["needs_water"] = False
 
-                    state["goal_completed"] = set_crop_state()
+                    # state["goal_completed"] = set_crop_state()
                     # return "Crop watered successfully"
                     return json.dumps({
                         "status": "true",
                         "action": "water",
                         "message": "crop watered successfully"
                     })
+
 
 
                 def collect_water() -> str:
@@ -587,7 +588,7 @@ for task in tasks:
                           else:
                             print(f'Tool {tool_call.function.name} not found')
                             messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
-                      elif state["goal_completed"]:
+                      elif goal_completed(state):
                         print("goal completed")
                         break
                       # elif response.message.tool_calls == None:
@@ -595,7 +596,7 @@ for task in tasks:
                       #   logger.error(f"LLm failed to call the tools: {str(e)}")
                       #   break
                       elif response.message.tool_calls == None:
-                        print("LLM did not call tools but goal is not complete.")
+                        print("LLM did not call tools but is not complete.")
                         # messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
                         # # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
                         # if len(messages) > 50: 
