@@ -109,6 +109,7 @@ for state_key,state in states.items():
     state_result = defaultdict(dict)
     print("state:")
     print(state)
+    print(state_key)
     invalid_moves = 0
     revisits = 0
     visited = set()
@@ -125,11 +126,21 @@ for state_key,state in states.items():
           if  crops[crop[0],crop[1]]["planted"] == True and crops[crop[0],crop[1]]["needs_water"] == False:
             value+=1
         print("value of goal completed:" + str(value))
+        if value == 1 and state_key == "state1":
+            state["goal_completed"] = True
+        if value == 2 and state_key == "state2":
+            state["goal_completed"] = True
+        if value == 3 and state_key == "state3":
+            state["goal_completed"] = True
+        if value == 4 and state_key == "state4":
+            state["goal_completed"] = True
+        if value == 5 and state_key == "state5":
+            state["goal_completed"] = True
+        if value == 6 and state_key == "state6":
+            state["goal_completed"] = True
         return state["goal_completed"]
 
 
-    # set_crop_state()
-    # breakpoint()
 
 
     def water() -> str:
