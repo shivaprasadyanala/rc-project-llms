@@ -61,7 +61,7 @@ for task in tasks:
                     "grid_size": (800, 600),
 
                     # Player
-                    "player_pos": [200, 100],  # use list for mutability
+                        "player_pos": [200, 100],  # use list for mutability
 
                     # Crops indexed by position
                     
@@ -363,13 +363,14 @@ for task in tasks:
                         }
                     """
                     global invalid_moves, invalid_move_object
-                    crop = state["crops"].get((x, y))
+                    crops = crops_object["crops"]
+                    crop = crops.get((x, y))
 
                     new_x = state["player_pos"][0]
                     new_y = state["player_pos"][1]
 
                     is_correct_position = check_player_postion(
-                        state["crops"], new_x, new_y, x, y)
+                        crops, new_x, new_y, x, y)
 
                     if not is_correct_position:
                         return json.dumps({
@@ -388,7 +389,7 @@ for task in tasks:
                             "position": [x, y]
                         })
 
-                    if crop["planted"]:
+                    if crop["is_planted"]:
                         invalid_move_object["Already planted"] = invalid_move_object.get(
                             "Already planted", 0) + 1
                         invalid_moves += 1
@@ -398,7 +399,7 @@ for task in tasks:
                             "position": [x, y]
                         })
 
-                    crop["planted"] = True
+                    crop["is_planted"] = True
 
                     return json.dumps({
                         "status": True,
@@ -407,6 +408,7 @@ for task in tasks:
                         "planted": True
                     })
 
+                # print(plant_crop(300,200))
 
 
                 available_tools = {"move":move,"water":water,"collect_water":collect_water,"plant_crop":plant_crop}
@@ -454,7 +456,7 @@ for task in tasks:
 
 
                 move 25pxs and one side at a time
-                and not allowed to pass through the crop, water tank, they are obstacles.
+                
 
                 call only one tool at a time.
  
@@ -464,6 +466,7 @@ for task in tasks:
                 """
                 # new_content = " oh wheat crop is drying up"
                 # new_content = "water the crops"
+                # and not allowed to pass through the crop, water tank, they are obstacles.
 
 
                 messages = [
@@ -647,7 +650,15 @@ for task in tasks:
                     print("llm tool call failed")
                 final_score_array.append(final_score)
                 tool_calls_array.append(len(player_positions))
-                tool_call_names.append(tool_calls)
+                result = []
+                if len(tool_calls) >0:
+                    result = [tool_calls[0]]
+                    for action in tool_calls[1:]:
+                        if action != result[-1]:
+                            result.append(action)
+                    print("tool_calls_after:")
+                    print(result)
+                tool_call_names.append(result)
 
             results[task_name][difficulty]["points"] = final_score_array
             results[task_name][difficulty]["tool_calls"] = tool_calls_array
