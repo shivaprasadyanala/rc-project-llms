@@ -170,8 +170,6 @@ player_positions = []
 
 def api_call(current_state):
     # Parse crops and format the state
-    print("api call current_state")
-    print(current_state)
     
     new_crops = crops_parser(current_state["crops"])
     player_positions.append(current_state["player_pos"])
@@ -217,8 +215,8 @@ def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_p
     path = astar(start_px, goal_px, obstacles_px)
     print(f"Path found: {path}")
     for step in path:
-        state["player_pos"] = step
-        modified_state =state
+        state["player_pos"] = [step[0], step[1]]
+        api_call(state)
     return json.dumps({
         "status":"true",
         "action":"follow_path",
@@ -288,7 +286,13 @@ def collect_water()-> str:
         "water_available": state["water_available"]
        }
     """
-
+    if state["player_pos"] != state["water_tank"]:
+        return json.dumps({
+            "status": "false",
+            "action": "collect water",
+            "message": "no water tank here",
+            "water_available": state["water_available"]
+    })
     state["water_available"] = True
     api_call(state)
     # print("in collect water tool.............")
@@ -528,7 +532,7 @@ try:
         st_time = time.time()    
         # response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop],options= {"num_ctx": 30000})
         # response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
-        response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,collect_water,plant_crop])
+        response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,collect_water,plant_crop],think=False)
         print(f"input_tokens: {response['prompt_eval_count']}")
 
         print("Prompt evaluation time:",response["prompt_eval_duration"] / 1e9, "seconds")
@@ -681,4 +685,7 @@ else:
     # logger.info(agent_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
+    print("points gained by agent: 0")
+    logger.info("points gained by agent: 0")
+
 
