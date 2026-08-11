@@ -109,6 +109,7 @@ for task in tasks:
                     """
                     global task_type
                     crops = crops_object["crops"]
+
                     is_goal_completed = False
                     if task_type == "plant_crop_water":
                         value = 0
@@ -152,7 +153,8 @@ for task in tasks:
                     global invalid_moves, invalid_move_object
                     pos = tuple(state["player_pos"])
                     print(pos)
-                    crop = state["crops"].get(pos)
+                    # crop = state["crops"].get(pos)
+                    crop = crops_object["crops"].get(pos)
                     print(crop)
                     if not crop:
                         invalid_moves += 1
@@ -163,7 +165,7 @@ for task in tasks:
                             "action": "water",
                             "message": "no crop here"
                         })
-                    if not crop["planted"]:
+                    if not crop["is_planted"]:
                         invalid_moves += 1
                         invalid_move_object["crop not planted"] = invalid_move_object.get(
                             "crop not planted", 0) + 1
@@ -244,7 +246,8 @@ for task in tasks:
                 def crops_to_text(crops):
                     lines = []
                     for pos, info in crops.items():
-                        lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+                        # lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+                        lines.append(f"- {pos}: planted = {info['is_planted']}, needs_water = {info['needs_water']}")
                     return "\n".join(lines)
 
 
@@ -587,21 +590,25 @@ for task in tasks:
                           else:
                             print(f'Tool {tool_call.function.name} not found')
                             messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
-                      elif state["goal_completed"]:
-                        print("goal completed")
+                      elif goal_completed(state)==True:
+                        print("goal completed:"+ str(state["goal_completed"]))
+                        logger.info("goal completed")
                         break
                       # elif response.message.tool_calls == None:
                       #   print("LLm did not call the tools")
                       #   logger.error(f"LLm failed to call the tools: {str(e)}")
                       #   break
-                      elif response.message.tool_calls == None:
+                      elif response.message.tool_calls == None and state["goal_completed"] == False:
                         print("LLM did not call tools but goal is not complete.")
-                        # messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
-                        # # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
-                        # if len(messages) > 50: 
-                        #     print("Message limit reached, aborting to prevent infinite loop.")
-                        #     logger.error(f"Message limit reached, aborting to prevent infinite loop.")
-                        break
+                        print("goal completed state:"+str(state["goal_completed"]))
+                        logger.info("goal completed state:"+str(state["goal_completed"]))
+                        logger.info("LLm did not call tools but goal is not complete using replan")
+                        messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
+                        # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
+                        if len(messages) > 50: 
+                             print("Message limit reached, aborting to prevent infinite loop.")
+                             logger.error(f"Message limit reached, aborting to prevent infinite loop.")
+                             break
                 except Exception as e:
                   logger.error(f"LLm failed due to error: {str(e)}")
                   print(f"llm failed due to error: {e}")
