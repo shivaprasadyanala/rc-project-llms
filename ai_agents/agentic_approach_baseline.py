@@ -391,12 +391,13 @@ from openai import OpenAI
 # Create a client pointing to your vLLM server
 # The API key can be any string since vLLM doesn't require real authentication by default
 client = OpenAI(
-    base_url="http://hal9000.skim.th-owl.de:1951/v1/",  # vLLM server endpoint
-    api_key="EMPTY"  # or any placeholder
+    base_url="https://llm-proxy-dgx.skim.th-owl.de",  # vLLM server endpoint
+    api_key="sk-QB2QKC9IuaSdqBvPy6dnpg"  # or any placeholder
 )
-# model = 'gpt-oss:20b'
-model = config_data["model"]["name"]
-# model = 'qwen3.5:27b'
+
+
+# model = 'Qwen/Qwen3.6-27B-FP8'
+
 
 # gpt-oss can call tools while "thinking"
 # a loop is needed to call the tools and get the results
@@ -421,7 +422,8 @@ tools = [
 while True:
   st_time = time.time()    
   extra_body = {"chat_template_kwargs": {"enable_thinking": False}}
-  response: ChatResponse = client.chat.completions.create(model="qwen3.6-27b", messages=messages, tools=tools,extra_body=extra_body)
+  response: ChatResponse = client.chat.completions.create(
+      model="Qwen/Qwen3.6-27B-FP8", messages=messages, tools=tools, extra_body=extra_body)
   msg = response.choices[0].message
 
 
