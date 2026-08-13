@@ -45,7 +45,9 @@ import queue
 import threading
 import copy
 import argparse
-
+from openai import OpenAI
+import inspect
+from typing import get_type_hints
 task_queue = queue.Queue()
 
 logger = logging.getLogger(__name__)
@@ -75,6 +77,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 model = args.model
+model = "Qwen3.6-27B-FP8"
 print(f"Running model: {model}")
 log_folder = "../../experiments/test_logs_queue"
 os.makedirs(log_folder, exist_ok=True)
@@ -705,9 +708,14 @@ messages = [
     {'role': 'user', 'content': new_content}
 ]
 
-client = Client(
-    host=config_data["server_urls"]["ollama_url"],
-    timeout=60
+# client = Client(
+#     host=config_data["server_urls"]["ollama_url"],
+#     timeout=60
+# )
+
+client = OpenAI(
+    base_url="https://llm-proxy-dgx.skim.th-owl.de",  # vLLM server endpoint
+    api_key="sk-QB2QKC9IuaSdqBvPy6dnpg"  # or any placeholder
 )
 
 time_taken = []
@@ -722,131 +730,197 @@ tool_calls = []
 MAX_ITERATIONS = 80          # hard cap so runaway gpt-oss reasoning loops end cleanly
 MAX_TEXT_RETRIES = 3          # how many text-only replies we tolerate before stopping
 text_reply_streak = 0
+PYTHON_TO_JSON = {
+    str: "string",
+    int: "integer",
+    float: "number",
+    bool: "boolean",
+    list: "array",
+    dict: "object",
+}
 
-try:
-    new_crops = {}
-    for iteration in range(MAX_ITERATIONS):
-        # Context trimming: keep system + first user message + recent history
-        # so the path/goal is not dropped mid-run.
-        if len(messages) > 30:
-            messages = messages[:2] + messages[-24:]
 
-        st_time = time.time()
-        response: ChatResponse = client.chat(model=model, messages=messages, tools=[
-                                             follow_path, water, collect_water, plant_crop], think=False)
-        print(f"input_tokens: {response['prompt_eval_count']}")
+def function_to_tool(func):
+    sig = inspect.signature(func)
+    hints = get_type_hints(func)
 
-        print("Prompt evaluation time:",
-              response["prompt_eval_duration"] / 1e9, "seconds")
-        logger.info(
-            f"Prompt evaluation time:{response['prompt_eval_duration'] / 1e9:.2f}")
+    properties = {}
+    required = []
 
-        print("Generation time:", response["eval_duration"] / 1e9, "seconds")
-        logger.info(f"Generation time: {response['eval_duration'] / 1e9:.2f}")
+    for name, param in sig.parameters.items():
+        py_type = hints.get(name, str)
 
-        print(f"output_tokens: {response['eval_count']}")
+        properties[name] = {
+            "type": PYTHON_TO_JSON.get(py_type, "string")
+        }
 
-        total_output_tokens += response['eval_count']
-        total_input_tokens = response['prompt_eval_count']
-        print(f"response time: {(response['total_duration']/1e9)}")
-        logger.info(f"response time: {response['total_duration'] / 1e9:.2f}")
+        if param.default is inspect.Parameter.empty:
+            required.append(name)
+    description = (inspect.getdoc(func) or "").split("\n")[0]
+    return {
+        "type": "function",
+        "function": {
+            "name": func.__name__,
+            "description": description,
+            "parameters": {
+                "type": "object",
+                "properties": properties,
+                "required": required,
+            },
+        },
+    }
+tools = [
+    function_to_tool(follow_path),
+    function_to_tool(water),
+    function_to_tool(collect_water),
+    function_to_tool(plant_crop),
+]
+# try:
+new_crops = {}
+for iteration in range(MAX_ITERATIONS):
+    # Context trimming: keep system + first user message + recent history
+    # so the path/goal is not dropped mid-run.
+    if len(messages) > 30:
+        messages = messages[:2] + messages[-24:]
 
-        if response.message.content:
-            print('Content: ')
-            print(response.message.content + '\n')
-            logger.info(f"content : {response.message.content}")
+    st_time = time.time()
+    # response: ChatResponse = client.chat(model=model, messages=messages, tools=[
+    #                                      follow_path, water, collect_water, plant_crop], think=False)
+    extra_body = {"chat_template_kwargs": {"enable_thinking": False}}
+    response: ChatResponse = client.chat.completions.create(
+        model="Qwen/Qwen3.6-27B-FP8",tools=tools, messages=messages, extra_body=extra_body)
+    
+    # print(f"input_tokens: {response['prompt_eval_count']}")
 
-        if response.message.thinking:
-            print('Thinking: ')
-            print(response.message.thinking + '\n')
-            logger.info(f"thinking : {response.message.thinking}")
+    # print("Prompt evaluation time:",
+    #         response["prompt_eval_duration"] / 1e9, "seconds")
+    # logger.info(
+    #     f"Prompt evaluation time:{response['prompt_eval_duration'] / 1e9:.2f}")
 
-        messages.append(response.message)
+    # print("Generation time:", response["eval_duration"] / 1e9, "seconds")
+    # logger.info(f"Generation time: {response['eval_duration'] / 1e9:.2f}")
 
-        if response.message.tool_calls:
-            text_reply_streak = 0
-            for tool_call in response.message.tool_calls:
-                # LLM decides which function to call
-                function_to_call = available_tools.get(tool_call.function.name)
-                real_result_json = ""
-                if function_to_call:
-                    try:
-                        print("Executing tool instantly in Python:",
-                              tool_call.function.name)
-                        # 1. Execute instantly. (Network calls are sent to the queue inside the tool)
-                        real_result_json = function_to_call(
-                            **tool_call.function.arguments)
-                    except Exception as e:
-                        real_result_json = json.dumps(
-                            {"status": "false", "message": f"{str(e)}"})
+    # print(f"output_tokens: {response['eval_count']}")
 
-                    print("tool result:")
-                    print(real_result_json)
-                    logger.info(f"tool_result: {str(real_result_json)}")
-                    if "false" not in real_result_json:
-                        tool_calls.append(tool_call.function.name)
-                    time_taken.append(time.time() - st_time)
+    # total_output_tokens += response['eval_count']
+    # total_input_tokens = response['prompt_eval_count']
+    # print(f"response time: {(response['total_duration']/1e9)}")
+    # logger.info(f"response time: {response['total_duration'] / 1e9:.2f}")
+    msg = response.choices[0].message
+    # if response.message.content:
+    #     print('Content: ')
+    #     print(response.message.content + '\n')
+    #     logger.info(f"content : {response.message.content}")
 
-                    real_result = real_result_json
+    # if response.message.thinking:
+    #     print('Thinking: ')
+    #     print(response.message.thinking + '\n')
+    #     logger.info(f"thinking : {response.message.thinking}")
 
-                    # Accurate model-facing state (full 800x600 grid, all crops,
-                    # obstacles, water_tank) so gpt-oss does not lose track.
-                    new_crops = crops_parser(state["crops"])
-                    new_state = {
-                        "grid_size": [800, 600],
-                        "player_pos": state["player_pos"],
-                        "crops": new_crops,
-                        "obstacles": state["obstacles"],
-                        "water_available": state["water_available"],
-                        "water_tank": state["water_tank"],
-                        "goal_completed": state["goal_completed"]
-                    }
+    # messages.append(response.message)
+    if msg.tool_calls:
+        for tool_call in msg.tool_calls:
+            # LLM decides which function to call
+            function_to_call = available_tools.get(tool_call.function.name)
+            real_result_json = ""
+            if function_to_call:
+                try:
+                    real_result_json = function_to_call(**json.loads(tool_call.function.arguments))
+                    print('Result from tool call name: ', tool_call.function.name, 'with arguments: ',
+                        tool_call.function.arguments, 'result: ', str(real_result_json) + '\n')
+                    agent_messages.append({'role': 'tool', 'content': real_result_json, 'tool_name': tool_call.function.name})
+                except Exception as e:
+                    real_result_json = json.dumps({"status": "false", "message": f"{str(e)}"})
+                print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
+                if "false" not in real_result_json:
+                    tool_calls.append(tool_call.function.name)
+                time_taken.append(time.time()-st_time)
+                crops = state["crops"]
+                logger.info(f"tool_result: {str(real_result_json)}")
+    # if response.message.tool_calls:
+    #     text_reply_streak = 0
+    #     for tool_call in response.message.tool_calls:
+    #         # LLM decides which function to call
+    #         function_to_call = available_tools.get(tool_call.function.name)
+    #         real_result_json = ""
+    #         if function_to_call:
+    #             try:
+    #                 print("Executing tool instantly in Python:",
+    #                         tool_call.function.name)
+    #                 # 1. Execute instantly. (Network calls are sent to the queue inside the tool)
+    #                 real_result_json = function_to_call(
+    #                     **tool_call.function.arguments)
+    #             except Exception as e:
+    #                 real_result_json = json.dumps(
+    #                     {"status": "false", "message": f"{str(e)}"})
 
-                    # Tell the LLM exactly what happened
-                    messages.append({
-                        "role": "tool",
-                        "content": json.dumps({
-                            "action_result": real_result,
-                            "current_state": new_state
-                        }),
-                        "name": tool_call.function.name
-                    })
-                else:
-                    print(f'Tool {tool_call.function.name} not found')
-                    messages.append(
-                        {'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+    #             print("tool result:")
+    #             print(real_result_json)
+    #             logger.info(f"tool_result: {str(real_result_json)}")
+    #             if "false" not in real_result_json:
+    #                 tool_calls.append(tool_call.function.name)
+    #             time_taken.append(time.time() - st_time)
 
-            if state["goal_completed"]:
-                print("goal completed")
-                break
-            continue
+    #             real_result = real_result_json
 
-        # No tool calls were made this turn.
+    #             # Accurate model-facing state (full 800x600 grid, all crops,
+    #             # obstacles, water_tank) so gpt-oss does not lose track.
+                new_crops = crops_parser(state["crops"])
+                new_state = {
+                    "grid_size": [800, 600],
+                    "player_pos": state["player_pos"],
+                    "crops": new_crops,
+                    "obstacles": state["obstacles"],
+                    "water_available": state["water_available"],
+                    "water_tank": state["water_tank"],
+                    "goal_completed": state["goal_completed"]
+                }
+
+                # Tell the LLM exactly what happened
+                messages.append({
+                    "role": "tool",
+                    "content": json.dumps({
+                        "action_result": real_result_json,
+                        "current_state": new_state
+                    }),
+                    "name": tool_call.function.name
+                })
+            else:
+                print(f'Tool {tool_call.function.name} not found')
+                messages.append(
+                    {'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+
         if state["goal_completed"]:
             print("goal completed")
             break
+        continue
 
-        # gpt-oss (and other reasoning models) sometimes answer with text only.
-        # Instead of hard-stopping like the original, nudge it to keep going.
-        text_reply_streak += 1
-        print(
-            f"LLM did not call tools but goal is not complete. (text streak = {text_reply_streak})")
+    # No tool calls were made this turn.
+    if state["goal_completed"]:
+        print("goal completed")
+        break
+
+    # gpt-oss (and other reasoning models) sometimes answer with text only.
+    # Instead of hard-stopping like the original, nudge it to keep going.
+    text_reply_streak += 1
+    print(
+        f"LLM did not call tools but goal is not complete. (text streak = {text_reply_streak})")
+    logger.info(
+        f"LLM did not call tools but goal is not complete. (text streak = {text_reply_streak})")
+    if text_reply_streak >= MAX_TEXT_RETRIES:
         logger.info(
-            f"LLM did not call tools but goal is not complete. (text streak = {text_reply_streak})")
-        if text_reply_streak >= MAX_TEXT_RETRIES:
-            logger.info(
-                "LLM did not call tools after repeated nudges; stopping run.")
-            print("LLM did not call tools after repeated nudges; stopping run.")
-            break
-        messages.append({
-            "role": "user",
-            "content": ("You answered with text but did not call a tool. "
-                        "Continue the task now: make the next tool call "
-                         "(follow_path, collect_water, plant_crop, or water) using the tool interface.")
-        })
-except Exception as e:
-    logger.error(f"LLm failed due to error: {str(e)}")
-    print(f"LLm failed due to error: {str(e)}")
+            "LLM did not call tools after repeated nudges; stopping run.")
+        print("LLM did not call tools after repeated nudges; stopping run.")
+        break
+    messages.append({
+        "role": "user",
+        "content": ("You answered with text but did not call a tool. "
+                    "Continue the task now: make the next tool call "
+                        "(follow_path, collect_water, plant_crop, or water) using the tool interface.")
+    })
+# except Exception as e:
+#     logger.error(f"LLm failed due to error: {str(e)}")
+#     print(f"LLm failed due to error: {str(e)}")
 
 if state["water_available"] == True:
     points_gained += 1
