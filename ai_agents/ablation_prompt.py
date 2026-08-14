@@ -142,4 +142,82 @@ Water_tank: {list(state['water_tank'])}
 """
 
 
-system_prompts = [system_message1,system_message2,system_message3,system_message3,system_message4]
+
+
+base_components = {
+    "role": "You are a smart farm game agent.",
+    "task": """
+DIRECTIVES & TASK ORDER:
+1. If water_available is False: Path to water tank at (75, 250) -> follow_path -> call collect_water().
+2. Process crops sequentially in the exact order listed below:
+   For each crop needing work: Path to (x, y) -> follow_path -> plant_crop(x, y) -> water().
+3. Finish ONLY when all crops are planted and watered AND water_available is True.
+""",
+
+    "thinking_limit": """
+    CRITICAL RULES:
+    - THINKING LIMIT: Keep reasoning under 2 sentences.
+    - Focus ONLY on the immediate next action.
+    - Do NOT output multi-step plans or summaries.
+    - EXECUTION: Execute exactly 1 tool call per turn.
+    - Never output text descriptions of tool calls.
+    """,
+
+    "world_state": f"""
+    WORLD STATE:
+    Grid size: {state['grid_size']}
+    Player position: {tuple(state['player_pos'])}
+
+    Crops:
+    {crops_to_text(state['crops'])}
+
+    Obstacles:
+    {list(state['obstacles'])}
+
+    Water_available: {state["water_available"]}
+    Water_tank: {list(state["water_tank"])}
+    """,
+
+    "tools": tools_description
+}
+full_prompt = "\n\n".join(base_components.values())
+
+ablations = {
+    "full": full_prompt,
+    "no_role": "\n\n".join([
+        base_components["task"],
+        base_components["thinking_limit"],
+        base_components["world_state"],
+        base_components["tools"],
+    ]),
+
+    "no_thinking_limit": "\n\n".join([
+        base_components["role"],
+        base_components["task"],
+        base_components["world_state"],
+        base_components["tools"],
+    ]),
+
+    "no_world_state": "\n\n".join([
+        base_components["role"],
+        base_components["task"],
+        base_components["thinking_limit"],
+        base_components["tools"],
+    ]),
+
+    "no_tools_description": "\n\n".join([
+        base_components["role"],
+        base_components["task"],
+        base_components["thinking_limit"],
+        base_components["world_state"],
+    ]),
+}
+
+print(ablations["full"])
+print(ablations["no_role"])
+print(ablations["no_thinking_limit"])
+print(ablations["no_world_state"])
+print(ablations["no_tools_description"])
+
+system_prompts = [ ablations["no_role"],
+                  ablations["no_thinking_limit"], ablations["no_tools_description"], ablations["no_world_state"]]
