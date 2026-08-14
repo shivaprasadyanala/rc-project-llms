@@ -45,7 +45,7 @@ import queue
 import threading
 import copy
 import argparse
-from ablation_prompt import system_prompts
+from ablation_prompt import system_prompts,ablations
 task_queue = queue.Queue()
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ print(f"Running model: {model}")
 
 
 def create_logger_file(file_name):
-    log_folder = "../../experiments/test_logs_queue_ablation"
+    log_folder = "../../experiments/test_logs_queue_ablation2"
     os.makedirs(log_folder, exist_ok=True)
 
     f_log_file_name = file_name.replace(":", "_").replace(".", "_")
@@ -126,9 +126,9 @@ state = {
     "goal_completed": False
 }
 
-for i in range(10):
-    for i, system_prompt in enumerate(system_prompts):
-        logger = create_logger_file(f"system_prompt_{i}")
+for i in range(1):
+    for ablation_name,system_prompt in ablations.items():
+        logger = create_logger_file(f"{ablation_name}_prompt")
         logging.getLogger("httpx").disabled = True
         logging.getLogger("httpcore").disabled = True
 
@@ -650,80 +650,10 @@ for i in range(10):
 
         # This usually means they are cells that cannot be part of the path *except* for the destination.
 
-        system_message2_ = f"""
-        you are smart farm game agent.
 
-        Your task:
-        1. Reach the water tank at (75,250) and call collect_water().
-        2. Walk to the first crop (use follow_path) and call plant_crop(x, y).
-        3. Call water() while standing on that crop.
-        4. Repeat for the other crop.
-        5. Only when EVERY crop is planted AND watered AND water_available=True, you may
-        finish. Never output "stop" or a summary before that.
-
-        Rules
-        - Execute exactly one action per turn, and after each tool result IMMEDIATELY continue
-        with the next tool call until the task is fully done. Never stop early and never
-        just reply with text while the goal is still incomplete.
-        - Always use tools: follow_path for pathfinding, movement, plant_crop,
-        water, collect_water. Never describe a tool call as text, JSON, markdown or code -- call the tool directly.
-        - Never calculate the distance manually. Always use the follow_path tool.
-        - move 25pxs and one side at a time, and not allowed to pass through the crops and
-        water tank -- they are obstacles.
-
-
-        WORLD STATE:
-
-        CURRENT STATE (authoritative):
-
-        Grid size: {state['grid_size']}
-        Player position: {tuple(state['player_pos'])}
-
-        Crops:
-        {crops_to_text(state['crops'])}
-
-        Obstacles:
-        {list(state['obstacles'])}
-
-        Water_available:
-        {state["water_available"]}
-        Water_tank:
-        {list(state['water_tank'])}
-
-        {tools_description}
-        """
-
-
-        system_message2 = f"""You are a smart farm game agent.
-
-        DIRECTIVES & TASK ORDER:
-        1. If water_available is False: Path to water tank at (75, 250) -> follow_path -> call collect_water().
-        2. Process crops sequentially in the exact order listed below:
-        For each crop needing work: Path to (x, y) -> follow_path -> plant_crop(x, y) -> water().
-        3. Finish ONLY when all crops are planted and watered AND water_available is True.
-
-        CRITICAL RULES:
-        - THINKING LIMIT: Keep reasoning under 2 sentences. Focus ONLY on the immediate next action. Do NOT output multi-step plans or summaries.
-        - EXECUTION: Execute exactly 1 tool call per turn. Never output text descriptions of tool calls.
-
-
-        WORLD STATE:
-        Grid size: {state['grid_size']}
-        Player position: {tuple(state['player_pos'])}
-
-        Crops:
-        {crops_to_text(state['crops'])}
-
-        Obstacles:
-        {list(state['obstacles'])}
-
-        Water_available: {state["water_available"]}
-        Water_tank: {list(state['water_tank'])}
-
-        {tools_description}"""
 
         messages = [
-            {'role': 'system', 'content': system_message2},
+            {'role': 'system', 'content': system_prompt},
             {'role': 'user', 'content': new_content}
         ]
 
@@ -892,10 +822,13 @@ for i in range(10):
             "grid_size": [5, 5],
             "player_pos": [200, 100],
             "crops": reset_crop,
-            "obstacles": state["obstacles"][0],
+            "obstacles": state["obstacles"],
             "water_available": False,
-            "goal_completed": state["goal_completed"]
+            "goal_completed": state["goal_completed"],
+            "water_tank": state["water_tank"],
+            "goal_completed": False
         }
+        state = reset_state
         task_queue.put(reset_state)
 
         print(time_taken)
@@ -927,3 +860,5 @@ for i in range(10):
         else:
             logger.info("llm tool failed")
             print("llm tool failed")
+            print("point gained by agent: 0")
+            logger.info("point gained by agent: 0")
