@@ -30,8 +30,9 @@ def crops_to_text(crops):
 
 tools_description = """
 Tools available:
-- follow_path(path): Move along the full path by calling astar.
-  path is a list of [x, y] pixel coordinates. Use this for ALL movement.
+- follow_path(start_px, goal_px, obstacles_px): Move along the full path by calling astar.
+  start_px and goal_px are [x, y] pixel coordinates; obstacles_px is a list of
+  [x, y] obstacles to avoid. Use this for ALL movement.
   Returns the path from start_px to goal_px, avoiding obstacles_px.
   Pass integers, not strings. Do NOT include the goal in obstacles_px.
 - collect_water(): Collect water at the water tank (75,250). Only works when
@@ -213,11 +214,3 @@ ablations = {
     ]),
 }
 
-print(ablations["full"])
-print(ablations["no_role"])
-print(ablations["no_thinking_limit"])
-print(ablations["no_world_state"])
-print(ablations["no_tools_description"])
-
-system_prompts = [ ablations["no_role"],
-                  ablations["no_thinking_limit"], ablations["no_tools_description"], ablations["no_world_state"]]

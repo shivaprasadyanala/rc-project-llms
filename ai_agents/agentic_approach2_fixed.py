@@ -45,8 +45,7 @@ import queue
 import threading
 import copy
 import argparse
-from ablation_prompt import system_prompts,ablations
-task_queue = queue.Queue()
+from ablation_prompt import ablations
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +134,12 @@ for i in range(1):
         logger.info(
             "agent_variant: follow_path + queueing, ablation study")
 
+        # Fresh queue + position log for each ablation run so runs do not bleed
+        # into each other (previously these were shared across all runs, causing
+        # stale states/positions to leak into subsequent runs).
+        task_queue = queue.Queue()
+        player_positions = []
+
         url = config_data["server_urls"]["game_state_url"]
 
         url2 = config_data["server_urls"]["whisper_url"]
@@ -203,9 +208,6 @@ for i in range(1):
                         "planted": v.get("planted")
                     }
             return new_crops
-
-
-        player_positions = []
 
 
         def api_call(current_state):
@@ -374,7 +376,13 @@ for i in range(1):
                     (125, 75)
                 ]
             """
-            obstacles_px.remove(goal_px) if goal_px in obstacles_px else None
+            # Work on a copy so the model's argument list is never mutated.
+            if obstacles_px is None:
+                obstacles_px = []
+            else:
+                obstacles_px = list(obstacles_px)
+            if goal_px in obstacles_px:
+                obstacles_px.remove(goal_px)
 
             if goal_px in obstacles_px:
                 return json.dumps({
@@ -599,12 +607,12 @@ for i in range(1):
 
 
 
-        def api_worker():
+        def api_worker(queue_for_worker):
             print("API worker started")
             while True:
                 try:
                     # 1. Try to get a task
-                    state_snapshot = task_queue.get(timeout=45)
+                    state_snapshot = queue_for_worker.get(timeout=45)
                 except queue.Empty:
                     print("No more tasks. Worker exiting.")
                     break  # Exit the loop if no tasks arrive for 45 seconds
@@ -616,11 +624,12 @@ for i in range(1):
                     print(f"Error in API call: {e}")
                 finally:
                     # 3. Mark THIS specific task as done
-                    task_queue.task_done()
+                    queue_for_worker.task_done()
 
 
-        # Start the thread
-        t = threading.Thread(target=api_worker)
+        # Start the thread, binding THIS run's queue to the worker so a lingering
+        # worker from a previous run can never drain the next run's queue.
+        t = threading.Thread(target=api_worker, args=(task_queue,))
         t.start()
 
 
@@ -804,13 +813,10 @@ for i in range(1):
             points_gained += 1
             points_gained_object["water_available"] = 1
 
-        reset_crop = {}
         j = 0
         crops = state["crops"]
         for k, v in crops.items():
             j += 1
-            reset_crop[f"crop{j}"] = {"pos": list(k), "name": crops.get(
-                k)["name"], "needs_water": True, "planted": False}
             if crops.get(k)["planted"] == True:
                 points_gained_object[f"plant_crop_{j}"] = 1
                 points_gained += 1
@@ -818,18 +824,27 @@ for i in range(1):
                 points_gained_object[f"needs_water_{j}"] = 1
                 points_gained += 1
 
-        reset_state = {
-            "grid_size": [5, 5],
-            "player_pos": [200, 100],
-            "crops": reset_crop,
-            "obstacles": state["obstacles"],
-            "water_available": False,
-            "goal_completed": state["goal_completed"],
-            "water_tank": state["water_tank"],
-            "goal_completed": False
+        # Reset the shared state IN PLACE for the next ablation run, preserving
+        # the tuple-keyed crop structure that plant_crop/water/check_player_position
+        # depend on. (Previously this reassigned `state` to a dict with string crop
+        # keys like "crop1" and a [5, 5] grid, which broke every subsequent run.
+        # Note: if an agent run was stopped mid-sequence before its worker drained
+        # the queue, values may have been briefly mutated; refresh them all here.)
+        state["grid_size"] = (800, 600)
+        state["player_pos"] = [200, 100]
+        state["crops"] = {
+            (400, 275): {"name": "wheat", "planted": False, "needs_water": True},
+            (300, 200): {"name": "rice", "planted": False, "needs_water": True},
         }
-        state = reset_state
-        task_queue.put(reset_state)
+        state["obstacles"] = [[250, 100]]
+        state["water_available"] = False
+        state["water_tank"] = [75, 250]
+        state["goal_completed"] = False
+
+        # Notify the game server that the episode ended with a fresh state.
+        state_to_send = copy.deepcopy(state)
+        state_to_send["crops"] = crops_parser(state["crops"])
+        task_queue.put(state_to_send)
 
         print(time_taken)
         if len(time_taken) > 0 and len(tool_calls) > 0:
