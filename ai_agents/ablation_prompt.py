@@ -9,6 +9,10 @@ state = {
     "crops": {
         (400, 275): {"name": "wheat", "planted": False, "needs_water": True},
         (300, 200): {"name": "rice", "planted": False, "needs_water": True},
+        (200, 425): {"name": "rice", "planted": False, "needs_water": True},
+        (350, 50): {"name": "rice", "planted": False, "needs_water": True},
+        (150, 350): {"name": "rice", "planted": False, "needs_water": True},
+        
     },
 
     # Obstacles as a set for fast lookup
