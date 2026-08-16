@@ -114,6 +114,10 @@ state = {
     "crops": {
         (400, 275): {"name": "wheat", "planted": False, "needs_water": True},
         (300, 200): {"name": "rice", "planted": False, "needs_water": True},
+        (200, 425): {"name": "rice", "planted": False, "needs_water": True},
+        (350, 50): {"name": "rice", "planted": False, "needs_water": True},
+        (150, 350): {"name": "rice", "planted": False, "needs_water": True},
+
     },
 
     # Obstacles as a set for fast lookup
@@ -125,7 +129,7 @@ state = {
     "goal_completed": False
 }
 
-for i in range(1):
+for i in range(20):
     for ablation_name,system_prompt in ablations.items():
         logger = create_logger_file(f"{ablation_name}_prompt")
         logging.getLogger("httpx").disabled = True
@@ -182,7 +186,7 @@ for i in range(1):
                 if crops[crop[0], crop[1]]["needs_water"] == False:
                     value += 1
             print("value of goal completed:" + str(value))
-            if value == 2:
+            if value == 5:
                 state["goal_completed"] = True
             return state["goal_completed"]
 
@@ -835,6 +839,9 @@ for i in range(1):
         state["crops"] = {
             (400, 275): {"name": "wheat", "planted": False, "needs_water": True},
             (300, 200): {"name": "rice", "planted": False, "needs_water": True},
+            (200, 475): {"name": "rice", "planted": False, "needs_water": True},
+            (350, 50): {"name": "rice", "planted": False, "needs_water": True},
+            (150, 350): {"name": "rice", "planted": False, "needs_water": True},
         }
         state["obstacles"] = [[250, 100]]
         state["water_available"] = False
