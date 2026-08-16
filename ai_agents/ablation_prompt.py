@@ -212,5 +212,9 @@ ablations = {
         base_components["thinking_limit"],
         base_components["world_state"],
     ]),
+    "only_task": "\n\n".join([
+            base_components["task"],
+        ]),
+    
 }
 
