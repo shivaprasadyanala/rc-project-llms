@@ -40,7 +40,7 @@ import logging
 import yaml
 import os
 import sys
-from speech_to_text import audio_text
+# from speech_to_text import audio_text
 import queue
 import threading
 import copy
@@ -99,24 +99,24 @@ url = config_data["server_urls"]["game_state_url"]
 url2 = config_data["server_urls"]["whisper_url"]
 
 new_content = ""
-if config_data["speech"]["user_input"]:
-    new_content = audio_text
-else:
-    st_time = time.time()
-    with open("plant_crops_audio.m4a", "rb") as f:
-        response = requests.post(url2, files={"file": f})
+# if config_data["speech"]["user_input"]:
+#     new_content = audio_text
+# else:
+#     st_time = time.time()
+#     with open("plant_crops_audio.m4a", "rb") as f:
+#         response = requests.post(url2, files={"file": f})
 
-    print(response.json()["text"])
+#     print(response.json()["text"])
 
-    print(time.time() - st_time)
-    logger.info(f"time taken for api call + model: {time.time()-st_time}")
-    print("time_take by model")
-    model_time = response.json()["time_taken"]
-    print(response.json()["time_taken"])
-    logger.info(f"time taken for audio by model: {model_time}")
+#     print(time.time() - st_time)
+#     logger.info(f"time taken for api call + model: {time.time()-st_time}")
+#     print("time_take by model")
+#     model_time = response.json()["time_taken"]
+#     print(response.json()["time_taken"])
+#     logger.info(f"time taken for audio by model: {model_time}")
 
-    new_content = response.json()["text"]
-
+#     new_content = response.json()["text"]
+new_content = "plant the crops and water them"
 headers = {
     "Content-Type": "application/json"
 }
@@ -196,7 +196,7 @@ def api_call(current_state):
     state_to_send["crops"] = new_crops
 
     # Push to background thread instantly
-    requests.post(url, json=current_state, headers=headers)
+    requests.post(url, json=state_to_send, headers=headers)
     # task_queue.put(state_to_send)
 
 
