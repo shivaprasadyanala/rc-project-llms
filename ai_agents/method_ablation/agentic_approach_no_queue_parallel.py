@@ -197,7 +197,7 @@ def api_call(current_state):
 
     # Push to background thread instantly
     # task_queue.put(state_to_send)
-    requests.post(url, json=current_state, headers=headers)
+    requests.post(url, json=state_to_send, headers=headers)
     
 
 
