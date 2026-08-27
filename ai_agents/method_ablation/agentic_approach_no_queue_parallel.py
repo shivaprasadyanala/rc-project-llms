@@ -186,7 +186,7 @@ def crops_parser(crops):
 player_positions = []
 
 
-def api_call(current_state):
+def api_call(current_state,tool="none"):
     # Parse crops and format the state
     new_crops = crops_parser(current_state["crops"])
     player_positions.append(current_state["player_pos"])
@@ -197,6 +197,8 @@ def api_call(current_state):
 
     # Push to background thread instantly
     # task_queue.put(state_to_send)
+    if tool == "follow_path":
+        time.sleep(0.25)
     requests.post(url, json=state_to_send, headers=headers)
     
 
@@ -368,7 +370,7 @@ def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_p
     print(f"Path found: {path}")
     for step in path:
         state["player_pos"] = [step[0], step[1]]
-        api_call(state)
+        api_call(state,"follow_path")
         # modified_state = state
     return json.dumps({
         "status": "true",
