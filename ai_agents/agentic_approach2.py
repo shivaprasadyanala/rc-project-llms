@@ -334,33 +334,44 @@ def _validate_steps(steps):
     return steps, None
 
 
-def follow_path(path) -> str:
+def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px: list[tuple[int, int]]) -> str:
     """
-      follow path tool takes the path from the astar algorithm to the goal and make api call to the game server.
+      follow path tool takes start and goal coordinates along with obstacles and makes an API call to the game server.
+      Args:
+            start_px int,int: x,y coordinates of start
+            goal_px int,int: x,y coordinate of goal
+            obstacles_px [(int,int)] : x,y coordinate of obstacles
+        Returns:
+            List: The list of tuples of the player coordinates to reach the destination
+        
+            A sample input for the function
+            start_px = (50,75)
+            goal_px = (150,125)
+
+            obstacles = [
+                (75, 75),
+            (100, 75),
+            (125, 75)
+        ]
     """
-    steps = _parse_path(path)
-    valid_steps, error = _validate_steps(steps) if steps else (None, None)
-    if error is None and not steps:
-        error = "invalid path: call astar and pass its returned path (list of [x, y] coordinates)."
-    if error:
+    obstacles_px.remove(goal_px) if goal_px in obstacles_px else None
+
+    if goal_px in obstacles_px:
         return json.dumps({
             "status": "false",
             "action": "follow_path",
-            "message": error
+            "message": "goal is an obstacle"
         })
 
-    MAX_PATH_STEPS = 40  # cap hallucinated mega-walks; legit astar paths are <= ~25 steps
-    if len(valid_steps) > MAX_PATH_STEPS:
-        valid_steps = valid_steps[:MAX_PATH_STEPS]
-
-    for x, y in valid_steps:
-        state["player_pos"] = [int(x), int(y)]
+    path = astar(start_px, goal_px, obstacles_px)
+    print(f"Path found: {path}")
+    for step in path:
+        state["player_pos"] = [step[0], step[1]]
         api_call(state)
     return json.dumps({
         "status": "true",
         "action": "follow_path",
-        "message": "followed path to the goal",
-        "player_pos": state["player_pos"]
+        "message": "followed path to the goal"
     })
 
 
@@ -625,7 +636,7 @@ def api_worker():
     while True:
         try:
             # 1. Try to get a task
-            state_snapshot = task_queue.get(timeout=45)
+            state_snapshot = task_queue.get(timeout=15)
         except queue.Empty:
             print("No more tasks. Worker exiting.")
             break  # Exit the loop if no tasks arrive for 45 seconds
@@ -646,7 +657,7 @@ t.start()
 
 
 available_tools = {"follow_path": follow_path, "water": water,
-                   "astar": astar, "collect_water": collect_water, "plant_crop": plant_crop}
+                  "collect_water": collect_water, "plant_crop": plant_crop}
 
 points_gained = 0
 points_gained_object = {}
@@ -658,10 +669,7 @@ points_gained_object = {}
 # ---------------------------------------------------------------------------
 tools_description = """
 Tools available:
-- follow_path(path): Move along the full path returned by astar.
-  path is a list of [x, y] pixel coordinates. Use this for ALL movement.
-- astar(start_px=[x,y], goal_px=[x,y], obstacles_px=[[x,y], ...], grid_width=800, grid_height=600):
-  Returns the path from start_px to goal_px, avoiding obstacles_px.
+- follow_path(start_px=[x,y], goal_px=[x,y], obstacles_px=[[x,y], ...]): Move along the full path returned by astar.
   Pass integers, not strings. Do NOT include the goal in obstacles_px.
 - collect_water(): Collect water at the water tank (75,250). Only works when
   the player is standing exactly on (75,250).
@@ -675,7 +683,7 @@ you are smart farm game agent.
 
 Your task:
 1. Reach the water tank at (75,250) and call collect_water().
-2. Walk to the first crop (use astar + follow_path) and call plant_crop(x, y).
+2. Walk to the first crop (use follow_path) and call plant_crop(x, y).
 3. Call water() while standing on that crop.
 4. Repeat for the other crop.
 5. Only when EVERY crop is planted AND watered AND water_available=True, you may
@@ -685,14 +693,14 @@ Rules
 - Execute exactly one action per turn, and after each tool result IMMEDIATELY continue
   with the next tool call until the task is fully done. Never stop early and never
   just reply with text while the goal is still incomplete.
-- Always use tools: astar for pathfinding, follow_path for movement, plant_crop,
+- Always use tools: follow_path for pathfinding and for movement, plant_crop,
   water, collect_water. Never describe a tool call as text, JSON, markdown or code -- call the tool directly.
 - Never calculate the distance manually. Always use the astar tool.
 - move 25pxs and one side at a time, and not allowed to pass through the crops and
   water tank -- they are obstacles.
 
-astar argument format (use integers, not strings):
-    astar(start_px=[x,y], goal_px=[x,y], obstacles_px=[[x1,y1],[x2,y2],...], grid_width=800, grid_height=600)
+follow_path argument format (use integers, not strings):
+    follow_path(start_px=[x,y], goal_px=[x,y], obstacles_px=[[x1,y1],[x2,y2],...])
 
 WORLD STATE:
 
@@ -769,7 +777,7 @@ try:
         print(f"output_tokens: {response['eval_count']}")
 
         total_output_tokens += response['eval_count']
-        total_input_tokens = response['prompt_eval_count']
+        total_input_tokens += response['prompt_eval_count']
         print(f"response time: {(response['total_duration']/1e9)}")
         logger.info(f"response time: {response['total_duration'] / 1e9:.2f}")
 
@@ -865,7 +873,7 @@ try:
             "role": "user",
             "content": ("You answered with text but did not call a tool. "
                         "Continue the task now: make the next tool call "
-                        "(astar, follow_path, collect_water, plant_crop, or water) using the tool interface.")
+                        "(follow_path, collect_water, plant_crop, or water) using the tool interface.")
         })
 except Exception as e:
     logger.error(f"LLm failed due to error: {str(e)}")
