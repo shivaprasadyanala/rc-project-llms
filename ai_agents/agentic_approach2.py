@@ -168,7 +168,7 @@ def crops_parser(crops):
 # breakpoint()
 player_positions = []
 
-def api_call(current_state):
+def api_call(current_state,tool="none"):
     # Parse crops and format the state
     
     new_crops = crops_parser(current_state["crops"])
@@ -179,7 +179,11 @@ def api_call(current_state):
     state_to_send["crops"] = new_crops
     
     # Push to background thread instantly
-    task_queue.put(state_to_send)
+    if tool=="follow_path":
+        print("sleeping....")
+        time.sleep(0.25)
+    requests.post(url, json=state_to_send, headers=headers)
+    # task_queue.put(state_to_send)
 
 
 def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px: list[tuple[int, int]]) -> str:
@@ -216,7 +220,7 @@ def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_p
     print(f"Path found: {path}")
     for step in path:
         state["player_pos"] = [step[0], step[1]]
-        api_call(state)
+        api_call(state,"follow_path")
     return json.dumps({
         "status":"true",
         "action":"follow_path",
@@ -264,7 +268,7 @@ def water()-> str:
 
     crop["needs_water"] = False
     state["goal_completed"] = set_crop_state()
-    api_call(state)
+    api_call(state,"follow_path")
     # return "Crop watered successfully"
     return json.dumps({
         "status":"true",
@@ -294,7 +298,7 @@ def collect_water()-> str:
             "water_available": state["water_available"]
     })
     state["water_available"] = True
-    api_call(state)
+    api_call(state,"follow_path")
     # print("in collect water tool.............")
     return json.dumps({
         "status":"true",
@@ -411,7 +415,7 @@ def plant_crop(x:int, y:int)-> str:
     crop["planted"] = True
     print("plant crop tool:-")
     print(state)
-    api_call(state)
+    api_call(state,"follow_path")
     return json.dumps({
         "status": True,
         "action": "plant_crop",
@@ -544,7 +548,7 @@ try:
         print(f"output_tokens: {response['eval_count']}")
 
         total_output_tokens += response['eval_count']
-        total_input_tokens = response['prompt_eval_count']
+        total_input_tokens += response['prompt_eval_count']
         print(f"response time: {(response['total_duration']/1e9)}")
         logger.info(f"response time: {response['total_duration'] / 1e9:.2f}")
 
