@@ -76,12 +76,12 @@ parser.add_argument(
 parser.add_argument(
     "--think",
     type=str,
-    choices=["default", "true", "false"],
+    choices=["default", "true", "false","low","high"],
     default="default",
     help="Whether to enable the model's thinking channel. "
          "default = let the server decide (omit the think param). "
          "gemma4:26b needs --think true for reliable tool calling; "
-         "gpt-oss:20b can use --think false for lower latency."
+         "gpt-oss:20b can use --think low for lower latency and high for reasoning."
 )
 args = parser.parse_args()
 model = args.model
@@ -695,7 +695,7 @@ Rules
   just reply with text while the goal is still incomplete.
 - Always use tools: follow_path for pathfinding and for movement, plant_crop,
   water, collect_water. Never describe a tool call as text, JSON, markdown or code -- call the tool directly.
-- Never calculate the distance manually. Always use the astar tool.
+- Never calculate the distance manually. Always use the follow_path tool.
 - move 25pxs and one side at a time, and not allowed to pass through the crops and
   water tank -- they are obstacles.
 
@@ -761,7 +761,7 @@ try:
         response: ChatResponse = client.chat(
             model=model,
             messages=messages,
-            tools=[follow_path, water, astar, collect_water, plant_crop],
+            tools=[follow_path, water, collect_water, plant_crop],
             **chat_kwargs
         )
         print(f"input_tokens: {response['prompt_eval_count']}")
