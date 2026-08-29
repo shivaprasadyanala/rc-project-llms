@@ -482,7 +482,7 @@ try:
         print(f"output_tokens: {response['eval_count']}")
 
         total_output_tokens += response['eval_count']
-        total_input_tokens = response['prompt_eval_count']
+        total_input_tokens += response['prompt_eval_count']
         print(f"response time: {(response['total_duration']/1e9)}")
         logger.info(f"response time: {response['total_duration'] / 1e9:.2f}")
 
