@@ -8,19 +8,30 @@ import sys
 #     latency while tool calls still work.
 #   - everything else -> --think default (same as omitting the flag).
 MODEL_THINK = {
-    "gemma4:26b": "true",
-    "gpt-oss:20b": "false",
+    "gemma4:26b": "false",
+    "gpt-oss:20b": "low",
+    "qwen3:8b":"false",
+    "nemotron-3-nano:4b": "false",
+    "llama3.1:8b": "false"
 }
+
+# MODEL_THINK = {
+#     "gemma4:26b": "true",
+#     "gpt-oss:20b": "high",
+#     "qwen3:8b": "true",
+#     "nemotron-3-nano:4b": "true",
+#     "llama3.1:8b": "true"
+# }
 
 models = [
     "gpt-oss:20b",
     "llama3.1:8b",
-    "qwen2.5:7b",
+    # "qwen2.5:7b",
     "qwen3:8b",
-    "qwen3.6:27b",
-    "glm-4.7-flash:q4_K_M",
-    "nemotron3:33b",
-    "gemma4:e4b",
+    # "qwen3.6:27b",
+    # "glm-4.7-flash:q4_K_M",
+    # "nemotron3:33b",
+    # "gemma4:e4b",
     "gemma4:26b",
     "nemotron-3-nano:4b"
 ]
