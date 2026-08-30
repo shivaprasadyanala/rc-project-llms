@@ -218,6 +218,7 @@ def api_call(current_state, tool="none"):
     if tool == "follow_path":
         print("sleeping....")
         time.sleep(0.25)
+    requests.post(url, json=state_to_send, headers=headers)
     # task_queue.put(state_to_send)
 
 
