@@ -445,9 +445,9 @@ def collect_water() -> str:
 def crops_to_text(crops):
     lines = []
     for pos, info in crops.items():
-        lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+        lines.append(f"- {pos}:planted = {info['planted']} needs_water = {info['needs_water']}")
+    print(lines)
     return "\n".join(lines)
-
 
 def move(dx: int, dy: int) -> str:
     """
