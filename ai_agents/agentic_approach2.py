@@ -205,7 +205,7 @@ def crops_parser(crops):
 player_positions = []
 
 
-def api_call(current_state):
+def api_call(current_state, tool="none"):
     # Parse crops and format the state
     new_crops = crops_parser(current_state["crops"])
     player_positions.append(current_state["player_pos"])
@@ -215,7 +215,10 @@ def api_call(current_state):
     state_to_send["crops"] = new_crops
 
     # Push to background thread instantly
-    task_queue.put(state_to_send)
+    if tool == "follow_path":
+        print("sleeping....")
+        time.sleep(0.25)
+    # task_queue.put(state_to_send)
 
 
 def _coerce_step(step):
@@ -355,7 +358,7 @@ def follow_path(path) -> str:
 
     for x, y in valid_steps:
         state["player_pos"] = [int(x), int(y)]
-        api_call(state)
+        api_call(state,"follow_path")
     return json.dumps({
         "status": "true",
         "action": "follow_path",
@@ -625,7 +628,7 @@ def api_worker():
     while True:
         try:
             # 1. Try to get a task
-            state_snapshot = task_queue.get(timeout=45)
+            state_snapshot = task_queue.get(timeout=15)
         except queue.Empty:
             print("No more tasks. Worker exiting.")
             break  # Exit the loop if no tasks arrive for 45 seconds
@@ -769,7 +772,7 @@ try:
         print(f"output_tokens: {response['eval_count']}")
 
         total_output_tokens += response['eval_count']
-        total_input_tokens = response['prompt_eval_count']
+        total_input_tokens += response['prompt_eval_count']
         print(f"response time: {(response['total_duration']/1e9)}")
         logger.info(f"response time: {response['total_duration'] / 1e9:.2f}")
 
