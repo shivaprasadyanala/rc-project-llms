@@ -734,6 +734,7 @@ agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
 tool_calls = []
+total_tool_time = 0
 
 # ---------------------------------------------------------------------------
 # Hardened agent loop.
@@ -800,8 +801,12 @@ try:
                         print("Executing tool instantly in Python:",
                               tool_call.function.name)
                         # 1. Execute instantly. (Network calls are sent to the queue inside the tool)
+                        tool_time = time.time()
                         real_result_json = function_to_call(
                             **tool_call.function.arguments)
+                        tool_time_taken = time.time()-tool_time
+                        logger.info(f"time taken for tool call {tool_call.function.name}: {str(tool_time_taken)}")
+                        total_tool_time+= tool_time_taken
                     except Exception as e:
                         real_result_json = json.dumps(
                             {"status": "false", "message": f"{str(e)}"})
@@ -929,6 +934,7 @@ if len(time_taken) > 0 and len(tool_calls) > 0:
     print("total output tokens: " + str(total_output_tokens))
     logger.info("total input tokens: " + str(total_input_tokens))
     logger.info("total output tokens: " + str(total_output_tokens))
+    logger.info(f"total tool time: {str(total_tool_time)}")
 else:
     logger.info("llm tool failed")
     print("llm tool failed")
