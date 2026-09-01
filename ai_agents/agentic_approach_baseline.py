@@ -2,17 +2,15 @@
 import random
 import requests
 import time
-import matplotlib.pyplot as plt
-import numpy as np
 from ollama import Client
 from ollama._types import ChatResponse
 import json
 import logging
 import yaml,os,sys
-from speech_to_text import audio_text
+# from speech_to_text import audio_text
 import argparse
 logger = logging.getLogger(__name__)
-
+import ast,copy
 def read_config(file_path):
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -56,25 +54,8 @@ url = config_data["server_urls"]["game_state_url"]
 
 url2 = config_data["server_urls"]["whisper_url"]
 
-new_content = ""
-if config_data["speech"]["user_input"]:
-    new_content = audio_text
-else:
-    st_time = time.time()
-    with open("plant_crops_audio.m4a", "rb") as f:
-        response = requests.post(url2, files={"file": f})
 
-    print(response.json()["text"])
-
-    print(time.time()-st_time)
-    logger.info(f"time taken for api call + model: {time.time()-st_time}")
-    print("time_take by model")
-    model_time = response.json()["time_taken"]
-    print(response.json()["time_taken"])
-    logger.info(f"time taken for audio by model: {model_time}")
-
-    new_content = response.json()["text"]
-
+new_content = "collect water from the water tank,plant crops and water them."
 headers = {
 "Content-Type": "application/json"
 }
@@ -84,7 +65,7 @@ state = {
     "grid_size": (800, 600),
 
     # Player
-    "player_pos": [200, 100],  # use list for mutability
+    "player_pos": [75, 250],  # use list for mutability
 
     # Crops indexed by position
     "crops": {
@@ -123,7 +104,39 @@ def set_crop_state():
     if value ==2:
         state["goal_completed"]= True
     return state["goal_completed"]
+player_positions = []
+def crops_parser(crops):
+    new_crops = {}
+    for i, (k, v) in enumerate(crops.items(), start=1):
+        if v is not None:
+            if isinstance(k, str):
+                try:
+                    pos = list(ast.literal_eval(k))
+                except (ValueError, SyntaxError):
+                    pos = [k]
+            else:
+                pos = list(k)
 
+            new_crops[f"crop{i}"] = {
+                "pos": pos,
+                "name": v.get("name"),
+                "needs_water": v.get("needs_water"),
+                "planted": v.get("planted")
+            }
+    return new_crops
+
+def api_call(current_state):
+    # Parse crops and format the state
+    new_crops = crops_parser(current_state["crops"])
+    player_positions.append(current_state["player_pos"])
+    # Create a deep copy so future LLM moves don't overwrite this data
+    # before the background thread has a chance to send it
+    state_to_send = copy.deepcopy(current_state)
+    state_to_send["crops"] = new_crops
+
+    # Push to background thread instantly
+    print("sending state to server...")
+    requests.post(url, json=state_to_send, headers=headers)
 
 # set_crop_state()
 # breakpoint()
@@ -174,7 +187,7 @@ def water()-> str:
         })
 
     crop["needs_water"] = False
-
+    api_call(state)
     state["goal_completed"] = set_crop_state()
     # return "Crop watered successfully"
     return json.dumps({
@@ -220,6 +233,9 @@ def collect_water()-> str:
 
     # water_tank_y = state["water_tank"][1]
     state["water_available"] = True
+    st_time = time.time()
+    api_call(state)
+    print(f"time for api call in collect water: {str(time.time()-st_time)}")
     # print("in collect water tool.............")
     return json.dumps({
         "status":"true",
@@ -227,7 +243,6 @@ def collect_water()-> str:
         "message":"water collected successfully",
         "water_available": state["water_available"]
     })
-
 
 
 
@@ -312,6 +327,7 @@ def move(dx:int, dy:int)-> str:
     else:
         visited.add((new_x, new_y))
         state["player_pos"] = [new_x, new_y]
+        api_call(state)
         # return f"game character moved to {(new_x, new_y)}"
         return json.dumps({
             "status":"true",
@@ -380,7 +396,7 @@ def plant_crop(x:int, y:int)-> str:
         })
 
     crop["planted"] = True
-
+    api_call(state)
     return json.dumps({
         "status": True,
         "action": "plant_crop",
@@ -388,12 +404,7 @@ def plant_crop(x:int, y:int)-> str:
         "planted": True
     })
 
-# state["player_pos"][0] = 400
-# state["player_pos"][1] = 275
 
-# print(plant_crop(400,275))
-
-# breakpoint()
 
 available_tools = {"move":move,"water":water,"collect_water":collect_water,"plant_crop":plant_crop}
 
@@ -467,10 +478,10 @@ client = Client(
 # a loop is needed to call the tools and get the results
 
 time_taken = []
-player_positions = []
 log_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
+total_tool_time = 0
 
 tool_calls = []
 try:
@@ -483,7 +494,7 @@ try:
   while i< 50:
       # time.sleep(1)
       i+=1
-      st_time = time.time()    
+    #   st_time = time.time()    
       # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0})
       response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
 
@@ -529,16 +540,21 @@ try:
           real_result_json = ""
           if function_to_call:
             try:
+                tool_time = time.time()
                 result = function_to_call(**tool_call.function.arguments)
+                print(f"time for tool {tool_call.function.name}: {str(time.time()-tool_time)}")
+                tool_time_taken = time.time()-tool_time
+                total_tool_time+= tool_time_taken
+                logger.info(f"time taken for tool call {tool_call.function.name}: {str(tool_time_taken)}")
                 print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
                 real_result_json = result
             except Exception as e:
                 real_result_json = json.dumps({"status":"false", "message": f"Error in tool call: {str(e)}"})
             logger.info(f"tool: {str(tool_call.function.name)}  result: {str(real_result_json)}") 
-            print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
+            # print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
             if "false" not in real_result_json:
                 tool_calls.append(tool_call.function.name)
-                time_taken.append(time.time()-st_time)
+                # time_taken.append(time.time()-st_time)
             crops = state["crops"]
             
             j = 0
@@ -565,13 +581,13 @@ try:
               "tool_name": tool_call.function.name
           })
 
-            print("new_state")
-            print(new_state)
-            player_positions.append(state["player_pos"])
-            new_state["task"] = new_content
-            new_task_state = new_state
-            response = requests.post(url, json=new_task_state, headers=headers)
-            print(response)
+            # print("new_state")
+            # print(new_state)
+            # player_positions.append(state["player_pos"])
+            # new_state["task"] = new_content
+            # new_task_state = new_state
+            # response = requests.post(url, json=new_task_state, headers=headers)
+            # print(response)
           else:
             print(f'Tool {tool_call.function.name} not found')
             messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
@@ -657,12 +673,7 @@ correct_seq = ['move', 'collect_water', 'move', 'plant_crop','water', 'move', 'p
 print(time_taken)
 if len(time_taken)>0 and len(tool_calls)>0:
     data = time_taken
-    mean = np.mean(data)
-    median = np.median(data)
-    variance = np.var(data)
-    std_dev = np.std(data)
-    min_val = np.min(data)
-    max_val = np.max(data)
+
 
     stats = {
         "mean": mean,
@@ -673,8 +684,6 @@ if len(time_taken)>0 and len(tool_calls)>0:
         "max": max_val
     }
 
-    normalized = (data - min_val) / (max_val - min_val)
-    z_scores = (data - mean) / std_dev
 
 
     print("No of llms calls:-")
@@ -734,6 +743,7 @@ if len(time_taken)>0 and len(tool_calls)>0:
     print("no of revisits:")
     print(str(revisits))
     logger.info("no of revisits:"+ str(revisits))
+    logger.info(f"total tool time: {str(total_tool_time)}")
 
 else:
     print(f"points gained by agent: {str(points_gained)}")

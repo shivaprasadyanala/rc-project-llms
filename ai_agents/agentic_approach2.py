@@ -75,7 +75,7 @@ else:
     logger.info(f"time taken for audio by model: {model_time}")
 
     new_content = response.json()["text"]
-
+new_content = "collect water from the water tank,plant crops and water them."
 headers = {
 "Content-Type": "application/json"
 }
@@ -127,6 +127,39 @@ def set_crop_state():
     return state["goal_completed"]
 
 
+def crops_parser(crops):
+    new_crops = {}
+    for i, (k, v) in enumerate(crops.items(), start=1):
+        if v is not None:
+            if isinstance(k, str):
+                try:
+                    pos = list(ast.literal_eval(k))
+                except (ValueError, SyntaxError):
+                    pos = [k]
+            else:
+                pos = list(k)
+
+            new_crops[f"crop{i}"] = {
+                "pos": pos,
+                "name": v.get("name"),
+                "needs_water": v.get("needs_water"),
+                "planted": v.get("planted")
+            }
+    return new_crops
+
+def api_call(current_state):
+    # Parse crops and format the state
+    new_crops = crops_parser(current_state["crops"])
+    # player_positions.append(current_state["player_pos"])
+    # Create a deep copy so future LLM moves don't overwrite this data
+    # before the background thread has a chance to send it
+    state_to_send = copy.deepcopy(current_state)
+    state_to_send["crops"] = new_crops
+
+    # Push to background thread instantly
+    print("sending state to server...")
+    requests.post(url, json=state_to_send, headers=headers)
+
 
 def water()-> str:
     """
@@ -175,7 +208,7 @@ def water()-> str:
         })
 
     crop["needs_water"] = False
-
+    api_call(state)
     state["goal_completed"] = set_crop_state()
     # return "Crop watered successfully"
     return json.dumps({
@@ -221,6 +254,7 @@ def collect_water()-> str:
 
     # water_tank_y = state["water_tank"][1]
     state["water_available"] = True
+    api_call(state)
     # print("in collect water tool.............")
     return json.dumps({
         "status":"true",
@@ -313,6 +347,7 @@ def move(dx:int, dy:int)-> str:
     else:
         visited.add((new_x, new_y))
         state["player_pos"] = [new_x, new_y]
+        api_call(state)
         # return f"game character moved to {(new_x, new_y)}"
         return json.dumps({
             "status":"true",
@@ -381,7 +416,7 @@ def plant_crop(x:int, y:int)-> str:
         })
 
     crop["planted"] = True
-
+    api_call(state)
     return json.dumps({
         "status": True,
         "action": "plant_crop",
@@ -464,12 +499,13 @@ player_positions = []
 # agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
+total_tool_time = 0
 try:
     new_crops = {}
     while True:
         if len(messages) > 10:
             messages = messages[:2] + messages[-8:]
-        st_time = time.time()    
+        # st_time = time.time()    
         response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,astar,collect_water,plant_crop])
         print(f"input_tokens: {response['prompt_eval_count']}")
 
@@ -506,14 +542,19 @@ try:
             real_result_json = ""
             if function_to_call:
               try:
+                tool_time = time.time()
                 result = function_to_call(**tool_call.function.arguments)
+                print("time taken for tool call: "+str(time.time()-tool_time))
+                tool_time_taken = time.time()-tool_time
+                total_tool_time+= tool_time_taken
+                logger.info(f"time taken for tool call {tool_call.function.name}: {str(tool_time_taken)}")
                 print('Result from tool call name: ', tool_call.function.name, 'with arguments: ', tool_call.function.arguments, 'result: ', str(result) + '\n')
                 real_result_json = result
               except Exception as e:
                 real_result_json = json.dumps({"status":"false", "message": f"Error in tool call: {str(e)}"})
               logger.info(f"tool: {str(tool_call.function.name)}  result: {str(real_result_json)}") 
               print(f"tool: {str(tool_call.function.name)}  result: {str(real_result_json)}")
-              print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
+              # print(f"time for tool {tool_call.function.name}: {str(time.time()-st_time)}")
               if "false" not in real_result_json:
                 tool_calls_array.append(tool_call.function.name)
                 time_taken.append(time.time()-st_time)
@@ -543,12 +584,12 @@ try:
                 "tool_name": tool_call.function.name
               })
 
-              print("new_state")
-              print(new_state)
+            #   print("new_state")
+            #   print(new_state)
               player_positions.append(state["player_pos"])
-              new_state["task"] = new_content
-              new_task_state = new_state
-              response = requests.post(url, json=new_task_state, headers=headers)
+            #   new_state["task"] = new_content
+            #   new_task_state = new_state
+            #   response = requests.post(url, json=new_task_state, headers=headers)
               print(response)
             else:
               print(f'Tool {tool_call.function.name} not found')
@@ -644,6 +685,7 @@ if len(time_taken)>0 and len(tool_calls_array)>0:
     print("total output tokens: "+str(total_output_tokens))
     logger.info("total input tokens: "+str(total_input_tokens))
     logger.info("total output tokens: "+str(total_output_tokens))
+    logger.info(f"total tool time: {str(total_tool_time)}")
 else:
     print(f"points gained by agent: {str(points_gained)}")
     logger.info(f"points gained by agent: {str(points_gained)}")
