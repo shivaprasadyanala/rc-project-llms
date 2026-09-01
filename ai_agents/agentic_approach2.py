@@ -745,7 +745,7 @@ tool_calls = []
 MAX_ITERATIONS = 80          # hard cap so runaway gpt-oss reasoning loops end cleanly
 MAX_TEXT_RETRIES = 3          # how many text-only replies we tolerate before stopping
 text_reply_streak = 0
-
+total_time_taken = 0.0
 try:
     new_crops = {}
     for iteration in range(MAX_ITERATIONS):
@@ -804,8 +804,14 @@ try:
                         print("Executing tool instantly in Python:",
                               tool_call.function.name)
                         # 1. Execute instantly. (Network calls are sent to the queue inside the tool)
+                        st_time = time.time()
                         real_result_json = function_to_call(
                             **tool_call.function.arguments)
+                        et_time = time.time()
+                        tool_time_taken = et_time - st_time
+                        print(f"Tool execution time: {tool_time_taken:.2f} seconds")
+                        logger.info(f"Tool execution time: {tool_time_taken:.2f} seconds")
+                        total_time_taken += tool_time_taken
                     except Exception as e:
                         real_result_json = json.dumps(
                             {"status": "false", "message": f"{str(e)}"})
@@ -933,6 +939,7 @@ if len(time_taken) > 0 and len(tool_calls) > 0:
     print("total output tokens: " + str(total_output_tokens))
     logger.info("total input tokens: " + str(total_input_tokens))
     logger.info("total output tokens: " + str(total_output_tokens))
+    logger.info(f"total time taken by tools: {total_time_taken:.2f} seconds")
 else:
     logger.info("llm tool failed")
     print("llm tool failed")
