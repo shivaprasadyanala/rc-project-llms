@@ -95,7 +95,7 @@ if args.think == "true":
 elif args.think == "false":
     think_option = False
 print(f"Running model: {model}")
-log_folder = "../../experiments/test_logs_queue"
+log_folder = "../../experiments/test_logs_queue_fp_tool_time"
 os.makedirs(log_folder, exist_ok=True)
 
 log_file_name = f"{model}"
@@ -204,8 +204,10 @@ def crops_parser(crops):
 
 player_positions = []
 
+total_tool_time = 0
 
 def api_call(current_state, tool="none"):
+    global total_tool_time
     # Parse crops and format the state
     new_crops = crops_parser(current_state["crops"])
     player_positions.append(current_state["player_pos"])
@@ -218,7 +220,13 @@ def api_call(current_state, tool="none"):
     if tool == "follow_path":
         print("sleeping....")
         time.sleep(0.25)
+    tool_time = time.time()    
     requests.post(url, json=state_to_send, headers=headers)
+    tool_time_taken = time.time()-tool_time
+    print(f"time taken for tool call  {str(tool_time_taken)}")
+    logger.info(f"time taken for tool call  {str(tool_time_taken)}")
+    total_tool_time+= tool_time_taken
+    
     # task_queue.put(state_to_send)
 
 
@@ -734,7 +742,6 @@ agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
 tool_calls = []
-total_tool_time = 0
 
 # ---------------------------------------------------------------------------
 # Hardened agent loop.
@@ -801,12 +808,9 @@ try:
                         print("Executing tool instantly in Python:",
                               tool_call.function.name)
                         # 1. Execute instantly. (Network calls are sent to the queue inside the tool)
-                        tool_time = time.time()
                         real_result_json = function_to_call(
                             **tool_call.function.arguments)
-                        tool_time_taken = time.time()-tool_time
-                        logger.info(f"time taken for tool call {tool_call.function.name}: {str(tool_time_taken)}")
-                        total_tool_time+= tool_time_taken
+                        
                     except Exception as e:
                         real_result_json = json.dumps(
                             {"status": "false", "message": f"{str(e)}"})
