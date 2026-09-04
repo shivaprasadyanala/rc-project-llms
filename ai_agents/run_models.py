@@ -9,23 +9,27 @@ import sys
 #   - everything else -> --think default (same as omitting the flag).
 MODEL_THINK = {
     "gemma4:26b": "true",
-    "gpt-oss:20b": "false",
+    "gpt-oss:20b": "high",
+    "qwen3:8b": "true",
+    "nemotron-3-nano:4b": "true",
+    "llama3.1:8b": "true",
+
 }
 
 models = [
     "gpt-oss:20b",
     "llama3.1:8b",
-    "qwen2.5:7b",
+    # "qwen2.5:7b",
     "qwen3:8b",
-    "qwen3.6:27b",
-    "glm-4.7-flash:q4_K_M",
-    "nemotron3:33b",
-    "gemma4:e4b",
+    # "qwen3.6:27b",
+    # "glm-4.7-flash:q4_K_M",
+    # "nemotron3:33b",
+    # "gemma4:e4b",
     "gemma4:26b",
     "nemotron-3-nano:4b"
 ]
 
-NUM_RUNS = 1
+NUM_RUNS = 20
 
 for model in models:
     for i in range(NUM_RUNS):

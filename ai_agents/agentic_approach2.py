@@ -76,7 +76,7 @@ parser.add_argument(
 parser.add_argument(
     "--think",
     type=str,
-    choices=["default", "true", "false"],
+    choices=["default", "true", "false","low","high"],
     default="default",
     help="Whether to enable the model's thinking channel. "
          "default = let the server decide (omit the think param). "
@@ -118,23 +118,25 @@ url = config_data["server_urls"]["game_state_url"]
 url2 = config_data["server_urls"]["whisper_url"]
 
 new_content = ""
-if config_data["speech"]["user_input"]:
-    new_content = audio_text
-else:
-    st_time = time.time()
-    with open("plant_crops_audio.m4a", "rb") as f:
-        response = requests.post(url2, files={"file": f})
+# if config_data["speech"]["user_input"]:
+#     new_content = audio_text
+# else:
+#     st_time = time.time()
+#     with open("plant_crops_audio.m4a", "rb") as f:
+#         response = requests.post(url2, files={"file": f})
 
-    print(response.json()["text"])
+#     print(response.json()["text"])
 
-    print(time.time() - st_time)
-    logger.info(f"time taken for api call + model: {time.time()-st_time}")
-    print("time_take by model")
-    model_time = response.json()["time_taken"]
-    print(response.json()["time_taken"])
-    logger.info(f"time taken for audio by model: {model_time}")
+#     print(time.time() - st_time)
+#     logger.info(f"time taken for api call + model: {time.time()-st_time}")
+#     print("time_take by model")
+#     model_time = response.json()["time_taken"]
+#     print(response.json()["time_taken"])
+#     logger.info(f"time taken for audio by model: {model_time}")
 
-    new_content = response.json()["text"]
+#     new_content = response.json()["text"]
+
+new_content = "collect water ,plant the crops and water them."
 
 headers = {
     "Content-Type": "application/json"
@@ -674,7 +676,7 @@ Tools available:
   when the crop is planted and water_available=True.
 """
 
-system_message2 = f"""
+system_message2_ = f"""
 you are smart farm game agent.
 
 Your task:
@@ -717,6 +719,47 @@ Water_tank:
 {list(state['water_tank'])}
 
 {tools_description}
+"""
+system_message2 = f"""
+you are smart farm game agent.
+
+Your task:
+1. planting the crops by going to the given coordinates.
+2. Water needs to collected to plant water.
+3. Reach the water tank to collect water.
+
+IMPORTANT.
+ check if the crops are planted.
+ Never calculate the distance on manually.
+
+WORLD STATE:
+
+CURRENT STATE (authoritative):
+  
+Grid size: {state['grid_size']}
+Player position: {tuple(state['player_pos'])}
+  
+Crops:
+{crops_to_text(state['crops'])}
+
+Obstacles:
+{list(state['obstacles'])}
+
+Water_available:
+{state["water_available"]}
+Water_tank:
+{list(state['water_tank'])}
+
+
+move 25pxs and one side at a time
+and not allowed to pass through the crop, water tank, they are obstacles.
+
+Never output tool arguments as text, JSON, markdown, or code blocks.
+When an action is required, invoke the corresponding tool. 
+If a tool is available, emitting its arguments in text form is always incorrect.
+
+Tools available:
+{available_tools}
 """
 
 messages = [
@@ -930,5 +973,7 @@ if len(time_taken) > 0 and len(tool_calls) > 0:
     logger.info("total input tokens: " + str(total_input_tokens))
     logger.info("total output tokens: " + str(total_output_tokens))
 else:
+    print("points gained by agent: 0")
+    logger.info("points gained by agent: 0")
     logger.info("llm tool failed")
     print("llm tool failed")
