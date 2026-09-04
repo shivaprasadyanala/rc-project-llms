@@ -64,24 +64,24 @@ url = config_data["server_urls"]["game_state_url"]
 
 url2 = config_data["server_urls"]["whisper_url"]
 
-new_content = ""
-if config_data["speech"]["user_input"]:
-    new_content = audio_text
-else:
-    st_time = time.time()
-    with open("plant_crops_audio.m4a", "rb") as f:
-        response = requests.post(url2, files={"file": f})
+new_content = "collect water , plant the crops and water them."
+# if config_data["speech"]["user_input"]:
+#     new_content = audio_text
+# else:
+#     st_time = time.time()
+#     with open("plant_crops_audio.m4a", "rb") as f:
+#         response = requests.post(url2, files={"file": f})
 
-    print(response.json()["text"])
+#     print(response.json()["text"])
 
-    print(time.time()-st_time)
-    logger.info(f"time taken for api call + model: {time.time()-st_time}")
-    print("time_take by model")
-    model_time = response.json()["time_taken"]
-    print(response.json()["time_taken"])
-    logger.info(f"time taken for audio by model: {model_time}")
+#     print(time.time()-st_time)
+#     logger.info(f"time taken for api call + model: {time.time()-st_time}")
+#     print("time_take by model")
+#     model_time = response.json()["time_taken"]
+#     print(response.json()["time_taken"])
+#     logger.info(f"time taken for audio by model: {model_time}")
 
-    new_content = response.json()["text"]
+#     new_content = response.json()["text"]
 
 headers = {
 "Content-Type": "application/json"
@@ -98,9 +98,6 @@ state = {
     "crops": {
         (400, 275): {"name":"wheat","planted":False,"needs_water": True},
         (300, 200): {"name":"rice","planted":False,"needs_water": True},
-        # (200,475): {"name":"sugarcane","planted":False,"needs_water": True},
-        # (150,300): {"planted":False,"needs_water": True},
-        # (275,325): {"planted":False,"needs_water": True}
     },
 
     # Obstacles as a set for fast lookup
@@ -183,10 +180,11 @@ def api_call(current_state,tool="none"):
         print("sleeping....")
         time.sleep(0.25)
     requests.post(url, json=state_to_send, headers=headers)
-    # task_queue.put(state_to_send)
 
+follow_path_steps = 0
 
 def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_px: list[tuple[int, int]]) -> str:
+    global follow_path_steps
     """
       follow path tool takes start and goal coordinates along with obstacles and makes an API call to the game server.
       Args:
@@ -220,6 +218,7 @@ def follow_path(start_px: tuple[int, int], goal_px: tuple[int, int], obstacles_p
     print(f"Path found: {path}")
     for step in path:
         state["player_pos"] = [step[0], step[1]]
+        follow_path_steps += 1
         api_call(state,"follow_path")
     return json.dumps({
         "status":"true",
@@ -527,10 +526,7 @@ total_output_tokens = 0
 total_input_tokens = 0
 tool_calls = []
 try:
-    # needs_water_state1 = True
-    # needs_water_state2 = True
-    # crop_planted1 = False
-    # crop_planted2 = False
+
     new_crops = {}
     while True:
         st_time = time.time()    
@@ -646,7 +642,7 @@ for k,v in crops.items():
 
 
 reset_state = {
-            "grid_size": [5, 5],
+    "grid_size": [800, 600],
             "player_pos": [200,100],
             "crops": reset_crop,
             "obstacles": state["obstacles"][0],
@@ -662,8 +658,8 @@ task_queue.put(reset_state)
 print(time_taken)
 if len(time_taken)>0 and len(tool_calls)>0:
     print("No of llms calls:-")
-    print(len(time_taken))
-    logger.info(f"No of llms calls: {len(time_taken)}")
+    print(len(time_taken) + follow_path_steps)
+    logger.info(f"No of llms calls: {len(time_taken) + follow_path_steps}")
     result = [tool_calls[0]]
     for action in tool_calls[1:]:
         if action != result[-1]:
@@ -686,7 +682,6 @@ if len(time_taken)>0 and len(tool_calls)>0:
     logger.info("total input tokens: "+str(total_input_tokens))
     logger.info("total output tokens: "+str(total_output_tokens))
 else:
-    # logger.info(agent_messages)
     logger.info("llm tool failed") 
     print("llm tool failed")
     print("points gained by agent: 0")
