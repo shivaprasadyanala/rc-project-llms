@@ -339,8 +339,10 @@ def _validate_steps(steps):
 
     return steps, None
 
+follow_path_steps = 0
 
 def follow_path(path) -> str:
+    global follow_path_steps
     """
       follow path tool takes the path from the astar algorithm to the goal and make api call to the game server.
     """
@@ -361,6 +363,7 @@ def follow_path(path) -> str:
 
     for x, y in valid_steps:
         state["player_pos"] = [int(x), int(y)]
+        follow_path_steps += 1
         api_call(state,"follow_path")
     return json.dumps({
         "status": "true",
@@ -949,8 +952,8 @@ task_queue.put(reset_state)
 print(time_taken)
 if len(time_taken) > 0 and len(tool_calls) > 0:
     print("No of llms calls:-")
-    print(len(time_taken))
-    logger.info(f"No of llms calls: {len(time_taken)}")
+    print(len(time_taken)+ follow_path_steps)
+    logger.info(f"No of llms calls: {len(time_taken) + follow_path_steps}")
     result = [tool_calls[0]]
     for action in tool_calls[1:]:
         if action != result[-1]:
