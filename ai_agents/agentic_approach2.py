@@ -427,7 +427,6 @@ Water_tank:
 
 
 move 25pxs and one side at a time
-and not allowed to pass through the crop, water tank, they are obstacles.
 
 Never output tool arguments as text, JSON, markdown, or code blocks.
 When an action is required, invoke the corresponding tool. 

@@ -433,9 +433,7 @@ Water_tank:
 
 
 move 25pxs and one side at a time
-and not allowed to pass through the crop, water tank, they are obstacles.
 
-call only one tool at a time.
 Never output tool arguments as text, JSON, markdown, or code blocks.
 When an action is required, invoke the corresponding tool. 
 If a tool is available, emitting its arguments in text form is always incorrect.
