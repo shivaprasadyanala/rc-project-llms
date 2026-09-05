@@ -525,14 +525,18 @@ agent_messages = []
 total_output_tokens = 0
 total_input_tokens = 0
 tool_calls = []
+MAX_ITERATIONS = 80          # hard cap so runaway gpt-oss reasoning loops end cleanly
+MAX_TEXT_RETRIES = 3
 try:
 
     new_crops = {}
-    while True:
+    for iteration in range(MAX_ITERATIONS):
+        # Context trimming: keep system + first user message + recent history
+        # so the path/goal is not dropped mid-run.
+        if len(messages) > 30:
+            messages = messages[:2] + messages[-24:]
         st_time = time.time()    
-        # response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop],options= {"num_ctx": 30000})
-        # response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,astar,collect_water,plant_crop])
-        response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,collect_water,plant_crop],think=False)
+        response: ChatResponse = client.chat(model=model, messages=messages, tools=[follow_path,water,collect_water,plant_crop])
         print(f"input_tokens: {response['prompt_eval_count']}")
 
         print("Prompt evaluation time:",response["prompt_eval_duration"] / 1e9, "seconds")
@@ -562,6 +566,7 @@ try:
 
         messages.append(response.message)
         if response.message.tool_calls:
+          text_reply_streak = 0
           for tool_call in response.message.tool_calls:
             # LLM decides which function to call
             function_to_call = available_tools.get(tool_call.function.name)
@@ -613,11 +618,25 @@ try:
               print(f'Tool {tool_call.function.name} not found')
               messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
         elif state["goal_completed"]:
+          print("goal completed")
           break
-        elif response.message.tool_calls == None:
-          print("LLm did not call the tools and goal not completed")
-          logger.error(f"LLm failed to call the tools and goal not completed")
-          break
+        elif not response.message.tool_calls:
+            text_reply_streak += 1
+            print(
+                f"LLM did not call tools but goal is not complete. (text streak = {text_reply_streak})")
+            logger.info(
+                f"LLM did not call tools but goal is not complete. (text streak = {text_reply_streak})")
+            if text_reply_streak >= MAX_TEXT_RETRIES:
+                logger.info(
+                    "LLM did not call tools after repeated nudges; stopping run.")
+                print("LLM did not call tools after repeated nudges; stopping run.")
+                break
+            messages.append({
+                "role": "user",
+                "content": ("You answered with text but did not call a tool. "
+                            "Continue the task now: make the next tool call "
+                            "(follow_path, collect_water, plant_crop, or water) using the tool interface.")
+            })
 except Exception as e:
         logger.error(f"LLm failed due to error: {str(e)}")
         print(f"LLm failed due to error: {str(e)}")
