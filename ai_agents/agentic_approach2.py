@@ -37,7 +37,7 @@ parser.add_argument(
 args = parser.parse_args()
 model = args.model
 print(f"Running model: {model}")
-log_folder = "../../experiments/test_logs_astar"
+log_folder = "../../experiments/test_logs_astar_new"
 os.makedirs(log_folder, exist_ok=True)
 
 log_file_name = f"{model}"
@@ -58,24 +58,24 @@ url = config_data["server_urls"]["game_state_url"]
 url2 = config_data["server_urls"]["whisper_url"]
 
 new_content = ""
-if config_data["speech"]["user_input"]:
-    new_content = audio_text
-else:
-    st_time = time.time()
-    with open("plant_crops_audio.m4a", "rb") as f:
-        response = requests.post(url2, files={"file": f})
+#if config_data["speech"]["user_input"]:
+#    new_content = audio_text
+#else:
+#    st_time = time.time()
+#    with open("plant_crops_audio.m4a", "rb") as f:
+#        response = requests.post(url2, files={"file": f})
 
-    print(response.json()["text"])
+#    print(response.json()["text"])
 
-    print(time.time()-st_time)
-    logger.info(f"time taken for api call + model: {time.time()-st_time}")
-    print("time_take by model")
-    model_time = response.json()["time_taken"]
-    print(response.json()["time_taken"])
-    logger.info(f"time taken for audio by model: {model_time}")
+#   print(time.time()-st_time)
+#    logger.info(f"time taken for api call + model: {time.time()-st_time}")
+#    print("time_take by model")
+#    model_time = response.json()["time_taken"]
+#    print(response.json()["time_taken"])
+#    logger.info(f"time taken for audio by model: {model_time}")
 
-    new_content = response.json()["text"]
-
+#    new_content = response.json()["text"]
+new_content = "collect water, plant the crops and water them"
 headers = {
 "Content-Type": "application/json"
 }
@@ -465,7 +465,9 @@ total_output_tokens = 0
 total_input_tokens = 0
 try:
     new_crops = {}
-    while True:
+    p = 0
+    while p<50:
+        p+=1
         if len(messages) > 10:
             messages = messages[:2] + messages[-8:]
         st_time = time.time()    
