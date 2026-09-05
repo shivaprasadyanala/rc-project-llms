@@ -754,7 +754,7 @@ try:
         if len(messages) > 30:
             messages = messages[:2] + messages[-24:]
 
-        st_time = time.time()
+        st_time1 = time.time()
         chat_kwargs = {}
         if think_option is not None:
             chat_kwargs["think"] = think_option
@@ -821,7 +821,7 @@ try:
                     logger.info(f"tool_result: {str(real_result_json)}")
                     if "false" not in real_result_json:
                         tool_calls.append(tool_call.function.name)
-                    time_taken.append(time.time() - st_time)
+                    time_taken.append(time.time() - st_time1)
 
                     real_result = real_result_json
 
