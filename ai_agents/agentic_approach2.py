@@ -117,24 +117,24 @@ url = config_data["server_urls"]["game_state_url"]
 
 url2 = config_data["server_urls"]["whisper_url"]
 
-new_content = ""
-if config_data["speech"]["user_input"]:
-    new_content = audio_text
-else:
-    st_time = time.time()
-    with open("plant_crops_audio.m4a", "rb") as f:
-        response = requests.post(url2, files={"file": f})
+new_content = "collect water from the water tank and plant the crops and water them"
+# if config_data["speech"]["user_input"]:
+#     new_content = audio_text
+# else:
+#     st_time = time.time()
+#     with open("plant_crops_audio.m4a", "rb") as f:
+#         response = requests.post(url2, files={"file": f})
 
-    print(response.json()["text"])
+#     print(response.json()["text"])
 
-    print(time.time() - st_time)
-    logger.info(f"time taken for api call + model: {time.time()-st_time}")
-    print("time_take by model")
-    model_time = response.json()["time_taken"]
-    print(response.json()["time_taken"])
-    logger.info(f"time taken for audio by model: {model_time}")
+#     print(time.time() - st_time)
+#     logger.info(f"time taken for api call + model: {time.time()-st_time}")
+#     print("time_take by model")
+#     model_time = response.json()["time_taken"]
+#     print(response.json()["time_taken"])
+#     logger.info(f"time taken for audio by model: {model_time}")
 
-    new_content = response.json()["text"]
+#     new_content = response.json()["text"]
 
 headers = {
     "Content-Type": "application/json"
@@ -639,10 +639,9 @@ def api_worker():
             state_snapshot = task_queue.get(timeout=15)
         except queue.Empty:
             print("No more tasks. Worker exiting.")
-            break  # Exit the loop if no tasks arrive for 45 seconds
-        # 2. Process the task (only runs if we successfully got an item)
+            break 
         try:
-            time.sleep(1)
+            time.sleep(0.25)
             requests.post(url, json=state_snapshot, headers=headers)
         except Exception as e:
             print(f"Error in API call: {e}")
@@ -746,6 +745,7 @@ MAX_ITERATIONS = 80          # hard cap so runaway gpt-oss reasoning loops end c
 MAX_TEXT_RETRIES = 3          # how many text-only replies we tolerate before stopping
 text_reply_streak = 0
 total_time_taken = 0.0
+episode_start_time = time.time()
 try:
     new_crops = {}
     for iteration in range(MAX_ITERATIONS):
@@ -912,6 +912,23 @@ reset_state = {
     "goal_completed": state["goal_completed"]
 }
 task_queue.put(reset_state)
+task_queue.join()
+
+queue_finish_time = time.time()
+true_end_to_end_latency = queue_finish_time - episode_start_time
+
+# logger.info("="*40)
+# logger.info(f"EPISODE FINISHED")
+# logger.info(
+#     f"1. Agent-Side Latency (Agent perception): {agent_side_latency:.3f} seconds")
+# logger.info(
+#     f"2. True End-to-End Latency (Server synced): {true_end_to_end_latency:.3f} seconds")
+print(f"2. True End-to-End Latency (Server synced): {true_end_to_end_latency:.3f} seconds")
+
+breakpoint()
+# logger.info(
+#     f"3. Queue Drain Time (Network overhead):     {queue_finish_time - agent_finish_time:.3f} seconds")
+# logger.info("="*40)
 
 print(time_taken)
 if len(time_taken) > 0 and len(tool_calls) > 0:
