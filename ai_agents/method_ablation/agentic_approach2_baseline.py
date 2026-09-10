@@ -450,7 +450,7 @@ def collect_water() -> str:
 def crops_to_text(crops):
     lines = []
     for pos, info in crops.items():
-        lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+        lines.append(f"- {pos}: planted = {info["planted"]} needs_water = {info['needs_water']}")
     return "\n".join(lines)
 
 
@@ -672,33 +672,47 @@ Water_tank:
 """
 
 
-system_message2 = f"""You are a smart farm game agent.
+system_message2 = f"""
+you are smart farm game agent.
 
-DIRECTIVES & TASK ORDER:
-1. If water_available is False: Path to water tank at (75, 250) -> follow_path -> call collect_water().
-2. Process crops sequentially in the exact order listed below:
-   For each crop needing work: Path to (x, y) -> follow_path -> plant_crop(x, y) -> water().
-3. Finish ONLY when all crops are planted and watered AND water_available is True.
+Your task:
+1. planting the crops by going to the given coordinates.
+2. Water needs to collected to plant water.
+3. Reach the water tank to collect water.
 
-CRITICAL RULES:
-- THINKING LIMIT: Keep reasoning under 2 sentences. Focus ONLY on the immediate next action. Do NOT output multi-step plans or summaries.
-- EXECUTION: Execute exactly 1 tool call per turn. Never output text descriptions of tool calls.
-
+IMPORTANT.
+ check if the crops are planted.
+ Never calculate the distance on manually.
 
 WORLD STATE:
+
+CURRENT STATE (authoritative):
+  
 Grid size: {state['grid_size']}
 Player position: {tuple(state['player_pos'])}
-
+  
 Crops:
 {crops_to_text(state['crops'])}
 
 Obstacles:
 {list(state['obstacles'])}
 
-Water_available: {state["water_available"]}
-Water_tank: {list(state['water_tank'])}
+Water_available:
+{state["water_available"]}
+Water_tank:
+{list(state['water_tank'])}
 
-{tools_description}"""
+
+move 25pxs and one side at a time
+
+Never output tool arguments as text, JSON, markdown, or code blocks.
+When an action is required, invoke the corresponding tool. 
+If a tool is available, emitting its arguments in text form is always incorrect.
+
+Tools available:
+{available_tools}
+
+"""
 
 messages = [
     {'role': 'system', 'content': system_message2},
