@@ -26,7 +26,7 @@ parser.add_argument(
 args = parser.parse_args()
 model = args.model
 print(f"Running model: {model}")
-log_folder = "../../experiments/logs_non_trivial_local"
+log_folder = "../../experiments/logs_non_trivial_fixed_2"
 os.makedirs(log_folder, exist_ok=True)
 
 log_file_name = f"{model}"

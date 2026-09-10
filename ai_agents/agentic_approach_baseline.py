@@ -167,6 +167,7 @@ for task in tasks:
                     global invalid_moves, invalid_move_object
                     pos = tuple(state["player_pos"])
                     print(pos)
+                    # crop = state["crops"].get(pos)
                     crop = crops_object["crops"].get(pos)
                     print(crop)
                     if not crop:
@@ -260,7 +261,8 @@ for task in tasks:
                 def crops_to_text(crops):
                     lines = []
                     for pos, info in crops.items():
-                        lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+                        # lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+                        lines.append(f"- {pos}: planted = {info['is_planted']}, needs_water = {info['needs_water']}")
                     return "\n".join(lines)
 
 

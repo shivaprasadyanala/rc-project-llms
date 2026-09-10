@@ -66,6 +66,8 @@ def find_final_score(time_taken,player_positions,points_gained_object,tool_calls
 
 
     if len(tool_calls)<=1:
+        print(f"points gained by agent: 0")
+        logger.info("points gained by agent: 0")
         return 0
     print(tool_calls)
     result = [tool_calls[0]]
