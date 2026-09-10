@@ -444,6 +444,41 @@ for task in tasks:
                 # If no task is provided, do nothing.
                 # Only perform actions that are necessary to accomplish the user's requested task.
                 # Think step-by-step.
+                # ------------------------------------------------------------------
+                # "Dead episode" mitigation - enabled ONLY for the models that were
+                # observed to reply with plain text and no tool call after a single
+                # action (gpt-oss:20b and llama3.1:8b). Because a turn without a tool
+                # call ends the episode, those runs died with 0 points
+                # ("Let me know if you'd like me to continue."). All other models keep
+                # the original prompt and the original behaviour, so the earlier logs
+                # stay comparable.
+                # ------------------------------------------------------------------
+                CONTINUATION_NUDGE_MODELS = ("gpt-oss", "gpt_oss", "llama3.1", "llama3_1", "llama-3.1")
+                needs_continuation_nudge = any(
+                    marker in str(model).lower() for marker in CONTINUATION_NUDGE_MODELS
+                )
+
+                # how many consecutive no-tool-call turns are allowed before giving up
+                MAX_CONSECUTIVE_NO_TOOL_CALL_TURNS = 3
+                # gpt-oss/llama need roughly two turns per action (action + nudge), so
+                # they get a larger turn budget; every other model keeps the 50 turns
+                MAX_TURNS = 75 if needs_continuation_nudge else 50
+                logger.info(
+                    f"continuation nudge for {model}: "
+                    f"{'ON' if needs_continuation_nudge else 'OFF'} (MAX_TURNS={MAX_TURNS})"
+                )
+
+                if needs_continuation_nudge:
+                    continuation_instructions = """
+                HOW THE TOOL LOOP WORKS (important):
+                You are running inside an automatic loop: every tool call you make is executed immediately and its result is returned to you in the next turn. Nobody will type "continue" for you.
+                Keep calling tools, one tool per turn, until the world state satisfies the task.
+                Never ask the user for permission or confirmation (for example "Let me know if you'd like me to continue.") and never end a turn with just a status sentence.
+                A reply that contains no tool call immediately ends the session, even if the task is unfinished.
+                """
+                else:
+                    continuation_instructions = ""
+
                 system_message2 = f"""
                 Your task:
                 You are a smart farm game agent. You have access to tools that let you move and interact with the world.
@@ -483,6 +518,10 @@ for task in tasks:
                 {available_tools}
 
                 """
+                # Only gpt-oss / llama3.1 get the extra tool-loop instructions; for
+                # every other model continuation_instructions is "" so the prompt above
+                # stays byte-identical to the original one.
+                system_message2 = system_message2 + continuation_instructions
                 # new_content = " oh wheat crop is drying up"
                 # new_content = "water the crops"
                 # and not allowed to pass through the crop, water tank, they are obstacles.
@@ -521,8 +560,9 @@ for task in tasks:
 
                   new_crops = {}
                   goal_reached = False
+                  consecutive_no_tool_call_turns = 0
                   i=0
-                  while i< 50:
+                  while i< MAX_TURNS:
                       # time.sleep(1)
                       i+=1
                       st_time = time.time()    
@@ -554,6 +594,7 @@ for task in tasks:
                       messages.append(response.message)
                       
                       if response.message.tool_calls:
+                        consecutive_no_tool_call_turns = 0
                         print("llm tool_calls:")
                         print(len(response.message.tool_calls))
                         for tool_call in response.message.tool_calls:
@@ -632,7 +673,35 @@ for task in tasks:
                       #   break
                       elif response.message.tool_calls == None:
                         print("LLM did not call tools but is not complete.")
-                        logger.info("episode finished: model stopped and the goal is NOT complete")
+                        # gpt-oss / llama hand the turn back to the user after a single
+                        # action ("Let me know if you'd like me to continue."), which used
+                        # to kill the episode with 0 points. Nudge them to keep going;
+                        # every other model falls through to the break below unchanged.
+                        if (
+                            needs_continuation_nudge
+                            and consecutive_no_tool_call_turns < MAX_CONSECUTIVE_NO_TOOL_CALL_TURNS
+                        ):
+                            consecutive_no_tool_call_turns += 1
+                            print("nudging the model to continue the tool loop.")
+                            logger.info(
+                                f"episode continued: model replied without a tool call "
+                                f"(nudge {consecutive_no_tool_call_turns}/{MAX_CONSECUTIVE_NO_TOOL_CALL_TURNS})"
+                            )
+                            if response.message.content:
+                                logger.info(f"content without a tool call: {response.message.content}")
+                            messages.append({
+                                'role': 'user',
+                                'content': (
+                                    "You did not call a tool and the task is not finished yet. "
+                                    "Do not ask for confirmation and do not stop. "
+                                    "Call the next tool now (one tool per turn)."
+                                )
+                            })
+                            continue
+                        logger.info(
+                            f"episode finished: model stopped and the goal is NOT complete "
+                            f"(no-tool-call turns: {consecutive_no_tool_call_turns})"
+                        )
                         # messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
                         # # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
                         # if len(messages) > 50: 
