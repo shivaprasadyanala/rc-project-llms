@@ -105,10 +105,24 @@ for task in tasks:
 
                 def goal_completed(state):
                     """
-                    sets the water state of the crop
+                    Termination predicate for the current episode.
+
+                    It is evaluated by the episode loop before every turn and after
+                    every tool call, so it always returns a boolean and keeps
+                    state["goal_completed"] in sync:
+
+                      collect_water    -> water has been collected
+                      plant_crop       -> every crop is planted
+                      plant_crop_water -> every crop is planted and watered
+
+                    The counters are compared with >= (instead of the old `== 2`)
+                    so the goal is still detected when more crops than required
+                    qualify; otherwise the flag could never be set and the episode
+                    only ended at the 50 turn budget.
                     """
                     global task_type
                     crops = crops_object["crops"]
+                    required = len(crops)
                     is_goal_completed = False
                     if task_type == "plant_crop_water":
                         value = 0
@@ -116,22 +130,23 @@ for task in tasks:
                           if  crops[crop[0],crop[1]]["is_planted"] == True and crops[crop[0],crop[1]]["needs_water"] == False:
                             value+=1
                         print("value of goal completed:" + str(value))
-                        if value ==2:
-                            state["goal_completed"] = True
-                        return state["goal_completed"]
+                        if required > 0 and value >= required:
+                            is_goal_completed = True
                     elif task_type == "plant_crop":
                         value = 0
                         for crop in crops:
                           if  crops[crop[0],crop[1]]["is_planted"] == True:
                             value+=1
                         print("value of goal completed:" + str(value))
-                        if value ==2:
-                            state["goal_completed"] = True
-                        return state["goal_completed"]
+                        if required > 0 and value >= required:
+                            is_goal_completed = True
                     elif task_type == "collect_water":
-                        if state["water_available"] == True:
-                            state["goal_completed"] = True
-                            return state["goal_completed"]
+                        print("water available for goal completed:" + str(state["water_available"]))
+                        is_goal_completed = bool(state["water_available"])
+                    else:
+                        print(f"goal_completed: unknown task_type {str(task_type)}")
+                    state["goal_completed"] = is_goal_completed
+                    return is_goal_completed
 
 
 
@@ -502,11 +517,18 @@ for task in tasks:
                 try:
 
                   new_crops = {}
+                  goal_reached = False
                   i=0
                   while i< 50:
                       # time.sleep(1)
                       i+=1
                       st_time = time.time()    
+                      # Stop before asking the model again if the goal is already met:
+                      # this is what prevents the agent from over-executing the task.
+                      if goal_completed(state):
+                          print("goal already completed before this turn - stopping")
+                          logger.info("episode finished: goal already satisfied at turn start")
+                          break
                       # response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop],think=True,options={"temperature": 0.0,"seed":42})
                       response: ChatResponse = client.chat(model=model, messages=messages, tools=[move,water,collect_water,plant_crop])
 
@@ -548,7 +570,12 @@ for task in tasks:
                             if "false" not in real_result_json:
                                 tool_calls.append(tool_call.function.name)
                                 time_taken.append(time.time()-st_time)
-                            # time_taken.append(time.time()-st_time)
+                            # Termination check after every tool call: as soon as the
+                            # goal is satisfied no further action is taken in this turn.
+                            if goal_completed(state):
+                                print("goal completed")
+                                logger.info(f"goal completed after tool call: {str(tool_call.function.name)}")
+                                goal_reached = True
                             crops = crops_object["crops"]
                             new_crops = {}
                             j = 0
@@ -588,8 +615,13 @@ for task in tasks:
                           else:
                             print(f'Tool {tool_call.function.name} not found')
                             messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+                        if goal_reached:
+                          print("goal completed - terminating episode")
+                          logger.info("episode finished: goal completed after tool call")
+                          break
                       elif goal_completed(state):
                         print("goal completed")
+                        logger.info("episode finished: model stopped and the goal is complete")
                         break
                       # elif response.message.tool_calls == None:
                       #   print("LLm did not call the tools")
@@ -597,6 +629,7 @@ for task in tasks:
                       #   break
                       elif response.message.tool_calls == None:
                         print("LLM did not call tools but is not complete.")
+                        logger.info("episode finished: model stopped and the goal is NOT complete")
                         # messages.append({'role': 'user', 'content': "You did not select a tool. Please review your plan and select the next tool to execute."})
                         # # Adding a fail-safe to prevent infinite loops if the model gets totally stuck
                         # if len(messages) > 50: 
