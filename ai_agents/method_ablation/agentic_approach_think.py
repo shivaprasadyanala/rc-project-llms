@@ -40,7 +40,7 @@ import logging
 import yaml
 import os
 import sys
-from speech_to_text import audio_text
+# from speech_to_text import audio_text
 import queue
 import threading
 import copy
@@ -98,29 +98,29 @@ url = config_data["server_urls"]["game_state_url"]
 
 url2 = config_data["server_urls"]["whisper_url"]
 
-new_content = ""
-if config_data["speech"]["user_input"]:
-    new_content = audio_text
-else:
-    st_time = time.time()
-    with open("plant_crops_audio.m4a", "rb") as f:
-        response = requests.post(url2, files={"file": f})
+# new_content = ""
+# if config_data["speech"]["user_input"]:
+#     new_content = audio_text
+# else:
+#     st_time = time.time()
+#     with open("plant_crops_audio.m4a", "rb") as f:
+#         response = requests.post(url2, files={"file": f})
 
-    print(response.json()["text"])
+#     print(response.json()["text"])
 
-    print(time.time() - st_time)
-    logger.info(f"time taken for api call + model: {time.time()-st_time}")
-    print("time_take by model")
-    model_time = response.json()["time_taken"]
-    print(response.json()["time_taken"])
-    logger.info(f"time taken for audio by model: {model_time}")
+#     print(time.time() - st_time)
+#     logger.info(f"time taken for api call + model: {time.time()-st_time}")
+#     print("time_take by model")
+#     model_time = response.json()["time_taken"]
+#     print(response.json()["time_taken"])
+#     logger.info(f"time taken for audio by model: {model_time}")
 
-    new_content = response.json()["text"]
+#     new_content = response.json()["text"]
 
 headers = {
     "Content-Type": "application/json"
 }
-
+new_content = "collect the water , plant the crops and water them."
 
 state = {
     "grid_size": (800, 600),
@@ -452,7 +452,7 @@ def collect_water() -> str:
 def crops_to_text(crops):
     lines = []
     for pos, info in crops.items():
-        lines.append(f"- {pos}: needs_water = {info['needs_water']}")
+        lines.append(f"- {pos}: planted = {info['planted']} needs_water = {info['needs_water']}")
     return "\n".join(lines)
 
 
@@ -628,35 +628,25 @@ Tools available:
 
 # This usually means they are cells that cannot be part of the path *except* for the destination.
 
-system_message2_ = f"""
+system_message2 = f"""
 you are smart farm game agent.
 
 Your task:
-1. Reach the water tank at (75,250) and call collect_water().
-2. Walk to the first crop (use follow_path) and call plant_crop(x, y).
-3. Call water() while standing on that crop.
-4. Repeat for the other crop.
-5. Only when EVERY crop is planted AND watered AND water_available=True, you may
-   finish. Never output "stop" or a summary before that.
+1. planting the crops by going to the given coordinates.
+2. Water needs to collected to plant water.
+3. Reach the water tank to collect water.
 
-Rules
-- Execute exactly one action per turn, and after each tool result IMMEDIATELY continue
-  with the next tool call until the task is fully done. Never stop early and never
-  just reply with text while the goal is still incomplete.
-- Always use tools: follow_path for pathfinding, movement, plant_crop,
-  water, collect_water. Never describe a tool call as text, JSON, markdown or code -- call the tool directly.
-- Never calculate the distance manually. Always use the follow_path tool.
-- move 25pxs and one side at a time, and not allowed to pass through the crops and
-  water tank -- they are obstacles.
-
+IMPORTANT.
+ check if the crops are planted.
+ Never calculate the distance on manually.
 
 WORLD STATE:
 
 CURRENT STATE (authoritative):
-
+  
 Grid size: {state['grid_size']}
 Player position: {tuple(state['player_pos'])}
-
+  
 Crops:
 {crops_to_text(state['crops'])}
 
@@ -668,11 +658,20 @@ Water_available:
 Water_tank:
 {list(state['water_tank'])}
 
-{tools_description}
+
+move 25pxs and one side at a time
+
+Never output tool arguments as text, JSON, markdown, or code blocks.
+When an action is required, invoke the corresponding tool. 
+If a tool is available, emitting its arguments in text form is always incorrect.
+
+Tools available:
+{available_tools}
+
 """
 
 
-system_message2 = f"""You are a smart farm game agent.
+system_message2_ = f"""You are a smart farm game agent.
 
 DIRECTIVES & TASK ORDER:
 1. If water_available is False: Path to water tank at (75, 250) -> follow_path -> call collect_water().
