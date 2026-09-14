@@ -737,6 +737,8 @@ MAX_ITERATIONS = 80          # hard cap so runaway gpt-oss reasoning loops end c
 MAX_TEXT_RETRIES = 3          # how many text-only replies we tolerate before stopping
 text_reply_streak = 0
 
+episode_start_time = time.time()
+
 try:
     new_crops = {}
     for iteration in range(MAX_ITERATIONS):
@@ -889,6 +891,10 @@ reset_state = {
     "goal_completed": state["goal_completed"]
 }
 task_queue.put(reset_state)
+task_queue.join()
+
+queue_finish_time = time.time()
+true_end_to_end_latency = queue_finish_time - episode_start_time
 
 print(time_taken)
 if len(time_taken) > 0 and len(tool_calls) > 0:
@@ -916,6 +922,10 @@ if len(time_taken) > 0 and len(tool_calls) > 0:
     print("total output tokens: " + str(total_output_tokens))
     logger.info("total input tokens: " + str(total_input_tokens))
     logger.info("total output tokens: " + str(total_output_tokens))
+    print(
+        f"2. True End-to-End Latency (Server synced): {true_end_to_end_latency:.3f} seconds")
+    logger.info(f"End-to-End Latency: {true_end_to_end_latency:.3f} seconds")
 else:
     logger.info("llm tool failed")
     print("llm tool failed")
+    logger.info(f"points gained by agent: 0")

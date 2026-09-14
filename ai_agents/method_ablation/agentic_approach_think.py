@@ -40,7 +40,7 @@ import logging
 import yaml
 import os
 import sys
-# from speech_to_text import audio_text
+from speech_to_text import audio_text
 import queue
 import threading
 import copy
@@ -116,11 +116,11 @@ url2 = config_data["server_urls"]["whisper_url"]
 #     logger.info(f"time taken for audio by model: {model_time}")
 
 #     new_content = response.json()["text"]
-
+new_content = "collect the water , plant the crops and water them."
 headers = {
     "Content-Type": "application/json"
 }
-new_content = "collect the water , plant the crops and water them."
+
 
 state = {
     "grid_size": (800, 600),
@@ -452,7 +452,8 @@ def collect_water() -> str:
 def crops_to_text(crops):
     lines = []
     for pos, info in crops.items():
-        lines.append(f"- {pos}: planted = {info['planted']} needs_water = {info['needs_water']}")
+        lines.append(
+            f"- {pos}: planted = {info['planted']} needs_water = {info['needs_water']}")
     return "\n".join(lines)
 
 
@@ -628,6 +629,50 @@ Tools available:
 
 # This usually means they are cells that cannot be part of the path *except* for the destination.
 
+system_message2_ = f"""
+you are smart farm game agent.
+
+Your task:
+1. Reach the water tank at (75,250) and call collect_water().
+2. Walk to the first crop (use follow_path) and call plant_crop(x, y).
+3. Call water() while standing on that crop.
+4. Repeat for the other crop.
+5. Only when EVERY crop is planted AND watered AND water_available=True, you may
+   finish. Never output "stop" or a summary before that.
+
+Rules
+- Execute exactly one action per turn, and after each tool result IMMEDIATELY continue
+  with the next tool call until the task is fully done. Never stop early and never
+  just reply with text while the goal is still incomplete.
+- Always use tools: follow_path for pathfinding, movement, plant_crop,
+  water, collect_water. Never describe a tool call as text, JSON, markdown or code -- call the tool directly.
+- Never calculate the distance manually. Always use the follow_path tool.
+- move 25pxs and one side at a time, and not allowed to pass through the crops and
+  water tank -- they are obstacles.
+
+
+WORLD STATE:
+
+CURRENT STATE (authoritative):
+
+Grid size: {state['grid_size']}
+Player position: {tuple(state['player_pos'])}
+
+Crops:
+{crops_to_text(state['crops'])}
+
+Obstacles:
+{list(state['obstacles'])}
+
+Water_available:
+{state["water_available"]}
+Water_tank:
+{list(state['water_tank'])}
+
+{tools_description}
+"""
+
+
 system_message2 = f"""
 you are smart farm game agent.
 
@@ -670,35 +715,6 @@ Tools available:
 
 """
 
-
-system_message2_ = f"""You are a smart farm game agent.
-
-DIRECTIVES & TASK ORDER:
-1. If water_available is False: Path to water tank at (75, 250) -> follow_path -> call collect_water().
-2. Process crops sequentially in the exact order listed below:
-   For each crop needing work: Path to (x, y) -> follow_path -> plant_crop(x, y) -> water().
-3. Finish ONLY when all crops are planted and watered AND water_available is True.
-
-CRITICAL RULES:
-- THINKING LIMIT: Keep reasoning under 2 sentences. Focus ONLY on the immediate next action. Do NOT output multi-step plans or summaries.
-- EXECUTION: Execute exactly 1 tool call per turn. Never output text descriptions of tool calls.
-
-
-WORLD STATE:
-Grid size: {state['grid_size']}
-Player position: {tuple(state['player_pos'])}
-
-Crops:
-{crops_to_text(state['crops'])}
-
-Obstacles:
-{list(state['obstacles'])}
-
-Water_available: {state["water_available"]}
-Water_tank: {list(state['water_tank'])}
-
-{tools_description}"""
-
 messages = [
     {'role': 'system', 'content': system_message2},
     {'role': 'user', 'content': new_content}
@@ -721,6 +737,8 @@ tool_calls = []
 MAX_ITERATIONS = 80          # hard cap so runaway gpt-oss reasoning loops end cleanly
 MAX_TEXT_RETRIES = 3          # how many text-only replies we tolerate before stopping
 text_reply_streak = 0
+
+episode_start_time = time.time()
 
 try:
     new_crops = {}
@@ -874,6 +892,10 @@ reset_state = {
     "goal_completed": state["goal_completed"]
 }
 task_queue.put(reset_state)
+task_queue.join()
+
+queue_finish_time = time.time()
+true_end_to_end_latency = queue_finish_time - episode_start_time
 
 print(time_taken)
 if len(time_taken) > 0 and len(tool_calls) > 0:
@@ -901,6 +923,10 @@ if len(time_taken) > 0 and len(tool_calls) > 0:
     print("total output tokens: " + str(total_output_tokens))
     logger.info("total input tokens: " + str(total_input_tokens))
     logger.info("total output tokens: " + str(total_output_tokens))
+    print(
+        f"2. True End-to-End Latency (Server synced): {true_end_to_end_latency:.3f} seconds")
+    logger.info(f"End-to-End Latency: {true_end_to_end_latency:.3f} seconds")
 else:
+    logger.info(f"points gained by agent: 0")
     logger.info("llm tool failed")
     print("llm tool failed")
